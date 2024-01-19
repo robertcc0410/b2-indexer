@@ -47,3 +47,41 @@ all: build
 build-all: tools build lint test vulncheck
 
 .PHONY: distclean clean build-all
+
+###############################################################################
+###                                Linting                                  ###
+###############################################################################
+
+lint:
+	@@test -n "$$golangci-lint version | awk '$4 >= 1.42')"
+	golangci-lint run --out-format=tab -n
+
+format:
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*"  -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -d -e -extra
+
+lint-fix:
+	golangci-lint run --fix --out-format=tab --issues-exit-code=0
+.PHONY: lint lint-fix lint-py
+
+format-fix:
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs gofumpt -w -s
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*"  -not -name '*.pb.go' -not -name '*.pb.gw.go' | xargs misspell -w
+.PHONY: format
+
+###############################################################################
+###                           Tests                                         ###
+###############################################################################
+
+PACKAGES_UNIT=$(shell go list ./...)
+TEST_PACKAGES=./...
+TEST_TARGETS := test-unit
+SKIP_TEST_METHOD='(^TestLocal)'
+
+test:
+ifneq (,$(shell which tparse 2>/dev/null))
+	go test -skip=$(SKIP_TEST_METHOD)  -mod=readonly  -json $(ARGS) $(EXTRA_ARGS) $(TEST_PACKAGES)  | tparse
+else
+	go test -skip=$(SKIP_TEST_METHOD) -mod=readonly $(ARGS)   $(EXTRA_ARGS) $(TEST_PACKAGES)
+endif
+
+.PHONY: test $(TEST_TARGETS)

@@ -1,10 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"path"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -12,19 +12,13 @@ import (
 	"github.com/b2network/b2-indexer/internal/logic/bitcoin"
 	logger "github.com/b2network/b2-indexer/pkg/log"
 	"github.com/btcsuite/btcd/rpcclient"
-	dbm "github.com/cometbft/cometbft-db"
 	"github.com/spf13/cobra"
+	"gorm.io/gorm"
 )
 
 func Start(ctx *Context, cmd *cobra.Command) (err error) {
-	home := ctx.cfg.RootDir
-
-	bitcoinCfg, err := config.LoadBitcoinConfig(path.Join(home, "config"))
-	if err != nil {
-		logger.Errorw("failed to load bitcoin config", "error", err.Error())
-		return err
-	}
-
+	home := ctx.Config.RootDir
+	bitcoinCfg := ctx.BitcoinConfig
 	if bitcoinCfg.EnableIndexer {
 		logger.Infow("bitcoin index service starting!!!")
 		bclient, err := rpcclient.New(&rpcclient.ConnConfig{
@@ -43,7 +37,12 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 		}()
 		bitcoinParam := config.ChainParams(bitcoinCfg.NetworkName)
 
-		bidxLogger := logger.New(logger.NewOptions())
+		bidxLoggerOpt := logger.NewOptions()
+		bidxLoggerOpt.Format = ctx.Config.LogFormat
+		bidxLoggerOpt.Level = ctx.Config.LogLevel
+		bidxLoggerOpt.EnableColor = true
+		bidxLoggerOpt.Name = "[bitcoin-indexer]"
+		bidxLogger := logger.New(bidxLoggerOpt)
 		bidxer, err := bitcoin.NewBitcoinIndexer(bidxLogger, bclient, bitcoinParam, bitcoinCfg.IndexerListenAddress)
 		if err != nil {
 			logger.Errorw("failed to new bitcoin indexer indexer", "error", err.Error())
@@ -62,15 +61,13 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 			return err
 		}
 
-		// TODO: use PostgreSQL
-		bitcoinidxDB, err := OpenBitcoinIndexerDB(home, dbm.GoLevelDBBackend)
+		db, err := GetDBContextFromCmd(cmd)
 		if err != nil {
-			logger.Errorw("failed to open bitcoin indexer DB", "error", err.Error())
+			logger.Errorw("failed to get db context", "error", err.Error())
 			return err
 		}
 
-		bindexerService := bitcoin.NewIndexerService(bidxer, bridge, bitcoinidxDB, bidxLogger)
-		// bindexerService.SetLogger(logger)
+		bindexerService := bitcoin.NewIndexerService(bidxer, db, bidxLogger)
 
 		errCh := make(chan error)
 		go func() {
@@ -84,6 +81,27 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 			return err
 		case <-time.After(5 * time.Second): // assume server started successfully
 		}
+
+		// start l1->l2 bridge service
+		bridgeLoggerOpt := logger.NewOptions()
+		bridgeLoggerOpt.Format = ctx.Config.LogFormat
+		bridgeLoggerOpt.Level = ctx.Config.LogLevel
+		bridgeLoggerOpt.EnableColor = true
+		bridgeLoggerOpt.Name = "[bridge-deposit]"
+		bridgeLogger := logger.New(bridgeLoggerOpt)
+		bridgeService := bitcoin.NewBridgeDepositService(bridge, db, bridgeLogger)
+		bridgeErrCh := make(chan error)
+		go func() {
+			if err := bridgeService.OnStart(); err != nil {
+				bridgeErrCh <- err
+			}
+		}()
+
+		select {
+		case err := <-bridgeErrCh:
+			return err
+		case <-time.After(5 * time.Second): // assume server started successfully
+		}
 	}
 	// wait quit
 	code := WaitForQuitSignals()
@@ -91,9 +109,12 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 	return nil
 }
 
-func OpenBitcoinIndexerDB(rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
-	dataDir := filepath.Join(rootDir, "data")
-	return dbm.NewDB("bitoinindexer", backendType, dataDir)
+func GetDBContextFromCmd(cmd *cobra.Command) (*gorm.DB, error) {
+	if v := cmd.Context().Value(DBContextKey); v != nil {
+		db := v.(*gorm.DB)
+		return db, nil
+	}
+	return nil, fmt.Errorf("db context not set")
 }
 
 func WaitForQuitSignals() int {

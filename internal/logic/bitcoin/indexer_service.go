@@ -1,22 +1,25 @@
 package bitcoin
 
 import (
-	"strconv"
-	"strings"
+	"encoding/json"
+	"errors"
 	"time"
 
+	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/internal/types"
 	"github.com/b2network/b2-indexer/pkg/log"
-	dbm "github.com/cometbft/cometbft-db"
+	"github.com/b2network/b2-indexer/pkg/utils"
 	"github.com/cometbft/cometbft/libs/service"
+	"gorm.io/gorm"
 )
 
 const (
 	ServiceName = "BitcoinIndexerService"
 
-	BitcoinIndexBlockKey = "bitcoinIndexBlock" // key: currentBlock + "."+ currentTxIndex
-
 	NewBlockWaitTimeout = 60 * time.Second
+
+	IndexTxTimeout    = 100 * time.Millisecond
+	IndexBlockTimeout = 2 * time.Second
 )
 
 // IndexerService indexes transactions for json-rpc service.
@@ -24,20 +27,19 @@ type IndexerService struct {
 	service.BaseService
 
 	txIdxr types.BITCOINTxIndexer
-	bridge types.BITCOINBridge
 
-	db  dbm.DB
+	db  *gorm.DB
 	log log.Logger
 }
 
 // NewIndexerService returns a new service instance.
 func NewIndexerService(
 	txIdxr types.BITCOINTxIndexer,
-	bridge types.BITCOINBridge,
-	db dbm.DB,
+	// bridge types.BITCOINBridge,
+	db *gorm.DB,
 	logger log.Logger,
 ) *IndexerService {
-	is := &IndexerService{txIdxr: txIdxr, bridge: bridge, db: db, log: logger}
+	is := &IndexerService{txIdxr: txIdxr, db: db, log: logger}
 	is.BaseService = *service.NewBaseService(nil, ServiceName, is)
 	return is
 }
@@ -54,37 +56,45 @@ func (bis *IndexerService) OnStart() error {
 		currentBlock   int64 // index current block number
 		currentTxIndex int64 // index current block tx index
 	)
-	// btcIndexBlock
-	btcIndexBlockMax, err := bis.db.Get([]byte(BitcoinIndexBlockKey))
-	if err != nil {
-		bis.log.Errorw("failed to get bitcoin index block from db", "error", err)
-		return err
-	}
-
-	bis.log.Infow("bitcoin indexer load db", "data", string(btcIndexBlockMax))
-
-	// set default value
-	currentBlock = latestBlock
-	currentTxIndex = 0
-
-	if btcIndexBlockMax != nil {
-		indexBlock := strings.Split(string(btcIndexBlockMax), ".")
-		bis.log.Infow("bitcoin indexer db data split", "indexBlock", indexBlock)
-		if len(indexBlock) > 1 {
-			currentBlock, err = strconv.ParseInt(indexBlock[0], 10, 64)
-			if err != nil {
-				bis.log.Errorw("failed to parse block", "error", err)
-				return err
-			}
-			currentTxIndex, err = strconv.ParseInt(indexBlock[1], 10, 64)
-			if err != nil {
-				bis.log.Errorw("failed to parse tx index", "error", err)
-				return err
-			}
+	if !bis.db.Migrator().HasTable(&model.Deposit{}) {
+		err = bis.db.AutoMigrate(&model.Deposit{})
+		if err != nil {
+			bis.log.Errorw("bitcoin indexer create table", "error", err.Error())
+			return err
 		}
 	}
-	bis.log.Infow("bitcoin indexer init data", "latestBlock", latestBlock,
-		"currentBlock", currentBlock, "db data", string(btcIndexBlockMax), "currentTxIndex", currentTxIndex)
+
+	if !bis.db.Migrator().HasTable(&model.BtcIndex{}) {
+		err = bis.db.AutoMigrate(&model.BtcIndex{})
+		if err != nil {
+			bis.log.Errorw("bitcoin indexer create table", "error", err.Error())
+			return err
+		}
+	}
+
+	var btcIndex model.BtcIndex
+	if err := bis.db.First(&btcIndex, 1).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			btcIndex = model.BtcIndex{
+				Base: model.Base{
+					ID: 1,
+				},
+				BtcIndexBlock: latestBlock,
+				BtcIndexTx:    0,
+			}
+			if err := bis.db.Create(&btcIndex).Error; err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	bis.log.Infow("bitcoin indexer load db", "data", btcIndex)
+
+	// set default value
+	currentBlock = btcIndex.BtcIndexBlock
+	currentTxIndex = btcIndex.BtcIndexTx
 
 	ticker := time.NewTicker(NewBlockWaitTimeout)
 	for {
@@ -112,52 +122,93 @@ func (bis *IndexerService) OnStart() error {
 		}
 
 		for i := currentBlock; i <= latestBlock; i++ {
-			txResults, err := bis.txIdxr.ParseBlock(i, currentTxIndex)
+			txResults, blockHeader, err := bis.txIdxr.ParseBlock(i, currentTxIndex)
 			if err != nil {
-				bis.log.Errorw("bitcoin indexer parseblock", "error", err.Error(), "currentBlock", i, "currentTxIndex", currentTxIndex)
+				bis.log.Errorw("parseblock", "error", err.Error(), "currentBlock", i, "currentTxIndex", currentTxIndex)
 				continue
 			}
-
 			if len(txResults) > 0 {
 				for _, v := range txResults {
 					// if from is listen address, skip
-					if v.From[0] == v.To {
-						bis.log.Infow("bitcoin indexer current transaction from is listen address", "currentBlock", i, "currentTxIndex", v.Index, "data", v)
+					if utils.StrInArray(v.From, v.To) {
+						bis.log.Infow("current transaction from is listen address", "currentBlock", i, "currentTxIndex", v.Index, "data", v)
 						continue
 					}
-					var transferResult string
-					depositResult, err := bis.bridge.Deposit(v.TxId, v.From[0], v.Value)
+
+					btcIndex.BtcIndexBlock = i
+					btcIndex.BtcIndexTx = v.Index
+					// write db
+					err = bis.SaveParsedResult(
+						v,
+						i,
+						model.DepositB2TxStatusPending,
+						blockHeader.Timestamp,
+						btcIndex,
+					)
 					if err != nil {
-						bis.log.Errorw("bitcoin indexer invoke deposit unknown err try again by transfer", "error", err.Error(),
-							"currentBlock", i, "currentTxIndex", v.Index, "data", v)
-						// try transfer
-						transferResult, err = bis.bridge.Transfer(v.From[0], v.Value)
-						if err != nil {
-							bis.log.Errorw("bitcoin indexer invoke transfer unknown err", "error", err.Error(),
-								"currentBlock", i, "currentTxIndex", v.Index, "data", v)
-						}
+						bis.log.Errorw("failed to save bitcoin index tx", "error", err,
+							"data", v)
+					} else {
+						bis.log.Infow("bitcoin indexer save bitcoin index tx success", "data", v)
 					}
-					currentBlockStr := strconv.FormatInt(i, 10)
-					currentTxIndexStr := strconv.FormatInt(v.Index, 10)
-					err = bis.db.Set([]byte(BitcoinIndexBlockKey), []byte(currentBlockStr+"."+currentTxIndexStr))
-					if err != nil {
-						bis.log.Errorw("failed to set bitcoin index block", "error", err)
-					}
-					bis.log.Infow("bitcoin indexer invoke deposit bridge", "deposit data", v, "depositResult", depositResult, "transferResult", transferResult)
+
+					time.Sleep(IndexTxTimeout)
 				}
 			}
-
 			currentBlock = i
 			currentTxIndex = 0
-
-			currentBlockStr := strconv.FormatInt(currentBlock, 10)
-			currentTxIndexStr := strconv.FormatInt(currentTxIndex, 10)
-			err = bis.db.Set([]byte(BitcoinIndexBlockKey), []byte(currentBlockStr+"."+currentTxIndexStr))
-			if err != nil {
-				bis.log.Errorw("failed to set bitcoin index block", "error", err)
+			btcIndex.BtcIndexBlock = currentBlock
+			btcIndex.BtcIndexTx = currentTxIndex
+			if err := bis.db.Save(&btcIndex).Error; err != nil {
+				bis.log.Errorw("failed to save bitcoin index block", "error", err, "currentBlock", i,
+					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
+			} else {
+				bis.log.Infow("bitcoin indexer parsed", "currentBlock", i,
+					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
 			}
-			bis.log.Infow("bitcoin indexer parsed", "txResult", txResults, "currentBlock", i,
-				"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
+
+			time.Sleep(IndexBlockTimeout)
 		}
 	}
+}
+
+// save index tx to db
+func (bis *IndexerService) SaveParsedResult(
+	parseResult *types.BitcoinTxParseResult,
+	btcBlockNumber int64,
+	b2TxStatus int,
+	btcBlockTime time.Time,
+	btcIndex model.BtcIndex,
+) error {
+	// write db
+	err := bis.db.Transaction(func(tx *gorm.DB) error {
+		froms, err := json.Marshal(parseResult.From)
+		if err != nil {
+			return err
+		}
+		deposit := model.Deposit{
+			BtcBlockNumber: btcBlockNumber,
+			BtcTxIndex:     parseResult.Index,
+			BtcTxHash:      parseResult.TxID,
+			BtcFrom:        parseResult.From[0],
+			BtcTo:          parseResult.To,
+			BtcValue:       parseResult.Value,
+			BtcFroms:       string(froms),
+			B2TxStatus:     b2TxStatus,
+			BtcBlockTime:   btcBlockTime,
+		}
+		err = tx.Save(&deposit).Error
+		if err != nil {
+			bis.log.Errorw("failed to save tx parsed result", "error", err)
+			return err
+		}
+
+		if err := tx.Save(&btcIndex).Error; err != nil {
+			bis.log.Errorw("failed to save bitcoin tx index", "error", err)
+			return err
+		}
+
+		return nil
+	})
+	return err
 }
