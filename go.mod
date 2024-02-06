@@ -121,7 +121,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
-	github.com/jackc/pgx/v5 v5.5.2 // indirect
+	github.com/jackc/pgx/v5 v5.5.2
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -206,7 +206,7 @@ require (
 )
 
 replace (
-	github.com/evmos/ethermint => github.com/b2network/b2-node v0.0.0-20240204025421-c35ea1827744
+	github.com/evmos/ethermint => github.com/b2network/b2-node v0.0.0-20240206041603-7e77da937615
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27
 )
