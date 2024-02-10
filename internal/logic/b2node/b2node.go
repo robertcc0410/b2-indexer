@@ -34,6 +34,7 @@ const (
 	DefaultBaseGasPrice = 10_000_000
 
 	EventTypeCreateDeposit = "EventCreateDeposit"
+	EventTypeSignWithdraw  = "EventSignWithdraw"
 )
 
 type NodeClient struct {
@@ -310,7 +311,7 @@ func (n *NodeClient) ParseBlockBridgeEvent(height int64, index int64) ([]*types.
 			}
 			for _, log := range tx.Logs {
 				for _, event := range log.Events {
-					switch event.Type { //nolint
+					switch event.Type {
 					case n.BridgeModuleEventType(EventTypeCreateDeposit):
 						createDepositID := ""
 						for _, attr := range event.Attributes {
@@ -327,6 +328,24 @@ func (n *NodeClient) ParseBlockBridgeEvent(height int64, index int64) ([]*types.
 							TxCode:              tx.Code,
 							TxData:              tx.Data,
 							BridgeEventID:       createDepositID,
+						}
+						b2NodeTxParseResult = append(b2NodeTxParseResult, &txResult)
+					case n.BridgeModuleEventType(EventTypeSignWithdraw):
+						withdrawTxID := ""
+						for _, attr := range event.Attributes {
+							if attr.Key == "tx_id" {
+								withdrawTxID = strings.Trim(attr.Value, "\"")
+							}
+						}
+						txResult := types.B2NodeTxParseResult{
+							Height:              blockHeight,
+							TxHash:              tx.Txhash,
+							EventType:           EventTypeSignWithdraw,
+							BridgeModuleTxIndex: txIndex,
+							RawLog:              tx.RawLog,
+							TxCode:              tx.Code,
+							TxData:              tx.Data,
+							BridgeEventID:       withdrawTxID,
 						}
 						b2NodeTxParseResult = append(b2NodeTxParseResult, &txResult)
 					}
@@ -374,4 +393,85 @@ func b2NodeAddress(privateKey ethsecp256k1.PrivKey, prefix string) (string, erro
 		return "", err
 	}
 	return b2nodeAddress, nil
+}
+
+func (n *NodeClient) CreateWithdraw(txID string, txHashList []string, encodedData string) error {
+	// private key -> adddress
+	msg := bridgeTypes.NewMsgCreateWithdraw(n.B2NodeAddress, txID, txHashList, encodedData)
+	ctx := context.Background()
+	msgResponse, err := n.broadcastTx(ctx, msg)
+	if err != nil {
+		return fmt.Errorf("[CreateWithdraw] err: %s", err)
+	}
+	code := msgResponse.TxResponse.Code
+	rawLog := msgResponse.TxResponse.RawLog
+	if code != 0 {
+		switch code {
+		case bridgeTypes.ErrIndexExist.ABCICode():
+			return bridgeTypes.ErrIndexExist
+		case bridgeTypes.ErrNotCallerGroupMembers.ABCICode():
+			return bridgeTypes.ErrNotCallerGroupMembers
+		}
+		n.log.Errorw("code", code)
+		return fmt.Errorf("[CreateWithdraw][msgResponse.TxResponse.Code] err: %s", rawLog)
+	}
+	hexData := msgResponse.TxResponse.Data
+	byteData, err := hex.DecodeString(hexData)
+	if err != nil {
+		return fmt.Errorf("[CreateWithdraw][hex.DecodeString] err: %s", err)
+	}
+	pbMsg := &sdk.TxMsgData{}
+	err = pbMsg.Unmarshal(byteData)
+	if err != nil {
+		return fmt.Errorf("[CreateWithdraw][pbMsg.Unmarshal] err: %s", err)
+	}
+	return nil
+}
+
+func (n *NodeClient) QueryWithdraw(txID string) (*bridgeTypes.Withdraw, error) {
+	queryClient := bridgeTypes.NewQueryClient(n.GrpcConn)
+	res, err := queryClient.Withdraw(context.Background(), &bridgeTypes.QueryGetWithdrawRequest{
+		TxId: txID,
+	})
+	if err != nil {
+		if err == bridgeTypes.ErrIndexNotExist {
+			return nil, bridgeTypes.ErrIndexNotExist
+		}
+		return nil, fmt.Errorf("[QueryWithdraw] err: %s", err)
+	}
+	return &res.Withdraw, nil
+}
+
+func (n *NodeClient) UpdateWithdraw(txID string, status bridgeTypes.WithdrawStatus) error {
+	msg := bridgeTypes.NewMsgUpdateWithdraw(n.B2NodeAddress, txID, status)
+	ctx := context.Background()
+	msgResponse, err := n.broadcastTx(ctx, msg)
+	if err != nil {
+		return fmt.Errorf("[UpdateWithdraw] err: %s", err)
+	}
+	code := msgResponse.TxResponse.Code
+	rawLog := msgResponse.TxResponse.RawLog
+	if code != 0 {
+		switch code {
+		case bridgeTypes.ErrIndexNotExist.ABCICode():
+			return bridgeTypes.ErrIndexNotExist
+		case bridgeTypes.ErrInvalidStatus.ABCICode():
+			return bridgeTypes.ErrInvalidStatus
+		case bridgeTypes.ErrNotCallerGroupMembers.ABCICode():
+			return bridgeTypes.ErrNotCallerGroupMembers
+		}
+		n.log.Errorw("code", code)
+		return fmt.Errorf("[UpdateWithdraw][msgResponse.TxResponse.Code] err: %s", rawLog)
+	}
+	hexData := msgResponse.TxResponse.Data
+	byteData, err := hex.DecodeString(hexData)
+	if err != nil {
+		return fmt.Errorf("[UpdateWithdraw][hex.DecodeString] err: %s", err)
+	}
+	pbMsg := &sdk.TxMsgData{}
+	err = pbMsg.Unmarshal(byteData)
+	if err != nil {
+		return fmt.Errorf("[UpdateWithdraw][pbMsg.Unmarshal] err: %s", err)
+	}
+	return nil
 }
