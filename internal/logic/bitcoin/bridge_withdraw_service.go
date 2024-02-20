@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	bridgeTypes "github.com/evmos/ethermint/x/bridge/types"
+
 	"github.com/b2network/b2-indexer/internal/config"
 	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/internal/types"
@@ -25,7 +27,6 @@ import (
 	"github.com/cometbft/cometbft/libs/service"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	bridgeTypes "github.com/evmos/ethermint/x/bridge/types"
 	"github.com/go-resty/resty/v2"
 	"gorm.io/gorm"
 
@@ -40,6 +41,36 @@ const (
 	BridgeWithdrawServiceName = "BitcoinBridgeWithdrawService"
 	WithdrawHandleTime        = 10
 	WithdrawTXConfirmTime     = 60 * 5
+
+	// P2SHSize 23 bytes.
+	P2SHSize = 23
+	// P2SHOutputSize 32 bytes
+	//      - value: 8 bytes
+	//      - var_int: 1 byte (pkscript_length)
+	//      - pkscript (p2sh): 23 bytes
+	P2SHOutputSize = 8 + 1 + P2SHSize
+	// InputSize 41 bytes
+	//	- PreviousOutPoint:
+	//		- Hash: 32 bytes
+	//		- Index: 4 bytes
+	//	- OP_DATA: 1 byte (ScriptSigLength)
+	//	- ScriptSig: 0 bytes
+	//	- Witness <----	we use "Witness" instead of "ScriptSig" for
+	// 			transaction validation, but "Witness" is stored
+	// 			separately and weight for it size is smaller. So
+	// 			we separate the calculation of ordinary data
+	// 			from witness data.
+	//	- Sequence: 4 bytes
+	InputSize = 32 + 4 + 1 + 4
+	// MultiSigSize 71 bytes
+	//	- OP_2: 1 byte
+	//	- OP_DATA: 1 byte (pubKeyAlice length)
+	//	- pubKeyAlice: 33 bytes
+	//	- OP_DATA: 1 byte (pubKeyBob length)
+	//	- pubKeyBob: 33 bytes
+	//	- OP_2: 1 byte
+	//	- OP_CHECKMULTISIG: 1 byte
+	MultiSigSize = 1 + 1 + 33 + 1 + 33 + 1 + 1
 )
 
 // BridgeWithdrawService indexes transactions for json-rpc service.
@@ -86,6 +117,14 @@ func (bis *BridgeWithdrawService) OnStart() error {
 		}
 	}
 
+	if !bis.db.Migrator().HasTable(&model.WithdrawIndex{}) {
+		err := bis.db.AutoMigrate(&model.WithdrawIndex{})
+		if err != nil {
+			bis.log.Errorw("BridgeWithdrawService create WithdrawIndex table", "error", err.Error())
+			return err
+		}
+	}
+
 	go func() {
 		// submit withdraw tx msg
 		for {
@@ -95,6 +134,9 @@ func (bis *BridgeWithdrawService) OnStart() error {
 			err := bis.db.Model(&model.Withdraw{}).Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawPending).Find(&withdrawList).Error
 			if err != nil {
 				bis.log.Errorw("BridgeWithdrawService get blockNumber failed", "error", err)
+				continue
+			}
+			if len(withdrawList) == 0 {
 				continue
 			}
 			var destAddressList []string
@@ -133,7 +175,7 @@ func (bis *BridgeWithdrawService) OnStart() error {
 					B2TxHashes: string(b2TxHashesByte),
 				}
 				if err = tx.Create(&withdrawTxData).Error; err != nil {
-					bis.log.Errorw("BridgeWithdrawService create withdrawTx err", "b2TxHashes", b2TxHashes)
+					bis.log.Errorw("BridgeWithdrawService create withdrawTx err", "b2TxHashes", b2TxHashes, "err", err)
 					return err
 				}
 
@@ -141,14 +183,17 @@ func (bis *BridgeWithdrawService) OnStart() error {
 				err = bis.b2node.CreateWithdraw(txID, b2TxHashes, btcTx)
 				if err != nil {
 					if !errors.Is(err, bridgeTypes.ErrIndexExist) {
-						bis.Logger.Info("BridgeWithdrawService CreateWithdraw to b2node tx err", "error", err)
+						bis.log.Errorw("BridgeWithdrawService CreateWithdraw to b2node tx err", "error", err)
 						return err
 					}
 				}
 
-				bis.Logger.Info("BridgeWithdrawService broadcast tx success", "id", ids, "b2TxHashes", b2TxHashes)
+				bis.log.Infow("BridgeWithdrawService broadcast tx success", "id", ids, "b2TxHashes", b2TxHashes)
 				return nil
 			})
+			if err != nil {
+				bis.log.Errorw("BridgeWithdrawService submit withdrawTx err", "error", err, "txID", txID)
+			}
 		}
 	}()
 
@@ -162,6 +207,9 @@ func (bis *BridgeWithdrawService) OnStart() error {
 				bis.log.Errorw("BridgeWithdrawService get broadcast tx failed", "error", err)
 				continue
 			}
+			if len(withdrawTxList) == 0 {
+				continue
+			}
 			for _, v := range withdrawTxList {
 				pack, err := psbt.NewFromRawBytes(strings.NewReader(v.BtcTx), true)
 				if err != nil {
@@ -173,10 +221,9 @@ func (bis *BridgeWithdrawService) OnStart() error {
 
 				withdrawInfo, err := bis.b2node.QueryWithdraw(v.BtcTxID)
 				if err != nil {
-					bis.Logger.Info("BridgeWithdrawService QueryWithdraw err", "error", err)
+					bis.log.Errorw("BridgeWithdrawService QueryWithdraw err", "error", err)
 					continue
 				}
-				count := 0
 				var signes [][]model.Sign
 				for _, signHex := range withdrawInfo.Signatures {
 					signByte, err := hex.DecodeString(signHex)
@@ -191,31 +238,37 @@ func (bis *BridgeWithdrawService) OnStart() error {
 						continue
 					}
 					signes = append(signes, sign)
-					count++
-					if count == 2 {
-						break
+				}
+				for index, in := range tx.TxIn {
+					witness := wire.TxWitness{nil}
+					for i := 0; i < bis.config.Bridge.MultisigNum; i++ {
+						sign := signes[i][index].Sign
+						witness = append(witness, sign)
 					}
+					witness = append(witness, preTx[index].WitnessUtxo.PkScript)
+					in.Witness = witness
 				}
-				for i, in := range tx.TxIn {
-					sign01 := signes[0][i].Sign
-					sign02 := signes[1][i].Sign
-					in.Witness = wire.TxWitness{nil, sign01, sign02, preTx[i].WitnessUtxo.PkScript}
-				}
-				txHash, err := bis.BroadcastTx(tx)
+				var status int
+				var reason string
+				txHash, err := bis.btcCli.SendRawTransaction(tx, true)
 				if err != nil {
 					bis.log.Errorw("BridgeWithdrawService broadcast tx err", "error", err)
-					continue
+					status = model.BtcTxWithdrawBroadcastFailed
+					reason = err.Error()
+				} else {
+					status = model.BtcTxWithdrawBroadcastSuccess
 				}
 				updateFields := map[string]interface{}{
 					model.WithdrawTx{}.Column().BtcTxHash: txHash,
-					model.WithdrawTx{}.Column().Status:    model.BtcTxWithdrawBroadcastSuccess,
+					model.WithdrawTx{}.Column().Status:    status,
+					model.WithdrawTx{}.Column().Reason:    reason,
 				}
 				err = bis.db.Model(&model.WithdrawTx{}).Where(fmt.Sprintf("%s = ?", model.WithdrawTx{}.Column().BtcTxID), v.BtcTxID).Updates(updateFields).Error
 				if err != nil {
 					bis.log.Errorw("BridgeWithdrawService broadcast tx update db err", "error", err, "id", v.ID)
 					continue
 				}
-				bis.Logger.Info("BridgeWithdrawService broadcast tx success", "id", v.ID, "btcTxID", v.BtcTxID)
+				bis.log.Infow("BridgeWithdrawService broadcast tx success", "id", v.ID, "btcTxID", v.BtcTxID)
 			}
 		}
 	}()
@@ -230,21 +283,24 @@ func (bis *BridgeWithdrawService) OnStart() error {
 				bis.log.Errorw("BridgeWithdrawService get broadcast tx failed", "error", err)
 				continue
 			}
+			if len(withdrawTxList) == 0 {
+				continue
+			}
 			for _, v := range withdrawTxList {
 				txHash, err := chainhash.NewHashFromStr(v.BtcTxHash)
 				if err != nil {
-					bis.Logger.Info("BridgeWithdrawService NewHashFromStr err", "error", err, "txhash", v.BtcTxHash)
+					bis.log.Errorw("BridgeWithdrawService NewHashFromStr err", "error", err, "txhash", v.BtcTxHash)
 					continue
 				}
 				txRawResult, err := bis.btcCli.GetRawTransactionVerbose(txHash)
 				if err != nil {
-					bis.Logger.Info("BridgeWithdrawService GetRawTransactionVerbose err", "error", err, "txID", v.BtcTxID)
+					bis.log.Errorw("BridgeWithdrawService GetRawTransactionVerbose err", "error", err, "txID", v.BtcTxID)
 					continue
 				}
 				if txRawResult.Confirmations >= 6 {
-					err = bis.db.Model(&model.WithdrawTx{}).Where("id = ?", v.ID).Update(model.WithdrawTx{}.Column().Status, model.BtcTxWithdrawSuccess).Error
+					err = bis.db.Model(&model.WithdrawTx{}).Where("id = ?", v.ID).Update(model.WithdrawTx{}.Column().Status, model.BtcTxWithdrawConfirmed).Error
 					if err != nil {
-						bis.Logger.Info("BridgeWithdrawService Update WithdrawTx status err", "error", err, "txID", v.BtcTxID)
+						bis.log.Errorw("BridgeWithdrawService Update WithdrawTx status err", "error", err, "txID", v.BtcTxID)
 						continue
 					}
 				}
@@ -257,23 +313,56 @@ func (bis *BridgeWithdrawService) OnStart() error {
 			time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 			// complete tx
 			var withdrawTxList []model.WithdrawTx
-			err := bis.db.Model(&model.WithdrawTx{}).Where(fmt.Sprintf("%s = ?", model.WithdrawTx{}.Column().Status), model.BtcTxWithdrawSuccess).Find(&withdrawTxList).Error
+			err := bis.db.Model(&model.WithdrawTx{}).
+				Where(fmt.Sprintf("%s = ? OR %s = ?", model.WithdrawTx{}.Column().Status, model.WithdrawTx{}.Column().Status), model.BtcTxWithdrawConfirmed, model.BtcTxWithdrawBroadcastFailed).
+				Find(&withdrawTxList).Error
 			if err != nil {
 				bis.log.Errorw("BridgeWithdrawService get broadcast tx failed", "error", err)
 				continue
 			}
+			if len(withdrawTxList) == 0 {
+				continue
+			}
 			for _, v := range withdrawTxList {
-				err := bis.b2node.UpdateWithdraw(v.BtcTxID, bridgeTypes.WithdrawStatus_WITHDRAW_STATUS_COMPLETED)
+				var b2NodeStatus bridgeTypes.WithdrawStatus
+				var withdrawTxStatus int
+				var withdrawHistoryStatus int
+				if v.Status == model.BtcTxWithdrawConfirmed {
+					b2NodeStatus = bridgeTypes.WithdrawStatus_WITHDRAW_STATUS_COMPLETED
+					withdrawTxStatus = model.BtcTxWithdrawSuccess
+					withdrawHistoryStatus = model.BtcTxWithdrawSuccess
+				} else {
+					b2NodeStatus = bridgeTypes.WithdrawStatus_WITHDRAW_STATUS_FAILED
+					withdrawTxStatus = model.BtcTxWithdrawFailed
+					withdrawHistoryStatus = model.BtcTxWithdrawPending
+				}
+				err := bis.b2node.UpdateWithdraw(v.BtcTxID, b2NodeStatus)
 				if err != nil {
 					if !errors.Is(err, bridgeTypes.ErrIndexExist) {
-						bis.Logger.Info("BridgeWithdrawService UpdateWithdraw err", "error", err, "txID", v.BtcTxID)
+						bis.log.Errorw("BridgeWithdrawService UpdateWithdraw err", "error", err, "txID", v.BtcTxID)
 						continue
 					}
 				}
-				err = bis.db.Model(&model.WithdrawTx{}).Where("id = ?", v.ID).Update(model.WithdrawTx{}.Column().Status, model.BtcTxWithdrawCompleted).Error
+				err = bis.db.Transaction(func(tx *gorm.DB) error {
+					err = tx.Model(&model.WithdrawTx{}).Where("id = ?", v.ID).Update(model.WithdrawTx{}.Column().Status, withdrawTxStatus).Error
+					if err != nil {
+						bis.log.Errorw("BridgeWithdrawService Update WithdrawTx status err", "error", err, "txID", v.BtcTxID)
+						return err
+					}
+					var b2TxHashList []string
+					err = json.Unmarshal([]byte(v.B2TxHashes), &b2TxHashList)
+					if err != nil {
+						return err
+					}
+					err = tx.Model(&model.Withdraw{}).Where(fmt.Sprintf("%s in (?)", model.Withdraw{}.Column().B2TxHash), b2TxHashList).Update(model.Withdraw{}.Column().Status, withdrawHistoryStatus).Error
+					if err != nil {
+						bis.log.Errorw("BridgeWithdrawService Update WithdrawTx status err", "error", err, "txID", v.BtcTxID)
+						return err
+					}
+					return nil
+				})
 				if err != nil {
-					bis.Logger.Info("BridgeWithdrawService Update WithdrawTx status err", "error", err, "txID", v.BtcTxID)
-					continue
+					bis.log.Errorw("BridgeWithdrawService complete WithdrawTx err", "error", err, "txID", v.BtcTxID)
 				}
 			}
 		}
@@ -282,17 +371,30 @@ func (bis *BridgeWithdrawService) OnStart() error {
 	for {
 		// listen withdraw
 		time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
-		var lastBlock uint64
-		var withdraw model.Withdraw
-		err := bis.db.Model(&model.Withdraw{}).Last(&withdraw).Error
-		if err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				bis.log.Errorw("BridgeWithdrawService get blockNumber failed", "error", err)
-				continue
+		var currentBlock uint64 // index current block number
+		var currentTxIndex uint // index current block tx index
+		var currentLogIndex uint
+		var WithdrawIndex model.WithdrawIndex
+		if err := bis.db.First(&WithdrawIndex, 1).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				WithdrawIndex = model.WithdrawIndex{
+					Base: model.Base{
+						ID: 1,
+					},
+					B2IndexBlock: 0,
+					B2IndexTx:    0,
+					B2LogIndex:   0,
+				}
+				if err := bis.db.Create(&WithdrawIndex).Error; err != nil {
+					return err
+				}
+			} else {
+				return err
 			}
-		} else {
-			lastBlock = withdraw.B2BlockNumber
 		}
+		currentBlock = WithdrawIndex.B2IndexBlock
+		currentTxIndex = WithdrawIndex.B2IndexTx
+		currentLogIndex = WithdrawIndex.B2LogIndex
 		addresses := []common.Address{
 			common.HexToAddress(bis.config.Bridge.ContractAddress),
 		}
@@ -303,16 +405,17 @@ func (bis *BridgeWithdrawService) OnStart() error {
 			},
 		}
 		for {
+			time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 			latestBlock, err := bis.ethCli.BlockNumber(context.Background())
 			if err != nil {
 				bis.log.Errorw("BridgeWithdrawService HeaderByNumber is failed:", "err", err)
 				continue
 			}
-			bis.Logger.Info("BridgeWithdrawService ethClient height", "height", latestBlock, "lastBlock", lastBlock)
-			if latestBlock <= lastBlock {
+			bis.log.Infow("BridgeWithdrawService ethClient height", "height", latestBlock, "currentBlock", currentBlock)
+			if latestBlock == currentBlock {
 				continue
 			}
-			for i := lastBlock + 1; i <= latestBlock; i++ {
+			for i := currentBlock; i <= latestBlock; i++ {
 				bis.log.Infow("BridgeWithdrawService get log height:", "height", i)
 				query := ethereum.FilterQuery{
 					FromBlock: big.NewInt(0).SetUint64(i),
@@ -327,7 +430,7 @@ func (bis *BridgeWithdrawService) OnStart() error {
 				}
 
 				for _, vlog := range logs {
-					if withdraw.B2TxIndex == vlog.TxIndex && withdraw.B2LogIndex == vlog.Index {
+					if currentBlock == vlog.BlockNumber && currentTxIndex == vlog.TxIndex && currentLogIndex == vlog.Index {
 						continue
 					}
 					eventHash := common.BytesToHash(vlog.Topics[0].Bytes())
@@ -342,7 +445,7 @@ func (bis *BridgeWithdrawService) OnStart() error {
 							bis.log.Errorw("BridgeWithdrawService listener withdraw Marshal failed: ", "err", err)
 							continue
 						}
-						bis.Logger.Info("BridgeWithdrawService listener withdraw event: ", "num", i, "withdraw", string(value))
+						bis.log.Infow("BridgeWithdrawService listener withdraw event: ", "num", i, "withdraw", string(value))
 
 						amount := DataToBigInt(vlog, 1)
 						destAddrStr := DataToString(vlog, 0)
@@ -357,12 +460,21 @@ func (bis *BridgeWithdrawService) OnStart() error {
 							B2LogIndex:    vlog.Index,
 						}
 						if err = bis.db.Create(&withdrawData).Error; err != nil {
-							bis.log.Errorw("BridgeWithdrawService create withdraw failed", "error", err, "withdraw", withdraw)
+							bis.log.Errorw("BridgeWithdrawService create withdraw failed", "error", err, "withdraw", withdrawData)
 							return err
 						}
 					}
+					currentTxIndex = vlog.TxIndex
+					currentLogIndex = vlog.Index
 				}
-				lastBlock = i
+				currentBlock = i
+				WithdrawIndex.B2IndexBlock = currentBlock
+				WithdrawIndex.B2IndexTx = currentTxIndex
+				WithdrawIndex.B2LogIndex = currentLogIndex
+				if err := bis.db.Save(&WithdrawIndex).Error; err != nil {
+					bis.log.Errorw("failed to save b2 index block", "error", err, "currentBlock", i,
+						"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
+				}
 			}
 		}
 	}
@@ -374,8 +486,6 @@ func (bis *BridgeWithdrawService) BroadcastTx(tx *wire.MsgTx) (*chainhash.Hash, 
 	if err := tx.Serialize(&buf); err != nil {
 		return nil, err
 	}
-	fmt.Println(hex.EncodeToString(buf.Bytes()))
-	fmt.Println(len(hex.EncodeToString(buf.Bytes())))
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/tx", mempoolURL), strings.NewReader(hex.EncodeToString(buf.Bytes())))
 	if err != nil {
 		return nil, err
@@ -478,6 +588,7 @@ func (bis *BridgeWithdrawService) GetMempoolURL() string {
 
 func (bis *BridgeWithdrawService) ConstructTx(destAddressList []string, amounts []int64, b2TxHashes []byte) (string, string, error) {
 	sourceAddrStr := bis.config.IndexerListenAddress
+	destAddressList, amounts = mergeDuplicateAddresses(destAddressList, amounts)
 
 	var defaultNet *chaincfg.Params
 	networkName := bis.config.NetworkName
@@ -517,6 +628,14 @@ func (bis *BridgeWithdrawService) ConstructTx(destAddressList []string, amounts 
 	}
 
 	tx := wire.NewMsgTx(wire.TxVersion)
+	changeScript, err := txscript.PayToAddrScript(sourceAddr)
+	if err != nil {
+		bis.log.Errorw("BridgeWithdrawService transferToBtc PayToAddrScript sourceAddr failed: ", "err", err)
+		return "", "", err
+	}
+	var txSize int
+	var outputSize int
+	var fee int
 	for index, destAddress := range destAddressList {
 		destAddr, err := btcutil.DecodeAddress(destAddress, defaultNet)
 		if err != nil {
@@ -529,16 +648,24 @@ func (bis *BridgeWithdrawService) ConstructTx(destAddressList []string, amounts 
 			return "", "", err
 		}
 		tx.AddTxOut(wire.NewTxOut(amounts[index], destinationScript))
+		outputSize += wire.NewTxOut(amounts[index], destinationScript).SerializeSize()
 	}
-
+	outputSize += P2SHOutputSize
 	var pInput psbt.PInput
+	feeRate, err := bis.GetFeeRate()
+	if err != nil {
+		bis.log.Errorw("BridgeWithdrawService GetFeeRate err: ", "err", err)
+		return "", "", err
+	}
+	txSize += outputSize
 	pInputArry := make([]psbt.PInput, 0)
 	totalInputAmount := btcutil.Amount(0)
 	for _, unspentTx := range unspentTxs {
+		var inputSize int
 		outpoint := wire.NewOutPoint(&unspentTx.Outpoint.Hash, unspentTx.Outpoint.Index)
 		txIn := wire.NewTxIn(outpoint, nil, nil)
 		tx.AddTxIn(txIn)
-		_, multiSigScript, err := bis.GenerateMultiSigScript(bis.config.Bridge.PublicKeys, 2)
+		multiSigScript, err := bis.GetMultiSigScript(bis.config.Bridge.PublicKeys, 2)
 		if err != nil {
 			bis.log.Errorw("BridgeWithdrawService ConstructTx GenerateMultiSigScript err", "error", err)
 			return "", "", err
@@ -548,21 +675,21 @@ func (bis *BridgeWithdrawService) ConstructTx(destAddressList []string, amounts 
 		pInput.WitnessScript = multiSigScript
 		pInputArry = append(pInputArry, pInput)
 		totalInputAmount += btcutil.Amount(unspentTx.Output.Value)
-		if int64(totalInputAmount) > (totalTransferAmount + bis.config.Fee) {
+		inputSize = InputSize + bis.GetMultiSigWitnessSize()
+		txSize += inputSize
+		fee = txSize * feeRate.FastestFee
+		if int64(totalInputAmount) > (totalTransferAmount + int64(fee)) {
 			break
 		}
 	}
-
-	changeAmount := int64(totalInputAmount) - bis.config.Fee - totalTransferAmount
+	changeAmount := int64(totalInputAmount) - int64(fee) - totalTransferAmount
 	if changeAmount < 0 {
+		bis.log.Errorw("BridgeWithdrawService ConstructTx insufficient balance err",
+			"totalInputAmount", totalInputAmount, "fee", fee, "totalTransferAmount", totalTransferAmount)
 		return "", "", errors.New("insufficient balance")
 	}
-	changeScript, err := txscript.PayToAddrScript(sourceAddr)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService transferToBtc PayToAddrScript sourceAddr failed: ", "err", err)
-		return "", "", err
-	}
 	tx.AddTxOut(wire.NewTxOut(changeAmount, changeScript))
+	bis.log.Infow("BridgeWithdrawService ConstructTx fee", "tx_id", tx.TxHash().String(), "fee", fee, "feeRate", feeRate)
 
 	txCopy := tx.Copy()
 	unsignedPsbt, err := psbt.NewFromUnsignedTx(txCopy)
@@ -584,45 +711,27 @@ func (bis *BridgeWithdrawService) ConstructTx(destAddressList []string, amounts 
 	return tx.TxHash().String(), psbtData, nil
 }
 
-func (bis *BridgeWithdrawService) GetMultiSigScript() ([]byte, error) {
+func (bis *BridgeWithdrawService) GetMultiSigScript(pubs []string, minSignNum int) ([]byte, error) {
 	var defaultNet *chaincfg.Params
 	networkName := bis.config.NetworkName
 	defaultNet = config.ChainParams(networkName)
 
-	pubKey1 := bis.config.Bridge.PublicKeys[0]
-	pubKey2 := bis.config.Bridge.PublicKeys[1]
-	pubKey3 := bis.config.Bridge.PublicKeys[2]
-	privateKeyByte01, err := hex.DecodeString(pubKey1)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService GetMultiSigScript DecodeString err", "error", err)
-		return nil, err
+	addressPubKeyList := make([]*btcutil.AddressPubKey, 0)
+	for _, pubKey := range pubs {
+		privateKeyByte01, err := hex.DecodeString(pubKey)
+		if err != nil {
+			bis.log.Errorw("BridgeWithdrawService GetMultiSigScript DecodeString err", "error", err)
+			return nil, err
+		}
+		addressPubKey, err := btcutil.NewAddressPubKey(privateKeyByte01, defaultNet)
+		if err != nil {
+			bis.log.Errorw("BridgeWithdrawService GetMultiSigScript NewAddressPubKey err", "error", err)
+			return nil, err
+		}
+		addressPubKeyList = append(addressPubKeyList, addressPubKey)
 	}
-	addressPubKey01, err := btcutil.NewAddressPubKey(privateKeyByte01, defaultNet)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService GetMultiSigScript NewAddressPubKey err", "error", err)
-		return nil, err
-	}
-	privateKeyByte02, err := hex.DecodeString(pubKey2)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService GetMultiSigScript DecodeString err", "error", err)
-		return nil, err
-	}
-	addressPubKey02, err := btcutil.NewAddressPubKey(privateKeyByte02, defaultNet)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService GetMultiSigScript NewAddressPubKey err", "error", err)
-		return nil, err
-	}
-	privateKeyByte03, err := hex.DecodeString(pubKey3)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService GetMultiSigScript DecodeString err", "error", err)
-		return nil, err
-	}
-	addressPubKey03, err := btcutil.NewAddressPubKey(privateKeyByte03, defaultNet)
-	if err != nil {
-		bis.log.Errorw("BridgeWithdrawService GetMultiSigScript NewAddressPubKey err", "error", err)
-		return nil, err
-	}
-	multiSigScript, err := txscript.MultiSigScript([]*btcutil.AddressPubKey{addressPubKey01, addressPubKey02, addressPubKey03}, 2)
+
+	multiSigScript, err := txscript.MultiSigScript(addressPubKeyList, minSignNum)
 	if err != nil {
 		bis.log.Errorw("BridgeWithdrawService get MultiSigScript err", "error", err)
 		return nil, err
@@ -668,4 +777,60 @@ func (bis *BridgeWithdrawService) GenerateMultiSigScript(xpubs []string, minSign
 		return "", nil, err
 	}
 	return address.EncodeAddress(), script, nil
+}
+
+func (bis *BridgeWithdrawService) GetFeeRate() (*model.FeeRates, error) {
+	mempoolURL := bis.GetMempoolURL()
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v1/fees/recommended", mempoolURL), strings.NewReader(""))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var feeRates model.FeeRates
+	err = json.Unmarshal(body, &feeRates)
+	if err != nil {
+		return nil, err
+	}
+	return &feeRates, nil
+}
+
+func (bis *BridgeWithdrawService) GetMultiSigWitnessSize() int {
+	//	- NumberOfWitnessElements: 1 byte
+	//	- NilLength: 1 byte
+	//	- sigAliceLength: 1 byte
+	//	- sigAlice: 73 bytes
+	//	- sigBobLength: 1 byte
+	//	- sigBob: 73 bytes
+	//	- WitnessScriptLength: 1 byte
+	//	- WitnessScript (MultiSig)
+	// MultiSigWitnessSize = 1 + 1 + 1 + 73 + 1 + 73 + 1 + MultiSigSize
+	return 1 + 1 + 1 + MultiSigSize + bis.config.Bridge.MultisigNum*74
+}
+
+func mergeDuplicateAddresses(destAddressList []string, amounts []int64) ([]string, []int64) {
+	mergedAddresses := make(map[string]int64)
+
+	for i, address := range destAddressList {
+		mergedAddresses[address] += amounts[i]
+	}
+
+	uniqueAddresses := make([]string, 0)
+	mergedAmounts := make([]int64, 0)
+
+	for address, amount := range mergedAddresses {
+		uniqueAddresses = append(uniqueAddresses, address)
+		mergedAmounts = append(mergedAmounts, amount)
+	}
+
+	return uniqueAddresses, mergedAmounts
 }

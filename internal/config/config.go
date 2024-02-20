@@ -48,9 +48,7 @@ type BitconConfig struct {
 	IndexerListenTargetConfirmations int64 `mapstructure:"indexer-listen-target-confirmations" env:"BITCOIN_INDEXER_LISTEN_TARGET_CONFIRMATIONS" envDefault:"1"`
 	// Bridge defines the bridge config
 	Bridge BridgeConfig `mapstructure:"bridge"`
-	// Fee defines the bitcoin tx fee
-	Fee int64     `mapstructure:"fee" env:"BITCOIN_FEE"`
-	Eps EpsConfig `mapstructure:"eps"`
+	Eps    EpsConfig    `mapstructure:"eps"`
 }
 
 type BridgeConfig struct {
@@ -90,6 +88,8 @@ type BridgeConfig struct {
 	PublicKeys []string `mapstructure:"publickeys" env:"BITCOIN_BRIDGE_PUBLICKEYS"`
 	// TimeInterval defines withdraw time interval
 	TimeInterval int64 `mapstructure:"time-interval" env:"BITCOIN_BRIDGE_TIME_INTERVAL"`
+	// MultisigNum defines withdraw multisig number
+	MultisigNum int `mapstructure:"multisig-num" env:"BITCOIN_BRIDGE_MULTISIG_NUM"`
 }
 
 type EpsConfig struct {

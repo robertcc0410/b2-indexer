@@ -2,23 +2,32 @@ package model
 
 import "github.com/btcsuite/btcd/wire"
 
+// tx status sequence
+// 1.1 BtcTxWithdrawPending
+// 1.2 BtcTxWithdrawSubmitTxMsg
+// 1.3 BtcTxWithdrawSignatureCompleted
+// 1.4 BtcTxWithdrawBroadcastSuccess/BtcTxWithdrawBroadcastFailed
+// 1.5 BtcTxWithdrawConfirmed
+// 1.6 BtcTxWithdrawSuccess/BtcTxWithdrawFailed
 const (
 	BtcTxWithdrawPending = iota + 1
 	BtcTxWithdrawSuccess
-	BtcTxWithdrawCompleted
+	BtcTxWithdrawFailed
 	BtcTxWithdrawSubmitTxMsg
 	BtcTxWithdrawSignatureCompleted
 	BtcTxWithdrawBroadcastSuccess
+	BtcTxWithdrawBroadcastFailed
+	BtcTxWithdrawConfirmed
 )
 
 type Withdraw struct {
 	Base
-	BtcFrom       string `json:"btc_from" gorm:"type:varchar(256);not null;default:'';index"`
-	BtcTo         string `json:"btc_to" gorm:"type:varchar(256);not null;default:'';index"`
+	BtcFrom       string `json:"btc_from" gorm:"type:varchar(256);default:'';index"`
+	BtcTo         string `json:"btc_to" gorm:"type:varchar(256);default:'';index"`
 	BtcValue      int64  `json:"btc_value" gorm:"type:bigint;default:0;comment:bitcoin transfer value"`
 	B2BlockNumber uint64 `json:"b2_block_number" gorm:"type:bigint;comment:b2 block number"`
 	B2BlockHash   string `json:"b2_block_hash" gorm:"type:varchar(256);comment:b2 block hash"`
-	B2TxHash      string `json:"b2_tx_hash" gorm:"type:varchar(256);not null;default:'';uniqueIndex;comment:b2 network tx hash"`
+	B2TxHash      string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network tx hash"`
 	B2TxIndex     uint   `json:"b2_tx_index" gorm:"type:bigint;comment:b2 tx index"`
 	B2LogIndex    uint   `json:"b2_log_index" gorm:"type:int;comment:b2 log index"`
 	Status        int    `json:"status" gorm:"type:smallint;default:1"`
@@ -62,6 +71,14 @@ type Utxo struct {
 type UnspentOutput struct {
 	Outpoint *wire.OutPoint
 	Output   *wire.TxOut
+}
+
+type FeeRates struct {
+	FastestFee  int `json:"fastestFee"`
+	HalfHourFee int `json:"halfHourFee"`
+	HourFee     int `json:"hourFee"`
+	EconomyFee  int `json:"economyFee"`
+	MinimumFee  int `json:"minimumFee"`
 }
 
 type WithdrawColumns struct {
