@@ -140,7 +140,8 @@ func TestParseAddress(t *testing.T) {
 // TestLocalParseTx only test in local
 // data source: testnet network
 func TestLocalParseTx(t *testing.T) {
-	indexer := bitcoinIndexerWithConfig(t)
+	to := "tb1qjda2l5spwyv4ekwe9keddymzuxynea2m2kj0qy"
+	indexer := bitcoinIndexerWithConfig(t, to)
 	testCases := []struct {
 		name   string
 		height int64
@@ -154,9 +155,14 @@ func TestLocalParseTx(t *testing.T) {
 					TxID:   "317ce1cc2f987c95d19ba13044c6298953d91c82274a2c34d7ac92a8df3dab0f",
 					TxType: bitcoin.TxTypeTransfer,
 					Index:  350,
-					From:   []string{"tb1qravmtnqvtpnmugeg7q90ck69lzznflu4w9amnw"},
-					To:     "tb1qjda2l5spwyv4ekwe9keddymzuxynea2m2kj0qy",
-					Value:  2306,
+					From: []types.BitcoinFrom{
+						{
+							Address: "tb1qravmtnqvtpnmugeg7q90ck69lzznflu4w9amnw",
+							PubKey:  "0254639ea1f3c20b1930cc5f0db623b67959c1dbaeb19a3b2d57646bf74ed0c275",
+						},
+					},
+					To:    "tb1qjda2l5spwyv4ekwe9keddymzuxynea2m2kj0qy",
+					Value: 2306,
 				},
 			},
 		},
@@ -176,23 +182,25 @@ func TestLocalParseTx(t *testing.T) {
 
 // TestLocalLatestBlock only test in local
 func TestLocalLatestBlock(t *testing.T) {
-	indexer := bitcoinIndexerWithConfig(t)
+	indexer := bitcoinIndexerWithConfig(t, "")
 	_, err := indexer.LatestBlock()
 	require.NoError(t, err)
 }
 
 // TestLocalBlockChainInfo only test in local
 func TestLocalBlockChainInfo(t *testing.T) {
-	indexer := bitcoinIndexerWithConfig(t)
+	indexer := bitcoinIndexerWithConfig(t, "")
 	_, err := indexer.BlockChainInfo()
 	require.NoError(t, err)
 }
 
 func mockRpcClient(t *testing.T) *rpcclient.Client {
+	cfg, err := config.LoadBitcoinConfig("")
+	require.NoError(t, err)
 	connCfg := &rpcclient.ConnConfig{
-		Host:         "127.0.0.1:38332",
-		User:         "user",
-		Pass:         "password",
+		Host:         cfg.RPCHost + ":" + cfg.RPCPort,
+		User:         cfg.RPCUser,
+		Pass:         cfg.RPCPass,
 		HTTPPostMode: true,
 		DisableTLS:   true,
 	}
@@ -202,18 +210,19 @@ func mockRpcClient(t *testing.T) *rpcclient.Client {
 }
 
 func mockBitcoinIndexer(t *testing.T, chainParams *chaincfg.Params) *bitcoin.Indexer {
+	cfg, err := config.LoadBitcoinConfig("../../config/testdata")
 	indexer, err := bitcoin.NewBitcoinIndexer(
 		log.NewNopLogger(),
 		mockRpcClient(t),
 		chainParams,
-		"tb1qukxc3sy3s3k5n5z9cxt3xyywgcjmp2tzudlz2n",
-		1)
+		cfg.IndexerListenAddress,
+		cfg.IndexerListenTargetConfirmations)
 	require.NoError(t, err)
 	return indexer
 }
 
-func bitcoinIndexerWithConfig(t *testing.T) *bitcoin.Indexer {
-	cfg, err := config.LoadBitcoinConfig("./testdata")
+func bitcoinIndexerWithConfig(t *testing.T, indexListenAddress string) *bitcoin.Indexer {
+	cfg, err := config.LoadBitcoinConfig("")
 	require.NoError(t, err)
 	connCfg := &rpcclient.ConnConfig{
 		Host:         cfg.RPCHost + ":" + cfg.RPCPort,
@@ -225,12 +234,15 @@ func bitcoinIndexerWithConfig(t *testing.T) *bitcoin.Indexer {
 	client, err := rpcclient.New(connCfg, nil)
 	require.NoError(t, err)
 	bitcoinParam := config.ChainParams(cfg.NetworkName)
+	if indexListenAddress == "" {
+		indexListenAddress = cfg.IndexerListenAddress
+	}
 	indexer, err := bitcoin.NewBitcoinIndexer(
 		log.NewNopLogger(),
 		client,
 		bitcoinParam,
-		cfg.IndexerListenAddress,
-		1,
+		indexListenAddress,
+		cfg.IndexerListenTargetConfirmations,
 	)
 	require.NoError(t, err)
 	return indexer
