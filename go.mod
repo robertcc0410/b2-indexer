@@ -22,6 +22,7 @@ require (
 
 require (
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.9
+	github.com/cometbft/cometbft v0.38.5
 	github.com/tendermint/tendermint v0.34.27
 )
 

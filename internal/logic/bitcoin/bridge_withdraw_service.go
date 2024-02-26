@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/go-resty/resty/v2"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	bridgeTypes "github.com/evmos/ethermint/x/bridge/types"
@@ -26,8 +28,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/go-resty/resty/v2"
-	"github.com/tendermint/tendermint/libs/service"
+	"github.com/cometbft/cometbft/libs/service"
 	"gorm.io/gorm"
 
 	"github.com/btcsuite/btcd/btcutil"
@@ -274,6 +275,11 @@ func (bis *BridgeWithdrawService) OnStart() error {
 					bis.log.Errorw("BridgeWithdrawService broadcast tx err", "error", err)
 					status = model.BtcTxWithdrawBroadcastFailed
 					reason = err.Error()
+					err = bis.b2node.DeleteWithdraw(v.BtcTxID)
+					if err != nil {
+						bis.log.Errorw("BridgeWithdrawService DeleteWithdraw err", "error", err, "id", v.ID)
+						continue
+					}
 				} else {
 					status = model.BtcTxWithdrawBroadcastSuccess
 				}
@@ -411,11 +417,16 @@ func (bis *BridgeWithdrawService) OnStart() error {
 		var WithdrawIndex model.WithdrawIndex
 		if err := bis.db.First(&WithdrawIndex, 1).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
+				latestBlock, err := bis.ethCli.BlockNumber(context.Background())
+				if err != nil {
+					bis.log.Errorw("BridgeWithdrawService HeaderByNumber is failed:", "error", err)
+					continue
+				}
 				WithdrawIndex = model.WithdrawIndex{
 					Base: model.Base{
 						ID: 1,
 					},
-					B2IndexBlock: 0,
+					B2IndexBlock: latestBlock,
 					B2IndexTx:    0,
 					B2LogIndex:   0,
 				}
