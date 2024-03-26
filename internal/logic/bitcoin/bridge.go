@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -37,6 +38,7 @@ var (
 	ErrBridgeWaitMinedStatus                    = errors.New("tx wait mined status failed")
 	ErrBridgeFromGasInsufficient                = errors.New("gas required exceeds allowanc")
 	ErrAAAddressNotFound                        = errors.New("address not found")
+	ErrOldNonceToHeight                         = errors.New("old nonce params to height")
 )
 
 // Bridge bridge
@@ -46,7 +48,6 @@ type Bridge struct {
 	EthPrivKey           *ecdsa.PrivateKey
 	ContractAddress      common.Address
 	ABI                  string
-	GasLimit             uint64
 	BaseGasPriceMultiple int64
 	B2ExplorerURL        string
 	logger               log.Logger
@@ -104,12 +105,11 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 		ContractAddress:      common.HexToAddress(bridgeCfg.ContractAddress),
 		EthPrivKey:           privateKey,
 		ABI:                  ABI,
-		GasLimit:             bridgeCfg.GasLimit,
 		logger:               log,
 		particle:             newParticle,
 		bitcoinParam:         bitcoinParam,
 		enableEoaTransfer:    bridgeCfg.EnableEoaTransfer,
-		AAPubKeyAPI:          bridgeCfg.AAPubKeyAPI,
+		AAPubKeyAPI:          bridgeCfg.AAB2PI,
 		BaseGasPriceMultiple: bridgeCfg.GasPriceMultiple,
 		B2ExplorerURL:        bridgeCfg.B2ExplorerURL,
 	}, nil
@@ -122,72 +122,93 @@ func (b *Bridge) Deposit(
 	amount int64,
 	oldTx *types.Transaction,
 	nonce uint64,
-) (*types.Transaction, []byte, string, error) {
+	resetNonce bool,
+) (*types.Transaction, []byte, string, string, error) {
 	if bitcoinAddress.Address == "" {
-		return nil, nil, "", fmt.Errorf("bitcoin address is empty")
+		return nil, nil, "", "", fmt.Errorf("bitcoin address is empty")
 	}
 
 	if hash == "" {
-		return nil, nil, "", fmt.Errorf("tx id is empty")
+		return nil, nil, "", "", fmt.Errorf("tx id is empty")
 	}
 
 	ctx := context.Background()
 
 	toAddress, err := b.BitcoinAddressToEthAddress(bitcoinAddress)
 	if err != nil {
-		return nil, nil, "", fmt.Errorf("btc address to eth address err:%w", err)
+		return nil, nil, "", "", fmt.Errorf("btc address to eth address err:%w", err)
 	}
 
 	data, err := b.ABIPack(b.ABI, "depositV3", common.HexToHash(hash), common.HexToAddress(toAddress), new(big.Int).SetInt64(amount))
 	if err != nil {
-		return nil, nil, toAddress, fmt.Errorf("abi pack err:%w", err)
+		return nil, nil, toAddress, "", fmt.Errorf("abi pack err:%w", err)
 	}
 
 	if oldTx != nil {
-		tx, err := b.retrySendTransaction(ctx, oldTx, b.EthPrivKey)
+		tx, err := b.retrySendTransaction(ctx, oldTx, b.EthPrivKey, resetNonce)
 		if err != nil {
-			return nil, nil, toAddress, err
+			return nil, nil, toAddress, "", err
 		}
-		return tx, oldTx.Data(), toAddress, nil
+		return tx, oldTx.Data(), toAddress, b.FromAddress(), nil
 	}
 
-	tx, err := b.sendTransaction(ctx, b.EthPrivKey, b.ContractAddress, data, new(big.Int).SetInt64(0), nonce)
+	tx, err := b.sendTransaction(ctx, b.EthPrivKey, b.ContractAddress, data, new(big.Int).SetInt64(0), nonce, resetNonce)
 	if err != nil {
-		return nil, nil, toAddress, err
+		return nil, nil, toAddress, "", err
 	}
 
-	return tx, data, toAddress, nil
+	return tx, data, toAddress, b.FromAddress(), nil
 }
 
 // Transfer to ethereum
 // TODO: temp handle, future remove
-func (b *Bridge) Transfer(bitcoinAddress b2types.BitcoinFrom, amount int64) (*types.Transaction, error) {
+func (b *Bridge) Transfer(bitcoinAddress b2types.BitcoinFrom,
+	amount int64,
+	oldTx *types.Transaction,
+	nonce uint64,
+	resetNonce bool,
+) (*types.Transaction, string, error) {
 	if bitcoinAddress.Address == "" {
-		return nil, fmt.Errorf("bitcoin address is empty")
+		return nil, "", fmt.Errorf("bitcoin address is empty")
 	}
 
 	ctx := context.Background()
 
 	toAddress, err := b.BitcoinAddressToEthAddress(bitcoinAddress)
 	if err != nil {
-		return nil, fmt.Errorf("btc address to eth address err:%w", err)
+		return nil, "", fmt.Errorf("btc address to eth address err:%w", err)
 	}
+
+	if oldTx != nil {
+		receipt, err := b.retrySendTransaction(ctx,
+			oldTx,
+			b.EthPrivKey,
+			resetNonce,
+		)
+		if err != nil {
+			return nil, "", err
+		}
+
+		return receipt, b.FromAddress(), nil
+	}
+
 	receipt, err := b.sendTransaction(ctx,
 		b.EthPrivKey,
 		common.HexToAddress(toAddress),
 		nil,
 		new(big.Int).Mul(new(big.Int).SetInt64(amount), new(big.Int).SetInt64(10000000000)),
-		0,
+		nonce,
+		resetNonce,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("eth call err:%w", err)
+		return nil, "", fmt.Errorf("eth call err:%w", err)
 	}
 
-	return receipt, nil
+	return receipt, b.FromAddress(), nil
 }
 
 func (b *Bridge) sendTransaction(ctx context.Context, fromPriv *ecdsa.PrivateKey,
-	toAddress common.Address, data []byte, value *big.Int, oldNonce uint64,
+	toAddress common.Address, data []byte, value *big.Int, oldNonce uint64, resetNonce bool,
 ) (*types.Transaction, error) {
 	txLock.Lock()
 	defer txLock.Unlock()
@@ -195,11 +216,24 @@ func (b *Bridge) sendTransaction(ctx context.Context, fromPriv *ecdsa.PrivateKey
 	if err != nil {
 		return nil, err
 	}
-	nonce, err := client.PendingNonceAt(ctx, crypto.PubkeyToAddress(fromPriv.PublicKey))
+	fromAddress := crypto.PubkeyToAddress(fromPriv.PublicKey)
+	nonce, err := client.PendingNonceAt(ctx, fromAddress)
 	if err != nil {
 		return nil, err
 	}
-	if oldNonce != 0 {
+	if oldNonce != 0 && !resetNonce {
+		// check oldNonce to height
+		// If db sets a nonce that is too high, the pending nonce will be too large
+		// There is virtually no transaction in between
+		// Manual handling may be required at this time
+		var latestTxCount hexutil.Uint64
+		err := client.Client().CallContext(ctx, &latestTxCount, "eth_getTransactionCount", fromAddress, "latest")
+		if err != nil {
+			return nil, err
+		}
+		if oldNonce > uint64(latestTxCount) {
+			return nil, ErrOldNonceToHeight
+		}
 		nonce = oldNonce
 	}
 	gasPrice, err := client.SuggestGasPrice(ctx)
@@ -229,9 +263,9 @@ func (b *Bridge) sendTransaction(ctx context.Context, fromPriv *ecdsa.PrivateKey
 	log.Infof("gas price:%v", new(big.Float).Quo(new(big.Float).SetInt(actualGasPrice), big.NewFloat(1e9)).String())
 	log.Infof("gas price:%v", actualGasPrice.String())
 	log.Infof("nonce:%v", nonce)
-	log.Infof("from address:%v", crypto.PubkeyToAddress(fromPriv.PublicKey))
+	log.Infof("from address:%v", fromAddress)
 	callMsg := ethereum.CallMsg{
-		From:     crypto.PubkeyToAddress(fromPriv.PublicKey),
+		From:     fromAddress,
 		To:       &toAddress,
 		Value:    value,
 		GasPrice: actualGasPrice,
@@ -299,6 +333,7 @@ func (b *Bridge) retrySendTransaction(
 	ctx context.Context,
 	oldTx *types.Transaction,
 	fromPriv *ecdsa.PrivateKey,
+	resetNonce bool,
 ) (*types.Transaction, error) {
 	txLock.Lock()
 	defer txLock.Unlock()
@@ -306,19 +341,31 @@ func (b *Bridge) retrySendTransaction(
 	if err != nil {
 		return nil, err
 	}
+	fromAddress := crypto.PubkeyToAddress(fromPriv.PublicKey)
 	nonce := oldTx.Nonce()
-	gasPrice := oldTx.GasPrice()
+	var latestTxCount hexutil.Uint64
+	err = client.Client().CallContext(ctx, &latestTxCount, "eth_getTransactionCount", fromAddress, "latest")
+	if err != nil {
+		return nil, err
+	}
+	if resetNonce {
+		nonce = uint64(latestTxCount)
+	}
+	if nonce > uint64(latestTxCount) {
+		return nil, ErrOldNonceToHeight
+	}
 
-	// TODO: set new gas price
-	// gasPrice.Mul(gasPrice, big.NewInt(5))
+	gasPrice := oldTx.GasPrice()
+	// set new gas price: newGasPrice = oldGasPrice * 2
+	gasPrice.Mul(gasPrice, big.NewInt(2))
 
 	log.Infof("new gas price:%v", new(big.Float).Quo(new(big.Float).SetInt(gasPrice), big.NewFloat(1e9)).String())
 	log.Infof("new gas price:%v", gasPrice.String())
 	log.Infof("nonce:%v", nonce)
-	log.Infof("from address:%v", crypto.PubkeyToAddress(fromPriv.PublicKey))
+	log.Infof("from address:%v", fromAddress)
 
 	callMsg := ethereum.CallMsg{
-		From:     crypto.PubkeyToAddress(fromPriv.PublicKey),
+		From:     fromAddress,
 		To:       oldTx.To(),
 		Value:    oldTx.Value(),
 		GasPrice: gasPrice,
@@ -393,16 +440,20 @@ func (b *Bridge) ABIPack(abiData string, method string, args ...interface{}) ([]
 
 // BitcoinAddressToEthAddress bitcoin address to eth address
 func (b *Bridge) BitcoinAddressToEthAddress(bitcoinAddress b2types.BitcoinFrom) (string, error) {
-	code, pubkey, err := aa.GetPubKey(b.AAPubKeyAPI, bitcoinAddress.Address)
+	pubkeyResp, err := aa.GetPubKey(b.AAPubKeyAPI, bitcoinAddress.Address)
 	if err != nil {
-		b.logger.Errorw("get pub key:", "pubkey", pubkey, "address", bitcoinAddress.Address)
+		b.logger.Errorw("get pub key:", "pubkey", pubkeyResp, "address", bitcoinAddress.Address)
 		return "", err
 	}
-	if code == aa.AddressNotFoundErrCode {
-		return "", ErrAAAddressNotFound
+	if pubkeyResp.Code != "0" {
+		if pubkeyResp.Code == aa.AddressNotFoundErrCode {
+			return "", ErrAAAddressNotFound
+		}
+		return "", fmt.Errorf("get pubkey code err:%v", pubkeyResp)
 	}
-	b.logger.Infow("get pub key:", "pubkey", pubkey, "address", bitcoinAddress.Address)
-	aaBtcAccount, err := b.particle.AAGetBTCAccount([]string{pubkey})
+
+	b.logger.Infow("get pub key:", "pubkey", pubkeyResp, "address", bitcoinAddress.Address)
+	aaBtcAccount, err := b.particle.AAGetBTCAccount([]string{pubkeyResp.Data.Pubkey})
 	if err != nil {
 		return "", err
 	}
@@ -486,4 +537,9 @@ func (b *Bridge) gasPrices() (*big.Int, error) {
 	gasPriceInt := new(big.Int)
 	gasPriceWei.Int(gasPriceInt)
 	return gasPriceInt, nil
+}
+
+func (b *Bridge) FromAddress() string {
+	fromAddress := crypto.PubkeyToAddress(b.EthPrivKey.PublicKey)
+	return fromAddress.String()
 }

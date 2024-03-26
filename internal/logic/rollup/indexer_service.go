@@ -136,13 +136,13 @@ func (bis *IndexerService) OnStart() error {
 					continue
 				}
 				eventHash := common.BytesToHash(vlog.Topics[0].Bytes())
-				if eventHash == common.HexToHash(bis.config.Bridge.Withdraw) {
-					err = handelWithdrawEvent(vlog, bis.db, bis.config.IndexerListenAddress)
-					if err != nil {
-						bis.log.Errorw("IndexerService handelWithdrawEvent err: ", "error", err)
-						continue
-					}
-				}
+				// if eventHash == common.HexToHash(bis.config.Bridge.Withdraw) {
+				// 	err = handelWithdrawEvent(vlog, bis.db, bis.config.IndexerListenAddress)
+				// 	if err != nil {
+				// 		bis.log.Errorw("IndexerService handelWithdrawEvent err: ", "error", err)
+				// 		continue
+				// 	}
+				// }
 				if eventHash == common.HexToHash(bis.config.Bridge.Deposit) {
 					bis.log.Warnw("vlog", "vlog", vlog)
 					err = handelDepositEvent(vlog, bis.db)
@@ -167,6 +167,9 @@ func (bis *IndexerService) OnStart() error {
 	}
 }
 
+// handelWithdrawEvent
+//
+//lint:ignore U1000 Ignore unused function temporarily for debugging
 func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) error {
 	amount := DataToBigInt(vlog, 1)
 	destAddrStr := DataToString(vlog, 0)
@@ -198,6 +201,7 @@ func handelDepositEvent(vlog ethtypes.Log, db *gorm.DB) error {
 		BtcTxHash:        remove0xPrefix(TxHash.String()),
 		BtcFromAAAddress: ToAddress,
 		BtcValue:         Amount.Div(decimal.NewFromInt(10000000000)).BigInt().Int64(),
+		B2TxFrom:         Caller,
 		B2BlockNumber:    vlog.BlockNumber,
 		B2BlockHash:      vlog.BlockHash.String(),
 		B2TxHash:         vlog.TxHash.String(),

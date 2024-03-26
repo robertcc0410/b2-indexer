@@ -2,8 +2,8 @@ package aa
 
 import (
 	"encoding/json"
-	"fmt"
 
+	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/b2network/b2-indexer/pkg/rpc"
 )
 
@@ -17,21 +17,20 @@ type Response struct {
 	}
 }
 
-func GetPubKey(api, btcAddress string) (string, string, error) {
-	res, err := rpc.HTTPGet(api + "/" + btcAddress)
+func GetPubKey(api, btcAddress string) (*Response, error) {
+	res, err := rpc.HTTPGet(api + "/v1/btc/pubkey/" + btcAddress)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
+
+	log.Infof("get pubkey response:%v", string(res))
 
 	btcResp := Response{}
 
 	err = json.Unmarshal(res, &btcResp)
 	if err != nil {
-		return "", "", err
-	}
-	if btcResp.Code != "0" {
-		return "", "", fmt.Errorf("GetPubKey err: %s", btcResp.Message)
+		return nil, err
 	}
 
-	return btcResp.Code, btcResp.Data.Pubkey, nil
+	return &btcResp, nil
 }

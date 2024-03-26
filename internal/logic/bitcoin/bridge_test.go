@@ -45,7 +45,6 @@ func TestNewBridge(t *testing.T) {
 		ContractAddress:     "0x123456789abcdef",
 		EthPrivKey:          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		ABI:                 "abi.json",
-		GasLimit:            1000000,
 		AAParticleRPC:       "http://localhost:8545",
 		AAParticleProjectID: "1111",
 		AAParticleServerKey: "",
@@ -91,7 +90,7 @@ func TestLocalTransfer(t *testing.T) {
 
 	for _, tc := range testCase {
 		t.Run(tc.name, func(t *testing.T) {
-			hex, err := bridge.Transfer(tc.args[0].(b2types.BitcoinFrom), tc.args[1].(int64))
+			hex, _, err := bridge.Transfer(tc.args[0].(b2types.BitcoinFrom), tc.args[1].(int64), nil, 0, false)
 			if err != nil {
 				assert.Equal(t, tc.err, err)
 			}
@@ -199,17 +198,17 @@ func TestLocalDepositWaitMined(t *testing.T) {
 	bigValue := 11111111111111111
 
 	// params check
-	_, _, _, err := bridge.Deposit("", address, int64(value), nil, 0)
+	_, _, _, _, err := bridge.Deposit("", address, int64(value), nil, 0, false)
 	if err != nil {
 		assert.EqualError(t, errors.New("tx id is empty"), err.Error())
 	}
-	_, _, _, err = bridge.Deposit(uuid, b2types.BitcoinFrom{}, int64(value), nil, 0)
+	_, _, _, _, err = bridge.Deposit(uuid, b2types.BitcoinFrom{}, int64(value), nil, 0, false)
 	if err != nil {
 		assert.EqualError(t, errors.New("bitcoin address is empty"), err.Error())
 	}
 
 	// normal
-	b2Tx, _, _, err := bridge.Deposit(uuid, address, int64(value), nil, 0)
+	b2Tx, _, _, _, err := bridge.Deposit(uuid, address, int64(value), nil, 0, false)
 	if err != nil {
 		assert.NoError(t, err)
 	}
@@ -219,13 +218,13 @@ func TestLocalDepositWaitMined(t *testing.T) {
 	}
 
 	// uuid check
-	_, _, _, err = bridge.Deposit(uuid, address, int64(value), nil, 0)
+	_, _, _, _, err = bridge.Deposit(uuid, address, int64(value), nil, 0, false)
 	if err != nil {
 		assert.EqualError(t, bitcoin.ErrBridgeDepositTxHashExist, err.Error())
 	}
 
 	// insufficient balance
-	_, _, _, err = bridge.Deposit(randHash(t), address, int64(bigValue), nil, 0)
+	_, _, _, _, err = bridge.Deposit(randHash(t), address, int64(bigValue), nil, 0, false)
 	if err != nil {
 		assert.EqualError(t, bitcoin.ErrBridgeDepositContractInsufficientBalance, err.Error())
 	} else {
@@ -233,7 +232,7 @@ func TestLocalDepositWaitMined(t *testing.T) {
 	}
 
 	// context timeout
-	b2Tx2, _, _, err := bridge.Deposit(randHash(t), address, int64(value), nil, 0)
+	b2Tx2, _, _, _, err := bridge.Deposit(randHash(t), address, int64(value), nil, 0, false)
 	if err != nil {
 		assert.NoError(t, err)
 	}
@@ -246,6 +245,20 @@ func TestLocalDepositWaitMined(t *testing.T) {
 		t.Fatal("context deadline check failed")
 	}
 }
+
+// func TestLocalTransactionByHash(t *testing.T) {
+// 	bridge := bridgeWithConfig(t)
+
+// 	tx, pending, err := bridge.TransactionByHash("0xaa0d1b59f1834becb63f982b4712f848402b2d577bf74bfbcf402d63a9d460d9")
+// 	if err != nil {
+// 		t.Fail()
+// 	}
+
+// 	// v, r, s := tx.RawSignatureValues()
+
+// 	// fmt.Println(tx, pending, v.String(), r.String(), s.String())
+// 	t.Fail()
+// }
 
 func randHash(t *testing.T) string {
 	randomTx := wire.NewMsgTx(wire.TxVersion)
