@@ -24,8 +24,8 @@ type Config struct {
 	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"INDEXER_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
 }
 
-// BitconConfig defines the bitcoin config
-type BitconConfig struct {
+// BitcoinConfig defines the bitcoin config
+type BitcoinConfig struct {
 	// NetworkName defines the bitcoin network name
 	NetworkName string `mapstructure:"network-name" env:"BITCOIN_NETWORK_NAME"`
 	// RPCHost defines the bitcoin rpc host
@@ -73,7 +73,7 @@ type BridgeConfig struct {
 	// AAParticleChainID defines the particle chain id
 	AAParticleChainID int `mapstructure:"aa-particle-chain-id" env:"BITCOIN_BRIDGE_AA_PARTICLE_CHAIN_ID"`
 	// GasPriceMultiple defines the gas price multiple, TODO: temp fix, base gas_price * n
-	GasPriceMultiple int64 `mapstructure:"gas-price-multiple" env:"BITCOIN_BRIDGE_GAS_PRICE_MULTIPLE" envDefault:"5"`
+	GasPriceMultiple int64 `mapstructure:"gas-price-multiple" env:"BITCOIN_BRIDGE_GAS_PRICE_MULTIPLE" envDefault:"2"`
 	// B2ExplorerURL defines the b2 explorer url, TODO: temp use explorer gas prices
 	B2ExplorerURL string `mapstructure:"b2-explorer-url" env:"BITCOIN_BRIDGE_B2_EXPLORER_URL"`
 	// EnableListener defines whether to enable the listener
@@ -92,6 +92,10 @@ type BridgeConfig struct {
 	MultisigNum int `mapstructure:"multisig-num" env:"BITCOIN_BRIDGE_MULTISIG_NUM"`
 	// EnableRollupListener defines rollup index server
 	EnableRollupListener bool `mapstructure:"enable-rollup-listener" env:"BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER"`
+	// EnableVSM defines whether to enable the vsm encryption/decryption
+	EnableVSM bool `mapstructure:"enable-vsm" env:"BITCOIN_BRIDGE_ENABLE_VSM"`
+	// VSMInternalKeyIndex defines the vsm internal key index
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX"`
 }
 
 // TODO: @robertcc0410 env prefix, mapstructure and env,  env prefix in the rule must be the same
@@ -151,8 +155,8 @@ func LoadConfig(homePath string) (*Config, error) {
 	return &config, nil
 }
 
-func LoadBitcoinConfig(homePath string) (*BitconConfig, error) {
-	config := BitconConfig{}
+func LoadBitcoinConfig(homePath string) (*BitcoinConfig, error) {
+	config := BitcoinConfig{}
 	configFile := path.Join(homePath, BitcoinConfigFileName)
 	v := viper.New()
 	v.SetConfigFile(configFile)
@@ -207,8 +211,8 @@ func DefaultConfig() *Config {
 	}
 }
 
-func DefaultBitcoinConfig() *BitconConfig {
-	return &BitconConfig{
+func DefaultBitcoinConfig() *BitcoinConfig {
+	return &BitcoinConfig{
 		EnableIndexer: false,
 		NetworkName:   "mainnet",
 		RPCHost:       "127.0.0.1",

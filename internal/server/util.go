@@ -28,7 +28,7 @@ import (
 type Context struct {
 	// Viper         *viper.Viper
 	Config        *config.Config
-	BitcoinConfig *config.BitconConfig
+	BitcoinConfig *config.BitcoinConfig
 	HTTPConfig    *config.HTTPConfig
 	// Logger        logger.Logger
 	// Db *gorm.DB
@@ -50,7 +50,7 @@ func NewDefaultContext() *Context {
 	)
 }
 
-func NewContext(cfg *config.Config, btcCfg *config.BitconConfig) *Context {
+func NewContext(cfg *config.Config, btcCfg *config.BitcoinConfig) *Context {
 	return &Context{
 		Config:        cfg,
 		BitcoinConfig: btcCfg,
@@ -129,7 +129,7 @@ func NewDB(cfg *config.Config) (*gorm.DB, error) {
 	return DB, nil
 }
 
-func NewHTTPContext(httpCfg *config.HTTPConfig, bitcoinCfg *config.BitconConfig) *Context {
+func NewHTTPContext(httpCfg *config.HTTPConfig, bitcoinCfg *config.BitcoinConfig) *Context {
 	return &Context{
 		HTTPConfig:    httpCfg,
 		BitcoinConfig: bitcoinCfg,

@@ -1,8 +1,10 @@
 FROM golang:latest as builder
 COPY . /src
 RUN cd /src && \
-    GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./build/main main.go
+    GO111MODULE=on CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ./build/main main.go
 
 # =====
-FROM alpine:latest
+FROM ubuntu:latest
+COPY --from=builder /src/pkg/vsm/libgvsm/linux64/libTassSDF4GHVSM.so /usr/lib/libTassSDF4GHVSM.so
+COPY --from=builder /src/pkg/vsm/libgvsm/cfg/tassConfig.ini /usr/etc/tassConfig.ini
 COPY --from=builder /src/build/main /usr/bin/main

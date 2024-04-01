@@ -1,8 +1,15 @@
 package cmd
 
 import (
+	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/hex"
 	"errors"
 
+	"github.com/b2network/b2-indexer/pkg/vsm"
 	"github.com/google/uuid"
 	"github.com/sinohope/sinohope-golang-sdk/common"
 	"github.com/sinohope/sinohope-golang-sdk/core/sdk"
@@ -10,12 +17,14 @@ import (
 )
 
 var (
-	FlagBaseURL          = "baseUrl"
-	FlagPrivateKey       = "privateKey"
-	FlagVaultID          = "vaultId"
-	FlagCreateWalletName = "createWalletName"
-	FlagWalletID         = "walletId"
-	FlagChainSymbol      = "chainSymbol"
+	FlagBaseURL             = "baseUrl"
+	FlagPrivateKey          = "privateKey"
+	FlagVaultID             = "vaultId"
+	FlagCreateWalletName    = "createWalletName"
+	FlagWalletID            = "walletId"
+	FlagChainSymbol         = "chainSymbol"
+	FlagEncrypt             = "encryptModel"
+	FlagVSMInternalKeyIndex = "vsmInternalKeyIndex"
 )
 
 var (
@@ -33,6 +42,25 @@ func Sinohope() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			enableEncrypt, err := cmd.Flags().GetBool(FlagEncrypt)
+			if err != nil {
+				return err
+			}
+			if enableEncrypt {
+				internalKeyIndex, err := cmd.Flags().GetUint(FlagVSMInternalKeyIndex)
+				if err != nil {
+					return err
+				}
+				tassInputData, err := hex.DecodeString(key)
+				if err != nil {
+					return err
+				}
+				decKey, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, internalKeyIndex)
+				if err != nil {
+					return err
+				}
+				key = string(bytes.TrimRight(decKey, "\x00"))
+			}
 			url, err := cmd.Flags().GetString(FlagBaseURL)
 			if err != nil {
 				return err
@@ -47,12 +75,15 @@ func Sinohope() *cobra.Command {
 		listSupportedChainAndCoins(),
 		createWallet(),
 		genAddress(),
+		generateECDSAPrivateKey(),
 	)
 	cmd.PersistentFlags().String(FlagBaseURL, "https://api.sinohope.com", "sinohope base url")
 	cmd.PersistentFlags().String(FlagPrivateKey, "", "fakePrivateKey")
 	cmd.PersistentFlags().String(FlagVaultID, "", "Sinohope VaultId")
 	cmd.PersistentFlags().String(FlagWalletID, "", "Sinohope wallet id")
 	cmd.PersistentFlags().String(FlagChainSymbol, "BTC", "Sinohope ChainSymbol")
+	cmd.PersistentFlags().Bool(FlagEncrypt, true, "enable encrypt model")
+	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
 	return cmd
 }
 
@@ -218,6 +249,31 @@ func genAddress() *cobra.Command {
 		},
 	}
 
+	return cmd
+}
+
+func generateECDSAPrivateKey() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gen-ecdsa-key",
+		Short: "generate ECDSA PrivateKey",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			if err != nil {
+				return err
+			}
+			pkcs8Bytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+			if err != nil {
+				return err
+			}
+			pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+			if err != nil {
+				return err
+			}
+			cmd.Println("pubKey:", hex.EncodeToString(pubKeyBytes))
+			cmd.Println("privateKey:", hex.EncodeToString(pkcs8Bytes))
+			return nil
+		},
+	}
 	return cmd
 }
 

@@ -6,10 +6,12 @@ COMMIT_HASH := $(shell git rev-parse --short=7 HEAD)
 DATE=$(shell date +%Y%m%d-%H%M%S)
 DOCKER_TAG := ${DATE}-$(COMMIT_HASH)
 MODULES := $(wildcard api/*)
+SYSTEM := $(shell uname -s)
 
 ###############################################################################
 ###                                  Build                                  ###
 ###############################################################################
+
 
 BUILD_TARGETS := build install
 
@@ -116,6 +118,7 @@ test:
 ifneq (,$(shell which tparse 2>/dev/null))
 	go test -skip=$(SKIP_TEST_METHOD)  -mod=readonly  -json $(ARGS) $(EXTRA_ARGS) $(TEST_PACKAGES)  | tparse
 else
+
 	go test -skip=$(SKIP_TEST_METHOD) -mod=readonly $(ARGS)   $(EXTRA_ARGS) $(TEST_PACKAGES)
 endif
 

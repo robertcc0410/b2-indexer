@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	"github.com/b2network/b2-indexer/pkg/aa"
 	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/b2network/b2-indexer/pkg/particle"
+	"github.com/b2network/b2-indexer/pkg/vsm"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -76,19 +78,14 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 		return nil, err
 	}
 
-	privateKey, err := crypto.HexToECDSA(bridgeCfg.EthPrivKey)
-	if err != nil {
-		return nil, err
-	}
-
 	var ABI string
 
-	abi, err := os.ReadFile(path.Join(abiFileDir, bridgeCfg.ABI))
+	abiFile, err := os.ReadFile(path.Join(abiFileDir, bridgeCfg.ABI))
 	if err != nil {
 		// load default abi
 		ABI = config.DefaultDepositAbi
 	} else {
-		ABI = string(abi)
+		ABI = string(abiFile)
 	}
 
 	newParticle, err := particle.NewParticle(
@@ -99,7 +96,22 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 	if err != nil {
 		return nil, err
 	}
-
+	ethPrivKey := bridgeCfg.EthPrivKey
+	if bridgeCfg.EnableVSM {
+		tassInputData, err := hex.DecodeString(ethPrivKey)
+		if err != nil {
+			return nil, err
+		}
+		decKey, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, bridgeCfg.VSMInternalKeyIndex)
+		if err != nil {
+			return nil, err
+		}
+		ethPrivKey = string(bytes.TrimRight(decKey, "\x00"))
+	}
+	privateKey, err := crypto.HexToECDSA(ethPrivKey)
+	if err != nil {
+		return nil, err
+	}
 	return &Bridge{
 		EthRPCURL:            rpcURL.String(),
 		ContractAddress:      common.HexToAddress(bridgeCfg.ContractAddress),

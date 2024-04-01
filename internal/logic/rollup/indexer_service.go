@@ -32,7 +32,7 @@ type IndexerService struct {
 	service.BaseService
 
 	ethCli *ethclient.Client
-	config *config.BitconConfig
+	config *config.BitcoinConfig
 	db     *gorm.DB
 	log    log.Logger
 }
@@ -40,7 +40,7 @@ type IndexerService struct {
 // NewIndexerService returns a new service instance.
 func NewIndexerService(
 	ethCli *ethclient.Client,
-	config *config.BitconConfig,
+	config *config.BitcoinConfig,
 	db *gorm.DB,
 	log log.Logger,
 ) *IndexerService {

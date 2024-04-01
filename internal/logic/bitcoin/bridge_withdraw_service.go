@@ -71,7 +71,7 @@ type BridgeWithdrawService struct {
 
 	btcCli *rpcclient.Client
 	ethCli *ethclient.Client
-	config *config.BitconConfig
+	config *config.BitcoinConfig
 	db     *gorm.DB
 	log    log.Logger
 }
@@ -80,7 +80,7 @@ type BridgeWithdrawService struct {
 func NewBridgeWithdrawService(
 	btcCli *rpcclient.Client,
 	ethCli *ethclient.Client,
-	config *config.BitconConfig,
+	config *config.BitcoinConfig,
 	db *gorm.DB,
 	log log.Logger,
 ) *BridgeWithdrawService {
