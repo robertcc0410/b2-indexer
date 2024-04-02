@@ -545,7 +545,7 @@ func (b *Bridge) gasPrices() (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	gasPriceWei := new(big.Float).Mul(big.NewFloat(stats.GasPrices.Fast), big.NewFloat(1e9))
+	gasPriceWei := new(big.Float).Mul(big.NewFloat(stats.GasPrices.Average), big.NewFloat(1e9))
 	gasPriceInt := new(big.Int)
 	gasPriceWei.Int(gasPriceInt)
 	return gasPriceInt, nil
