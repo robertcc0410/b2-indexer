@@ -14,41 +14,44 @@
 
 ## Bitcoin configuration
 
-| Variable                                    | Type       | Description                                           | Compulsoriness | Default value | Example value                        |
-|---------------------------------------------|------------|-------------------------------------------------------|----------------|---------------|--------------------------------------|
-| BITCOIN_NETWORK_NAME                        | `string`   | bitcoin network name                                  | Required       | testnet3      | `mainnet testnet3 regtest`           |
-| BITCOIN_RPC_HOST                            | `string`   | bitcoin rpc host                                      | Required       |               | `127.0.0.1`                          |
-| BITCOIN_RPC_PORT                            | `string`   | bitcoin rpc port                                      | Required       |               | `8332`                               |
-| BITCOIN_RPC_USER                            | `string`   | bitcoin rpc user                                      | Required       |               |                                      |
-| BITCOIN_RPC_PASS                            | `string`   | bitcoin rpc password                                  | Required       |               |                                      |
-| BITCOIN_DISABLE_TLS                         | `bool`     | bitcoin disable tls                                   | Required       | `true`        |                                      |
-| BITCOIN_ENABLE_INDEXER                      | `bool`     | enable indexer service                                | Required       |               | `false true`                         |
-| BITCOIN_INDEXER_LISTEN_ADDRESS              | `string`   | indexer service listen btc address                    | Required       |               |                                      |
-| BITCOIN_INDEXER_LISTEN_TARGET_CONFIRMATIONS | `number`   | target confirmations, adjust as needed                | -              | `1`           |                                      |
-| BITCOIN_BRIDGE_ETH_RPC_URL                  | `string`   | bridge contract eth rpc url                           | Required       |               | `https://zkevm-rpc.bsquared.network` |
-| BITCOIN_BRIDGE_ETH_PRIV_KEY                 | `string`   | bridge contract eth invoke priv key                   | Required       |               |                                      |
-| BITCOIN_BRIDGE_CONTRACT_ADDRESS             | `string`   | bridge contract address                               | Required       |               |                                      |
-| BITCOIN_BRIDGE_ABI                          | `string`   | bridge contract abi, if not set, will use default abi | -              |               |                                      |
-| BITCOIN_BRIDGE_AA_B2_API                    | `string`   | b2 aa api                                             | Required       |               |                                      |
-| ENABLE_EPS                                  | `bool`     | enable eps service                                    | Required       |               | false true                           |
-| EPS_URL                                     | `string`   | eps url                                               | Required       |               |                                      |
-| EPS_AUTHORIZATION                           | `string`   | eps authorization                                     | Required       |               |                                      |
-| BITCOIN_BRIDGE_DEPOSIT                      | `string`   | bridge deposit event hash                             | Required       |               |                                      |
-| BITCOIN_BRIDGE_WITHDRAW                     | `string`   | bridge withdraw event hash                            | Required       |               |                                      |
-| BITCOIN_BRIDGE_UNISAT_API_KEY               | `string`   | bridge withdraw unisat api_key                        | Required       |               |                                      |
-| BITCOIN_BRIDGE_PUBLICKEYS                   | `[]string` | bridge withdraw sign publickey                        | Required       |               |                                      |
-| BITCOIN_BRIDGE_TIME_INTERVAL                | `int64`    | bridge withdraw time interval                         | Required       |               |                                      |
-| BITCOIN_BRIDGE_MULTISIG_NUM                 | `int`      | bridge withdraw multisig num                          | Required       |               |                                      |
-| BITCOIN_BRIDGE_WITHDRAW_ENABLE_LISTENER     | `bool`     | enable bridge withdraw service                        | Required       |               | false true                           |
-| BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER                     | `bool`     | enable rollup indexer service                         | Required       |               | false true                           |
+| Variable                                    | Type     | Description                                           | Compulsoriness | Default value | Example value                            |
+|---------------------------------------------|----------|-------------------------------------------------------|----------------|---------------|------------------------------------------|
+| BITCOIN_NETWORK_NAME                        | `string` | bitcoin network name                                  | Required       | testnet3      | `mainnet testnet3 regtest`               |
+| BITCOIN_RPC_HOST                            | `string` | bitcoin rpc host                                      | Required       |               | `127.0.0.1`                              |
+| BITCOIN_RPC_PORT                            | `string` | bitcoin rpc port                                      | Required       |               | `8332`                                   |
+| BITCOIN_RPC_USER                            | `string` | bitcoin rpc user                                      | Required       |               |                                          |
+| BITCOIN_RPC_PASS                            | `string` | bitcoin rpc password                                  | Required       |               |                                          |
+| BITCOIN_DISABLE_TLS                         | `bool`   | bitcoin disable tls                                   | Required       | `true`        |                                          |
+| BITCOIN_ENABLE_INDEXER                      | `bool`   | enable indexer service                                | Required       |               | `false true`                             |
+| BITCOIN_INDEXER_LISTEN_ADDRESS              | `string` | indexer service listen btc address                    | Required       |               |                                          |
+| BITCOIN_INDEXER_LISTEN_TARGET_CONFIRMATIONS | `number` | target confirmations, adjust as needed                | -              | `1`           |                                          |
+| BITCOIN_BRIDGE_ETH_RPC_URL                  | `string` | bridge contract eth rpc url                           | Required       |               | `https://zkevm-rpc.bsquared.network`     |
+| BITCOIN_BRIDGE_ETH_PRIV_KEY                 | `string` | bridge contract eth invoke priv key                   | Required       |               |                                          |
+| BITCOIN_BRIDGE_CONTRACT_ADDRESS             | `string` | bridge contract address                               | Required       |               |                                          |
+| BITCOIN_BRIDGE_ABI                          | `string` | bridge contract abi, if not set, will use default abi | -              |               |                                          |
+| BITCOIN_BRIDGE_AA_B2_API                    | `string` | b2 aa api                                             | Required       |               |                                          |
+| BITCOIN_BRIDGE_GAS_PRICE_MULTIPLE           | `number` | base gas price multiple                               | Required       | `1`           |                                          |
+| BITCOIN_BRIDGE_B2_EXPLORER_URL              | `string` | b2 explorer api url                                   | -              |               |                                          |
+| BITCOIN_BRIDGE_AA_PARTICLE_RPC              | `string` | particle rpc url                                      | Required       |               | `https://rpc.particle.network/evm-chain` |
+| BITCOIN_BRIDGE_AA_PARTICLE_PROJECT_ID       | `string` | particle project id                                   | Required       |               |                                          |
+| BITCOIN_BRIDGE_AA_PARTICLE_SERVER_KEY       | `string` | particle server key                                   | Required       |               |                                          |
+| BITCOIN_BRIDGE_AA_PARTICLE_CHAIN_ID         | `string` | particle chain id                                     | Required       |               |                                          |
+| BITCOIN_BRIDGE_ENABLE_EOA_TRANSFER          | `bool`   | enable eoa transfer                                   | -              | `true`        | false true                               |
+| ENABLE_EPS                                  | `bool`   | enable eps service                                    | Required       |               | false true                               |
+| EPS_URL                                     | `string` | eps url                                               | Required       |               |                                          |
+| EPS_AUTHORIZATION                           | `string` | eps authorization                                     | Required       |               |                                          |
+| BITCOIN_BRIDGE_DEPOSIT                      | `string` | bridge deposit event hash                             | Required       |               |                                          |
+| BITCOIN_BRIDGE_WITHDRAW                     | `string` | bridge withdraw event hash                            | Required       |               |                                          |
+| BITCOIN_BRIDGE_WITHDRAW_ENABLE_LISTENER     | `bool`   | enable bridge withdraw service                        | Required       |               | false true                               |
+| BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER       | `bool`   | enable rollup indexer service                         | Required       |               | false true                               |
 
 ## http configuration
 
-| Variable       | Type     | Description | Compulsoriness | Default value | Example value |
-|----------------|----------|-------------|----------------|---------------|---------------|
-| HTTP_PORT      | `string` | Http port   | -              | 8080          | -             |
-| HTTP_GRPC_PORT | `string` | grpc port   | -              | 8081          | -             |
-| HTTP_IP_WHITE_LIST | `string` | ip white list   | -              |           | -             |
+| Variable           | Type     | Description   | Compulsoriness | Default value | Example value |
+|--------------------|----------|---------------|----------------|---------------|---------------|
+| HTTP_PORT          | `string` | Http port     | -              | 8080          | -             |
+| HTTP_GRPC_PORT     | `string` | grpc port     | -              | 8081          | -             |
+| HTTP_IP_WHITE_LIST | `string` | ip white list | Required       |               | -             |
 
 # Service requirement environment variable
 
@@ -69,6 +72,7 @@ BITCOIN_RPC_USER
 BITCOIN_RPC_PASS
 BITCOIN_ENABLE_INDEXER
 BITCOIN_INDEXER_LISTEN_ADDRESS
+BITCOIN_INDEXER_LISTEN_TARGET_CONFIRMATIONS
 
 BITCOIN_BRIDGE_ETH_RPC_URL
 BITCOIN_BRIDGE_CONTRACT_ADDRESS
@@ -89,10 +93,15 @@ BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER
 
 BITCOIN_BRIDGE_WITHDRAW_ENABLE_LISTENER=false
 
+BITCOIN_BRIDGE_ENABLE_EOA_TRANSFER=true
 
 ENABLE_EPS
 EPS_URL
 EPS_AUTHORIZATION
+
+
+BITCOIN_BRIDGE_ENABLE_VSM
+BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX
 ```
 
 ## b2-indexer-http
