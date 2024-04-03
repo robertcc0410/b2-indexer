@@ -44,6 +44,8 @@ func TestBitcoinConfig(t *testing.T) {
 	os.Unsetenv("BITCOIN_BRIDGE_TIME_INTERVAL")
 	os.Unsetenv("BITCOIN_BRIDGE_MULTISIG_NUM")
 	os.Unsetenv("BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER")
+	os.Unsetenv("BITCOIN_BRIDGE_ENABLE_VSM")
+	os.Unsetenv("BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX")
 	config, err := config.LoadBitcoinConfig("./testdata")
 	require.NoError(t, err)
 	require.Equal(t, "signet", config.NetworkName)
@@ -76,6 +78,8 @@ func TestBitcoinConfig(t *testing.T) {
 	require.Equal(t, []string{""}, config.Bridge.PublicKeys)
 	require.Equal(t, 0, config.Bridge.MultisigNum)
 	require.Equal(t, false, config.Bridge.EnableRollupListener)
+	require.Equal(t, false, config.Bridge.EnableVSM)
+	require.Equal(t, uint(10), config.Bridge.VSMInternalKeyIndex)
 }
 
 func TestBitcoinConfigEnv(t *testing.T) {
@@ -113,6 +117,8 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	os.Setenv("BITCOIN_BRIDGE_PUBLICKEYS", "")
 	os.Setenv("BITCOIN_BRIDGE_MULTISIG_NUM", strconv.FormatInt(0, 10))
 	os.Setenv("BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER", "false")
+	os.Setenv("BITCOIN_BRIDGE_ENABLE_VSM", "true")
+	os.Setenv("BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX", "11")
 
 	config, err := config.LoadBitcoinConfig("./")
 	require.NoError(t, err)
@@ -146,6 +152,8 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	require.Equal(t, []string(nil), config.Bridge.PublicKeys)
 	require.Equal(t, 0, config.Bridge.MultisigNum)
 	require.Equal(t, false, config.Bridge.EnableRollupListener)
+	require.Equal(t, true, config.Bridge.EnableVSM)
+	require.Equal(t, uint(11), config.Bridge.VSMInternalKeyIndex)
 }
 
 func TestChainParams(t *testing.T) {

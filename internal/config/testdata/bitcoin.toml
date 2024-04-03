@@ -30,6 +30,8 @@ publickeys = [""]
 time-interval = 0
 multisig-num = 0
 enable-rollup-listener = false
+enable-vsm = false
+vsm-internal-key-index = 10
 
 [eps]
 enable-eps = true
