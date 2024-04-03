@@ -3,13 +3,14 @@ package bitcoin
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/internal/types"
 	"github.com/b2network/b2-indexer/pkg/log"
-	"github.com/b2network/b2-indexer/pkg/utils"
 	"github.com/cometbft/cometbft/libs/service"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
 
@@ -72,6 +73,22 @@ func (bis *IndexerService) OnStart() error {
 		}
 	}
 
+	if !bis.db.Migrator().HasTable(&model.Sinohope{}) {
+		err = bis.db.AutoMigrate(&model.Sinohope{})
+		if err != nil {
+			bis.log.Errorw("bitcoin indexer create table", "error", err.Error())
+			return err
+		}
+	}
+
+	if !bis.db.Migrator().HasTable(&model.RollupDeposit{}) {
+		err = bis.db.AutoMigrate(&model.RollupDeposit{})
+		if err != nil {
+			bis.log.Errorw("bitcoin indexer create table", "error", err.Error())
+			return err
+		}
+	}
+
 	var btcIndex model.BtcIndex
 	if err := bis.db.First(&btcIndex, 1).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -112,7 +129,6 @@ func (bis *IndexerService) OnStart() error {
 			}
 			continue
 		}
-
 		// index > 0, start index from currentBlock currentTxIndex + 1
 		// index == 0, start index from currentBlock + 1
 		if currentTxIndex == 0 {
@@ -125,41 +141,44 @@ func (bis *IndexerService) OnStart() error {
 			bis.log.Infow("start parse block", "currentBlock", i, "currentTxIndex", currentTxIndex)
 			txResults, blockHeader, err := bis.txIdxr.ParseBlock(i, currentTxIndex)
 			if err != nil {
-				bis.log.Errorw("parse block unknown err", "error", err.Error(), "currentBlock", i, "currentTxIndex", currentTxIndex)
+				if errors.Is(err, ErrTargetConfirmations) {
+					bis.log.Warnw("parse block confirmations", "error", err.Error(), "currentBlock", i, "currentTxIndex", currentTxIndex)
+					time.Sleep(NewBlockWaitTimeout)
+				} else {
+					bis.log.Errorw("parse block unknown err", "error", err.Error(), "currentBlock", i, "currentTxIndex", currentTxIndex)
+				}
 				if currentTxIndex == 0 {
 					currentBlock = i - 1
 				} else {
 					currentBlock = i
 					currentTxIndex--
 				}
+
 				break
 			}
 			if len(txResults) > 0 {
-				for _, v := range txResults {
-					// if from is listen address, skip
-					if utils.StrInArray(v.From, v.To) {
-						bis.log.Infow("current transaction from is listen address", "currentBlock", i, "currentTxIndex", v.Index, "data", v)
-						continue
+				currentBlock, currentTxIndex, err = bis.HandleResults(txResults, btcIndex, blockHeader.Timestamp, i)
+				if err != nil {
+					bis.log.Errorw("failed to handle results", "error", err,
+						"currentBlock", currentBlock, "currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
+					rollback := true
+					// not duplicated key, rollback index
+					if pgErr, ok := err.(*pgconn.PgError); ok {
+						// 23505 duplicate key value violates unique constraint , continue
+						if pgErr.Code == "23505" {
+							rollback = false
+						}
 					}
 
-					btcIndex.BtcIndexBlock = i
-					btcIndex.BtcIndexTx = v.Index
-					// write db
-					err = bis.SaveParsedResult(
-						v,
-						i,
-						model.DepositB2TxStatusPending,
-						blockHeader.Timestamp,
-						btcIndex,
-					)
-					if err != nil {
-						bis.log.Errorw("failed to save bitcoin index tx", "error", err,
-							"data", v)
-					} else {
-						bis.log.Infow("bitcoin indexer save bitcoin index tx success", "data", v)
+					if rollback {
+						if currentTxIndex == 0 {
+							currentBlock = i - 1
+						} else {
+							currentBlock = i
+							currentTxIndex--
+						}
+						break
 					}
-
-					time.Sleep(IndexTxTimeout)
 				}
 			}
 			currentBlock = i
@@ -169,11 +188,12 @@ func (bis *IndexerService) OnStart() error {
 			if err := bis.db.Save(&btcIndex).Error; err != nil {
 				bis.log.Errorw("failed to save bitcoin index block", "error", err, "currentBlock", i,
 					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
-			} else {
-				bis.log.Infow("bitcoin indexer parsed", "currentBlock", i,
-					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
+				// rollback
+				currentBlock = i - 1
+				break
 			}
-
+			bis.log.Infow("bitcoin indexer parsed", "currentBlock", i,
+				"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
 			time.Sleep(IndexBlockTimeout)
 		}
 	}
@@ -189,34 +209,118 @@ func (bis *IndexerService) SaveParsedResult(
 ) error {
 	// write db
 	err := bis.db.Transaction(func(tx *gorm.DB) error {
+		if len(parseResult.From) == 0 {
+			return fmt.Errorf("parse result from empty")
+		}
+
+		if len(parseResult.To) == 0 {
+			return fmt.Errorf("parse result to empty")
+		}
+
 		froms, err := json.Marshal(parseResult.From)
 		if err != nil {
 			return err
 		}
-		deposit := model.Deposit{
-			BtcBlockNumber: btcBlockNumber,
-			BtcTxIndex:     parseResult.Index,
-			BtcTxHash:      parseResult.TxID,
-			BtcFrom:        parseResult.From[0],
-			BtcTo:          parseResult.To,
-			BtcValue:       parseResult.Value,
-			BtcFroms:       string(froms),
-			B2TxStatus:     b2TxStatus,
-			BtcBlockTime:   btcBlockTime,
-			B2TxRetry:      0,
-		}
-		err = tx.Save(&deposit).Error
+		tos, err := json.Marshal(parseResult.Tos)
 		if err != nil {
-			bis.log.Errorw("failed to save tx parsed result", "error", err)
 			return err
+		}
+
+		// if existed, update deposit record
+		var deposit model.Deposit
+		err = tx.First(&deposit,
+			fmt.Sprintf("%s = ?", model.Deposit{}.Column().BtcTxHash),
+			parseResult.TxID).Error
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			deposit := model.Deposit{
+				BtcBlockNumber: btcBlockNumber,
+				BtcTxIndex:     parseResult.Index,
+				BtcTxHash:      parseResult.TxID,
+				BtcFrom:        parseResult.From[0].Address,
+				BtcTos:         string(tos),
+				BtcTo:          parseResult.To,
+				BtcValue:       parseResult.Value,
+				BtcFroms:       string(froms),
+				B2TxStatus:     b2TxStatus,
+				BtcBlockTime:   btcBlockTime,
+				B2TxRetry:      0,
+				ListenerStatus: model.ListenerStatusSuccess,
+				CallbackStatus: model.CallbackStatusPending,
+			}
+			err = tx.Create(&deposit).Error
+			if err != nil {
+				bis.log.Errorw("failed to save tx parsed result", "error", err)
+				return err
+			}
+		} else if deposit.CallbackStatus == model.CallbackStatusSuccess &&
+			deposit.ListenerStatus == model.ListenerStatusPending {
+			// if existed, update deposit record
+			updateFields := map[string]interface{}{
+				model.Deposit{}.Column().BtcBlockNumber: btcBlockNumber,
+				model.Deposit{}.Column().BtcTxIndex:     parseResult.Index,
+				model.Deposit{}.Column().BtcFroms:       string(froms),
+				model.Deposit{}.Column().BtcTos:         string(tos),
+				model.Deposit{}.Column().BtcBlockTime:   btcBlockTime,
+				model.Deposit{}.Column().ListenerStatus: model.ListenerStatusSuccess,
+			}
+			err = tx.Model(&model.Deposit{}).Where("id = ?", deposit.ID).Updates(updateFields).Error
+			if err != nil {
+				bis.log.Errorw("failed to update tx parsed result", "error", err)
+				return err
+			}
 		}
 
 		if err := tx.Save(&btcIndex).Error; err != nil {
 			bis.log.Errorw("failed to save bitcoin tx index", "error", err)
 			return err
 		}
-
 		return nil
 	})
 	return err
+}
+
+func (bis *IndexerService) HandleResults(
+	txResults []*types.BitcoinTxParseResult,
+	btcIndex model.BtcIndex,
+	btcBlockTime time.Time,
+	currentBlock int64,
+) (int64, int64, error) {
+	for _, v := range txResults {
+		// if from is listen address, skip
+		if bis.ToInFroms(v.From, v.To) {
+			bis.log.Infow("current transaction from is listen address", "currentBlock", currentBlock, "currentTxIndex", v.Index, "data", v)
+			continue
+		}
+
+		btcIndex.BtcIndexBlock = currentBlock
+		btcIndex.BtcIndexTx = v.Index
+		// write db
+		err := bis.SaveParsedResult(
+			v,
+			currentBlock,
+			model.DepositB2TxStatusPending,
+			btcBlockTime,
+			btcIndex,
+		)
+		if err != nil {
+			bis.log.Errorw("failed to save bitcoin index tx", "error", err,
+				"data", v)
+			return currentBlock, v.Index, err
+		}
+		bis.log.Infow("save bitcoin index tx success", "currentBlock", currentBlock, "currentTxIndex", v.Index, "data", v)
+		time.Sleep(IndexTxTimeout)
+	}
+	return currentBlock, 0, nil
+}
+
+func (bis *IndexerService) ToInFroms(a []types.BitcoinFrom, s string) bool {
+	for _, i := range a {
+		if i.Address == s {
+			return true
+		}
+	}
+	return false
 }

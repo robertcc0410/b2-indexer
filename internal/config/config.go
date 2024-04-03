@@ -24,8 +24,8 @@ type Config struct {
 	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"INDEXER_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
 }
 
-// BitconConfig defines the bitcoin config
-type BitconConfig struct {
+// BitcoinConfig defines the bitcoin config
+type BitcoinConfig struct {
 	// NetworkName defines the bitcoin network name
 	NetworkName string `mapstructure:"network-name" env:"BITCOIN_NETWORK_NAME"`
 	// RPCHost defines the bitcoin rpc host
@@ -44,17 +44,15 @@ type BitconConfig struct {
 	EnableIndexer bool `mapstructure:"enable-indexer" env:"BITCOIN_ENABLE_INDEXER"`
 	// IndexerListenAddress defines the address to listen on
 	IndexerListenAddress string `mapstructure:"indexer-listen-address" env:"BITCOIN_INDEXER_LISTEN_ADDRESS"`
+	// IndexerListenTargetConfirmations defines the number of confirmations to listen on
+	IndexerListenTargetConfirmations uint64 `mapstructure:"indexer-listen-target-confirmations" env:"BITCOIN_INDEXER_LISTEN_TARGET_CONFIRMATIONS" envDefault:"1"`
 	// Bridge defines the bridge config
 	Bridge BridgeConfig `mapstructure:"bridge"`
-	// Fee defines the bitcoin tx fee
-	Fee int64 `mapstructure:"fee" env:"BITCOIN_FEE"`
-	// Evm defines the evm config
-	Evm EvmConfig `mapstructure:"evm"`
-	Eps EpsConfig `mapstructure:"eps"`
+	Eps    EpsConfig    `mapstructure:"eps"`
 }
 
 type BridgeConfig struct {
-	// EthRPCURL defines the ethereum rpc url
+	// EthRPCURL defines the ethereum rpc url, b2 rollup rpc
 	EthRPCURL string `mapstructure:"eth-rpc-url" env:"BITCOIN_BRIDGE_ETH_RPC_URL"`
 	// EthPrivKey defines the invoke ethereum private key
 	EthPrivKey string `mapstructure:"eth-priv-key" env:"BITCOIN_BRIDGE_ETH_PRIV_KEY"`
@@ -62,38 +60,68 @@ type BridgeConfig struct {
 	ContractAddress string `mapstructure:"contract-address" env:"BITCOIN_BRIDGE_CONTRACT_ADDRESS"`
 	// ABI defines the l1 -> l2 bridge contract abi
 	ABI string `mapstructure:"abi" env:"BITCOIN_BRIDGE_ABI"`
-	// GasLimit defines the  contract gas limit
-	GasLimit uint64 `mapstructure:"gas-limit" env:"BITCOIN_BRIDGE_GAS_LIMIT"`
+	// if deposit invoke b2 failed(status != 1), Whether to allow invoke eoa trnasfer
+	EnableEoaTransfer bool `mapstructure:"enable-eoa-transfer" env:"BITCOIN_BRIDGE_ENABLE_EOA_TRANSFER" envDefault:"true"`
+	// AAB2PI get pubkey by btc address
+	AAB2PI string `mapstructure:"aa-b2-api" env:"BITCOIN_BRIDGE_AA_B2_API"`
+	// AAParticleRPC defines the particle api
+	AAParticleRPC string `mapstructure:"aa-particle-rpc" env:"BITCOIN_BRIDGE_AA_PARTICLE_RPC"`
+	// AAParticleProjectID defines the particle project id
+	AAParticleProjectID string `mapstructure:"aa-particle-project-id" env:"BITCOIN_BRIDGE_AA_PARTICLE_PROJECT_ID"`
+	// AAParticleServerKey defines the particle server key
+	AAParticleServerKey string `mapstructure:"aa-particle-server-key" env:"BITCOIN_BRIDGE_AA_PARTICLE_SERVER_KEY"`
+	// AAParticleChainID defines the particle chain id
+	AAParticleChainID int `mapstructure:"aa-particle-chain-id" env:"BITCOIN_BRIDGE_AA_PARTICLE_CHAIN_ID"`
 	// GasPriceMultiple defines the gas price multiple, TODO: temp fix, base gas_price * n
-	GasPriceMultiple int64 `mapstructure:"gas-price-multiple" env:"BITCOIN_BRIDGE_GAS_PRICE_MULTIPLE" envDefault:"5"`
+	GasPriceMultiple int64 `mapstructure:"gas-price-multiple" env:"BITCOIN_BRIDGE_GAS_PRICE_MULTIPLE" envDefault:"2"`
 	// B2ExplorerURL defines the b2 explorer url, TODO: temp use explorer gas prices
-	B2ExplorerURL string `mapstructure:"b2-explorer-url" env:"BITCOIN_BRIDGE_B2_EXPLORER_URL" envDefault:"https://blocksout-backend-role.bsquared.network"`
-	// AASCARegistry defines the  contract AASCARegistry address
-	AASCARegistry string `mapstructure:"aa-sca-registry" env:"BITCOIN_BRIDGE_AA_SCA_REGISTRY"`
-	// AAKernelFactory defines the  contract AAKernelFactory address
-	AAKernelFactory string `mapstructure:"aa-kernel-factory" env:"BITCOIN_BRIDGE_AA_KERNEL_FACTORY"`
-}
-
-type EvmConfig struct {
+	B2ExplorerURL string `mapstructure:"b2-explorer-url" env:"BITCOIN_BRIDGE_B2_EXPLORER_URL"`
 	// EnableListener defines whether to enable the listener
-	EnableListener bool `mapstructure:"enable-listener" env:"BITCOIN_BRIDGE_ENABLE_LISTENER"`
+	EnableWithdrawListener bool `mapstructure:"enable-withdraw-listener" env:"BITCOIN_BRIDGE_WITHDRAW_ENABLE_LISTENER"`
 	// Deposit defines the deposit event hash
 	Deposit string `mapstructure:"deposit" env:"BITCOIN_BRIDGE_DEPOSIT"`
 	// Withdraw defines the withdraw event hash
 	Withdraw string `mapstructure:"withdraw" env:"BITCOIN_BRIDGE_WITHDRAW"`
+	// UnisatApiKey defines unisat api_key
+	UnisatAPIKey string `mapstructure:"unisat-api-key" env:"BITCOIN_BRIDGE_UNISAT_API_KEY"`
+	// PublicKeys defines signer publickey
+	PublicKeys []string `mapstructure:"publickeys" env:"BITCOIN_BRIDGE_PUBLICKEYS"`
+	// TimeInterval defines withdraw time interval
+	TimeInterval int64 `mapstructure:"time-interval" env:"BITCOIN_BRIDGE_TIME_INTERVAL"`
+	// MultisigNum defines withdraw multisig number
+	MultisigNum int `mapstructure:"multisig-num" env:"BITCOIN_BRIDGE_MULTISIG_NUM"`
+	// EnableRollupListener defines rollup index server
+	EnableRollupListener bool `mapstructure:"enable-rollup-listener" env:"BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER"`
+	// EnableVSM defines whether to enable the vsm encryption/decryption
+	EnableVSM bool `mapstructure:"enable-vsm" env:"BITCOIN_BRIDGE_ENABLE_VSM"`
+	// VSMInternalKeyIndex defines the vsm internal key index
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX"`
 }
 
+// TODO: @robertcc0410 env prefix, mapstructure and env,  env prefix in the rule must be the same
 type EpsConfig struct {
 	EnableEps     bool   `mapstructure:"enable-eps" env:"ENABLE_EPS"`
 	URL           string `mapstructure:"url" env:"EPS_URL"`
 	Authorization string `mapstructure:"authorization" env:"EPS_AUTHORIZATION"`
 }
 
+// HTTPConfig defines the http server config
+type HTTPConfig struct {
+	// port defines the http server port
+	HTTPPort string `mapstructure:"http-port" env:"HTTP_PORT" envDefault:"9090"`
+	// port defines the grpc server port
+	GrpcPort string `mapstructure:"grpc-port" env:"HTTP_GRPC_PORT" envDefault:"9091"`
+	// ipWhiteList defines the ip white list, Only those in the whitelist can be called
+	IPWhiteList string `mapstructure:"ip-white-list" env:"HTTP_IP_WHITE_LIST"`
+}
+
 const (
 	BitcoinConfigFileName  = "bitcoin.toml"
 	AppConfigFileName      = "indexer.toml"
+	HTTPConfigFileName     = "http.toml"
 	BitcoinConfigEnvPrefix = "BITCOIN"
 	AppConfigEnvPrefix     = "APP"
+	HTTPConfigEnvPrefix    = "HTTP"
 )
 
 func LoadConfig(homePath string) (*Config, error) {
@@ -127,8 +155,8 @@ func LoadConfig(homePath string) (*Config, error) {
 	return &config, nil
 }
 
-func LoadBitcoinConfig(homePath string) (*BitconConfig, error) {
-	config := BitconConfig{}
+func LoadBitcoinConfig(homePath string) (*BitcoinConfig, error) {
+	config := BitcoinConfig{}
 	configFile := path.Join(homePath, BitcoinConfigFileName)
 	v := viper.New()
 	v.SetConfigFile(configFile)
@@ -183,8 +211,8 @@ func DefaultConfig() *Config {
 	}
 }
 
-func DefaultBitcoinConfig() *BitconConfig {
-	return &BitconConfig{
+func DefaultBitcoinConfig() *BitcoinConfig {
+	return &BitcoinConfig{
 		EnableIndexer: false,
 		NetworkName:   "mainnet",
 		RPCHost:       "127.0.0.1",
@@ -192,4 +220,35 @@ func DefaultBitcoinConfig() *BitconConfig {
 		RPCPass:       "",
 		RPCPort:       "8332",
 	}
+}
+
+func LoadHTTPConfig(homePath string) (*HTTPConfig, error) {
+	config := HTTPConfig{}
+	configFile := path.Join(homePath, HTTPConfigFileName)
+	v := viper.New()
+	v.SetConfigFile(configFile)
+
+	v.SetEnvPrefix(HTTPConfigEnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	// try load config from file
+	err := v.ReadInConfig()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		// if err load config from env
+		if err := env.Parse(&config); err != nil {
+			return nil, err
+		}
+		return &config, nil
+	}
+
+	err = v.Unmarshal(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
