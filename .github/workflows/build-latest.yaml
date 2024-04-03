@@ -18,7 +18,7 @@ jobs:
       - name: clone repo
         run: git clone https://${{secrets.PERSONAL_USERNAME}}:${{secrets.PERSONAL_TOKEN}}@github.com/b2network/devops.git 
       - name: modify 
-        run: cd devops/devops_dev/b2-bridge/ && sed -i "s/gitTag:.*/gitTag:\ '${{github.sha}}'/g"  ${{vars.DEVOPS_PROJECT}}/dev-values*.yaml
+        run: cd devops/devops_dev/b2-bridge/ && sed -i "s/gitTag:.*/gitTag:\ '${{github.sha}}'/g"  ${{vars.DEVOPS_PROJECT}}/dev-values*.yaml   ${{vars.DEVOPS_PROJECT}}-api/dev-values*.yaml
       - name: commit && push
         run: |
           cd devops
