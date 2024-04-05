@@ -257,7 +257,7 @@ func (b *Bridge) sendTransaction(ctx context.Context, fromPriv *ecdsa.PrivateKey
 	// if fail, use base gas price
 	newGasPrice, err := b.gasPrices()
 	if err != nil {
-		log.Errorf("get price err:%v", err.Error())
+		b.logger.Errorf("get price err:%v", err.Error())
 		if b.BaseGasPriceMultiple != 0 {
 			gasPrice.Mul(gasPrice, big.NewInt(b.BaseGasPriceMultiple))
 		}
@@ -272,10 +272,10 @@ func (b *Bridge) sendTransaction(ctx context.Context, fromPriv *ecdsa.PrivateKey
 	}
 
 	actualGasPrice := new(big.Int).Set(gasPrice)
-	log.Infof("gas price:%v", new(big.Float).Quo(new(big.Float).SetInt(actualGasPrice), big.NewFloat(1e9)).String())
-	log.Infof("gas price:%v", actualGasPrice.String())
-	log.Infof("nonce:%v", nonce)
-	log.Infof("from address:%v", fromAddress)
+	b.logger.Infof("gas price:%v", new(big.Float).Quo(new(big.Float).SetInt(actualGasPrice), big.NewFloat(1e9)).String())
+	b.logger.Infof("gas price:%v", actualGasPrice.String())
+	b.logger.Infof("nonce:%v", nonce)
+	b.logger.Infof("from address:%v", fromAddress)
 	callMsg := ethereum.CallMsg{
 		From:     fromAddress,
 		To:       &toAddress,
@@ -284,6 +284,7 @@ func (b *Bridge) sendTransaction(ctx context.Context, fromPriv *ecdsa.PrivateKey
 	}
 	if data != nil {
 		callMsg.Data = data
+		b.logger.Infof("data:%v", hexutil.Encode(data))
 	}
 
 	// use eth_estimateGas only check deposit err
@@ -540,7 +541,7 @@ func (b *Bridge) gasPrices() (*big.Int, error) {
 
 	stats := &B2ExplorerStatus{}
 
-	log.Infof("b2 explorer status:", string(resp.Body()))
+	b.logger.Infof("b2 explorer status:%v", string(resp.Body()))
 	err = json.Unmarshal(resp.Body(), stats)
 	if err != nil {
 		return nil, err
