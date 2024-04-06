@@ -151,7 +151,7 @@ func (b *Bridge) Deposit(
 		return nil, nil, "", "", fmt.Errorf("btc address to eth address err:%w", err)
 	}
 
-	data, err := b.ABIPack(b.ABI, "depositV3", common.HexToHash(hash), common.HexToAddress(toAddress), new(big.Int).SetInt64(amount))
+	data, err := b.ABIPack(b.ABI, "depositV4", common.HexToHash(hash), common.HexToAddress(toAddress), new(big.Int).SetInt64(amount))
 	if err != nil {
 		return nil, nil, toAddress, "", fmt.Errorf("abi pack err:%w", err)
 	}

@@ -324,6 +324,29 @@ var DefaultDepositAbi = `
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "deposit_uuid",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "b2_to_address",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "btc_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "depositV4",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "getMinB2Amount",
       "outputs": [
