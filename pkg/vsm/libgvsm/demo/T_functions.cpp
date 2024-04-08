@@ -11,7 +11,6 @@
 #include "TassAPI4GHVSM.h"
 
 using namespace std;
-
 #ifdef _WIN32
 #pragma warning(disable:4996)
 #include <WinSock2.h>
@@ -22,6 +21,34 @@ using namespace std;
 #define BUFSMALL   128
 #define BUF        1024
 
+#define CC_TO_UC(ptr) \
+    reinterpret_cast<unsigned char*>(const_cast<char*>(ptr))
+
+
+#define CHECK_RT(func, rt)\
+	if (rt)\
+	{\
+		printf("Function[%s] run failed %d | 0x%08x\n", #func, rt, rt);\
+		return;\
+	}\
+	else{\
+		printf("Function[%s] run success\n", #func);\
+	}
+
+#define PRINT_NUM(num)\
+do{\
+	printf("\t%s = %d | 0x%08X\n", #num, num, num);\
+}while(0)
+
+#define PRINT_BIN(buf, len)\
+do{\
+	printf("\t%s[%s = %d]: %s\n", #buf, #len, len, Bin2String(buf, len, true).c_str());\
+}while(0)
+
+#define PRINT_STR(buf, len)\
+do{\
+	printf("\t%s[%s = %d]: %s\n", #buf, #len, len, buf);\
+}while(0)
 static void* g_hDev = NULL, * g_hSess = NULL, * g_hKey = NULL;
 
 static unsigned char pwd[] = "a1234567";
@@ -36,6 +63,44 @@ static unsigned char* g_Data = NULL;
 static unsigned int g_DataLen = 0;
 static unsigned char* g_DataOut = NULL;
 static unsigned int g_DataOutLen = 0;
+
+string pkcs5_pad(string data) {
+	int m = 16 - data.length() % 16;
+	string padded_data = data + string(m,m);
+	return padded_data;
+}
+
+string pkcs5_unpad(string padded_data)
+{
+	unsigned char m = padded_data.at(padded_data.length() - 1);
+	string unPadded_data = padded_data.substr(0, padded_data.length() - (unsigned int)m);
+	return unPadded_data;
+}
+
+string pad_80(string data)
+{
+	int m = 16 - data.length() % 16;
+	string padded_data = data + string(m, 0x80);
+	return padded_data;
+}
+
+string unpad_80(string padded_data)
+{
+	int pad_length = 0;
+
+	for (int i = padded_data.length() - 1; i >= 0; --i) {
+		if (padded_data[i] == 0x80)
+			pad_length++;
+		else
+			break;
+	}
+
+	if (pad_length == 0)
+		return padded_data;
+
+	string unpadded_data = padded_data.substr(0, padded_data.length() - pad_length);
+	return unpadded_data;
+}
 
 #define TaMalloc(memory, type, size)    if( memory==NULL ){                     \
 											memory = (type *)malloc(size);		\
@@ -221,6 +286,7 @@ char* GetAlgStr(unsigned int algID)
 /************************************************************************/
 
 /*---------------------------设备管理类函数测试-------------------------*/
+
 void T_SDF_GetDeviceInfo()
 {
 	DEVICEINFO devInfo = { 0 };
@@ -1668,6 +1734,8 @@ void T_SDF_Encrypt_And_Decrypt_External_ECC()
 	unsigned int dataPlainLen = strlen((char*)dataPlain);
 	unsigned int algID = SGD_SM2_3;
 
+
+	
 	//生成非对称密钥
 	int rt = SDF_GenerateKeyPair_ECC(g_hSess, algID, 256, &pubKey, &priKey);
 	if (rt)
@@ -1731,7 +1799,7 @@ void T_SDF_ExternalKeyOperation_RSA()
 		dataPlain[i] = 'a';
 
 	//获取公钥
-	int rt = SDF_GenerateKeyPair_RSA(g_hSess, 4096, &rsaPubKey, &rsaPriKey);
+	int rt = SDF_GenerateKeyPair_RSA(g_hSess, 2048, &rsaPubKey, &rsaPriKey);
 	if (rt)
 	{
 		printf("\nSDF_GenerateKeyPair_RSA failed %d | 0x%08x\n", rt, rt);
@@ -2190,9 +2258,74 @@ void T_SelfTest()
 	T_HashOperationFunctions();
 	T_FileOperationFunctions();
 }
+void T_signtest()
+{
+	
+	int rt = SDF_GetPrivateKeyAccessRight(g_hSess,300,(unsigned char*)"a1234567a",9);
+	CHECK_RT(SDF_GetPrivateKeyAccessRight, rt);
+	unsigned char hash[32] = { 0 };
+	unsigned int hashLen = 32;
+	//for (int i = 0;i < 200;i++)
+	{
+		ECCSignature sign = { 0 };
+		//memset(hash, i, 32);
+		//rt = SDF_InternalSign_ECC(g_hSess,300, NULL, 0, &sign);
+		//CHECK_RT(SDF_InternalSign_ECC, rt);
+		//printf("count =%d\n\n", i);
+
+	}
+	for (int j = 0;j < 100;j++)
+	{
+		unsigned char ID[BUF] = { 0 };
+		unsigned int IDLen = 0;
+		rt = SDF_HashInit(g_hSess, SGD_SM3, NULL, ID, IDLen);
+		CHECK_RT(SDF_HashInit, rt);
+		unsigned char data[32] = { 0 };
+		unsigned int dataLen = 32;
+
+		char datastr[] = "hfwgyVbui1EwIe8mrP3yPjvorrOymuz0oIAGrvpVKls=";
+		for (int i = 0;i < 3;i++)
+		{
+			rt = SDF_HashUpdate(g_hSess, (unsigned char*)datastr, strlen(datastr));
+			CHECK_RT(SDF_HashUpdate, rt);
+		}
+		rt = SDF_HashFinal(g_hSess, hash, &hashLen);
+		CHECK_RT(SDF_HashFinal, rt);
+		unsigned int len = strlen((char*)hash);
+		printf("len=%d\n", len);
+		PRINT_BIN(hash, hashLen);
+	}
+	
+}
+
+
+
+
+
+#define PRINT_NUM(num)\
+do{\
+	printf("\t%s = %d | 0x%08X\n", #num, num, num);\
+}while(0)
+
+#define PRINT_BIN(buf, len)\
+do{\
+	printf("\t%s[%s = %d]: %s\n", #buf, #len, len, Bin2String(buf, len, true).c_str());\
+}while(0)
+
+#define PRINT_STR(buf, len)\
+do{\
+	printf("\t%s[%s = %d]: %s\n", #buf, #len, len, buf);\
+}while(0)
+
+
+#define DefineStrLen(buf, size)\
+ char buf[size] = { 0 };\
+ unsigned int buf##Len = sizeof(buf);\
+
 
 int SDFFunctionsTest(int argc, char* argv[])
 {
+
 	int rt = SDF_OpenDevice(&g_hDev);
 	if (rt) {
 		printf("SDF_OpenDevice failed %#08x\n", rt);
@@ -2206,7 +2339,6 @@ int SDFFunctionsTest(int argc, char* argv[])
 		getchar();
 		return -1;
 	}
-
 	while (1) {
 		printf("\n");
 		printf("---------------------------SDF Functions Test-------------------------\n");
@@ -2241,7 +2373,7 @@ int SDFFunctionsTest(int argc, char* argv[])
 	return 0;
 }
 
-#include "TassAPI4GHVSM.h"
+
 
 #define DefineBufLen(buf, size)\
  unsigned char buf[size] = { 0 };\
@@ -2342,12 +2474,12 @@ void T_Tass_GeneratePlainRSA_ECCKeyPair(void* hSess)
 void T_Tass_GenerateAsymmKeyWithLMK(void* hSess)
 {
 	{//生成RSA密钥
-		DefineBufLen(pubKeyN_X, 4096 / 8);
-		DefineBufLen(pubKeyE_Y, 4096 / 8);
-		DefineBufLen(priKey, 4096 / 8 * 6);
+		DefineBufLen(pubKeyN_X, 2048 / 8);
+		DefineBufLen(pubKeyE_Y, 2048 / 8);
+		DefineBufLen(priKey, 2048/ 8 * 6);
 
 		int rt = Tass_GenerateAsymmKeyWithLMK(hSess,
-			TA_RSA, 4096, TA_3,
+			TA_RSA, 2048, TA_3,
 			TA_SM2,
 			ParamBufPLen(pubKeyN_X),
 			ParamBufPLen(pubKeyE_Y),
@@ -2586,7 +2718,7 @@ void T_Tass_Generate_ImportSymmKeyWithRSA(void* hSess)
 			DefineBufLen(keyCipehrByLmk, 64);
 			rt = Tass_GenerateSymmKeyWithRSA(hSess,
 				RSA_INDEX_1,
-				NULL, NULL, NULL, NULL,
+				NULL, 0, NULL, 0,
 				keySize[i],
 				ParamBufPLen(keyCipehrByPubKey),
 				ParamBufPLen(keyCipehrByLmk));
@@ -2664,7 +2796,7 @@ void T_Tass_Generate_ImportSymmKeyWithECC(void* hSess)
 			rt = Tass_GenerateSymmKeyWithECC(hSess,
 				ECC_INDEX_1,
 				TA_SM2,
-				NULL, NULL, NULL, NULL,
+				NULL, 0, NULL, 0,
 				keySize[i],
 				ParamBufPLen(keyCipehrByPubKey),
 				ParamBufPLen(keyCipehrByLmk));
@@ -3038,7 +3170,7 @@ void T_Tass_GetIndexInfo_Get_SetKeyLabel_GetKeyIndex_GetSymmKeyInfo_GetSymmKCV_D
 
 		rt = Tass_GetSymmKCV(hSess,
 			SYMM_INDEX_1,
-			NULL, NULL, alg,
+			NULL, 0, alg,
 			kcv);
 		CheckFunctionRT(Tass_GetSymmKCV, rt);
 		if (rt == SDR_OK)
@@ -4565,6 +4697,49 @@ void T_Tass_Create_Read_Write_DeleteFile(void* hSess)
 	CheckFunctionRT(Tass_DeleteFile, rt);
 }
 
+
+void T_Tass_ProKeyDiversifyOperation(void* hSess)
+{
+	int rt = 0;
+	DefineBufLen(proKey, 256);
+	DefineBufLen(proKcv, 16);
+	rt = Tass_GenerateSymmKeyWithLMK(hSess,TA_SM4, proKey,&proKeyLen, proKcv,&proKcvLen);
+	CheckFunctionRT(Tass_GenerateSymmKeyWithLMK, rt);
+	PrintBufLen(proKey);//保护密钥
+	PrintBufLen(proKcv);
+
+	DefineBufLen(iv, 16);
+	memset(iv, 0x11, ivLen);
+	DefineBufLen(sessKeyPlain, 32);
+	memset(sessKeyPlain + 16, 0x10, 16);//给明文sessKey做PKCS7填充处理
+	DefineBufLen(sessKey, 32);
+
+	rt = Tass_SymmKeyOperation(hSess,TA_ENC,TA_CBC,iv,0,proKey,proKeyLen,TA_SM4, sessKeyPlain, sessKeyPlainLen, sessKey, NULL);
+	CheckFunctionRT(Tass_SymmKeyOperation, rt);
+	PrintBufLen(sessKey);//保护密钥加密CBC加密的会话密钥密文
+
+	DefineBufLen(sessKeyMac, 16);
+	memcpy(sessKeyMac, sessKey + sessKeyLen - 16, 16);//取最后16字节做sessKey的mac
+	PrintBufLen(sessKeyMac);
+
+	DefineBufLen(data, 32);
+	DefineBufLen(cipher, 256);
+	DefineBufLen(plain, 256);
+	rt = Tass_ProKeyDiversifyOperation(hSess, 0, TA_SM4, proKey, proKeyLen, proKcv, TA_PAD_PKCS_7, sessKey, sessKeyLen, iv, 
+		sessKeyMac, sessKeyMacLen, TA_CBC, iv, ivLen, NULL, 0, NULL, 0,TA_SM4, 0, 0, NULL,0, TA_SM4, TA_ENC, TA_ECB, 
+		data, dataLen, TA_PAD_PKCS_7, NULL, 0, NULL, 0, NULL,0,cipher,&cipherLen,NULL,0);
+	CheckFunctionRT(Tass_ProKeyDiversifyOperation, rt);
+	PrintBufLen(cipher);
+
+	rt = Tass_ProKeyDiversifyOperation(hSess, 0, TA_SM4, proKey, proKeyLen, proKcv, TA_PAD_PKCS_7, sessKey, sessKeyLen, iv,
+		sessKeyMac, sessKeyMacLen, TA_CBC, iv, ivLen, NULL, 0, NULL, 0, TA_SM4, 0, 0, NULL,0, TA_SM4, TA_DEC, TA_ECB,
+		cipher, cipherLen, TA_PAD_PKCS_7, NULL, 0, NULL, 0, NULL, 0, plain, &plainLen, NULL, 0);
+	CheckFunctionRT(Tass_ProKeyDiversifyOperation, rt);
+	PrintBufLen(plain);
+
+
+}
+
 int TassCryptoOperationFunctionsTest(void* hSess)
 {
 	while (1) {
@@ -4584,6 +4759,7 @@ int TassCryptoOperationFunctionsTest(void* hSess)
 		printf("[%d] T_Tass_Create_Read_Write_DeleteFile\n", ++i);
 		printf("[%d] T_Tass_RSASign_Verify_ExternalHash\n", ++i);
 		printf("[%d] T_Tass_MultiHash\n", ++i);
+		printf("[%d] T_Tass_ProKeyDiversifyOperation\n", ++i);
 		printf("[0] Exit\n");
 		printf("Test Command Num: ");
 		int idx;
@@ -4602,6 +4778,7 @@ int TassCryptoOperationFunctionsTest(void* hSess)
 		case 11: T_Tass_Create_Read_Write_DeleteFile(hSess); break;
 		case 12: T_Tass_RSASign_Verify_ExternalHash(hSess); break;
 		case 13: T_Tass_MultiHash(hSess); break;
+		case 14: T_Tass_ProKeyDiversifyOperation(hSess); break;
 		case 0: return 0;
 		default: printf("Invalid input\n"); continue;
 		}
@@ -5778,7 +5955,120 @@ void T_Tass_ExportMultiKeys(void* hSess)
 		printf("expKeyCipherLen = %d, expKeyCipher: %s\n", expKeyCipherLen, Bin2String(expKeyCipher, expKeyCipherLen, true).data());
 	}
 }
+void T_Tass_ExportAndImportKey(void* hSess)
+{
+	unsigned char keyCipherByLmk[64] = { 0 };
+	unsigned int keyCipherByLmkLen = sizeof(keyCipherByLmk);
 
+	unsigned char kcv[16] = { 0 };
+	unsigned int kcvLen = sizeof(kcv);
+	unsigned char iv[32] = { 0 };
+	unsigned char symmKcv[12] = { 0 };
+
+	unsigned char pubKeyN_X[128] = { 0 };
+	unsigned int pubKeyN_XLen = sizeof(pubKeyN_X);
+	unsigned char pubKeyE_Y[128] = { 0 };
+	unsigned int pubKeyE_YLen = sizeof(pubKeyE_Y);
+	unsigned char priCipherKeyByLmk[256] = { 0 };
+	unsigned int priCipherKeyByLmkLen = { 0 };
+	//生成保护密钥
+	int rt = Tass_GenerateAsymmKeyWithLMK(hSess, TA_ECC, 0, TA_3, TA_SM2, pubKeyN_X, &pubKeyN_XLen, pubKeyE_Y, &pubKeyE_YLen, priCipherKeyByLmk, &priCipherKeyByLmkLen);
+	unsigned char sm2PubKey[512] = { 0 };
+	memcpy(sm2PubKey, pubKeyN_X, pubKeyN_XLen);
+	memcpy(sm2PubKey + pubKeyN_XLen, pubKeyE_Y, pubKeyE_YLen);
+	unsigned int sm2PubKeyLen = pubKeyN_XLen+ pubKeyE_YLen;
+	if (rt)
+	{
+		printf("Tass_GenerateAsymmKeyWithLMK|Error|\n");
+	}
+	else
+	{
+		
+		printf("Tass_GenerateAsymmKeyWithLMK|Susses|\n");
+		printHex("sm2PubKey", sm2PubKey, sm2PubKeyLen);
+		printHex("priCipherKeyByLmk", priCipherKeyByLmk, priCipherKeyByLmkLen);
+	}
+	//生成目的密钥
+	rt = Tass_GenerateSymmKeyWithLMK(hSess, TA_SM4, keyCipherByLmk, &keyCipherByLmkLen, kcv, &kcvLen);
+	if (rt)
+	{
+		printf("Tass_GenerateSymmKeyWithLMK|Error|\n");
+	}
+	else
+	{
+		printf("Tass_GenerateSymmKeyWithLMK|Susses|\n");
+		printHex("keyCipherByLmk", keyCipherByLmk, keyCipherByLmkLen);
+	}
+	//LMK转SM2加密
+	unsigned char keyCipherBySm2[512] = { 0 };
+	unsigned int keyCipherBySm2Len = sizeof(keyCipherBySm2);
+		rt = Tass_ExportKey(hSess, TA_ECC, 
+		TA_SM2,
+		TA_ECB,
+		NULL,
+		NULL, 0, 
+		NULL, 0,
+		0,
+		TA_CIPHER, 
+		sm2PubKey, sm2PubKeyLen,
+		 //保护密钥
+		NULL, 
+		NULL, 0,
+		TA_NO_PAD, TA_NOHASH, TA_NOHASH, 
+		NULL, 0,
+		TA_SYMM_KEY,
+		0, TA_CIPHER,
+		TA_SM4, 
+		keyCipherByLmk, keyCipherByLmkLen,
+		//目的密钥
+		NULL, keyCipherBySm2,
+		& keyCipherBySm2Len,
+		NULL,0, NULL, 0, symmKcv);
+	if (rt)
+	{
+		printf("Tass_ExportKey|Error|\n");
+	}
+	else
+	{
+		printf("Tass_ExportKey|Susses|\n");
+		printHex("keyCipherBySm2", keyCipherBySm2, keyCipherBySm2Len);
+	}
+	unsigned char sm4CipherByLmk[512] = { 0 };
+	unsigned int sm4KeyCipherByLmkLen = sizeof(sm4CipherByLmk);
+	//SM2加密转LMK
+	rt = Tass_ImportKey(hSess, TA_ECC,
+			TA_SM2,
+			TA_ECB,
+			NULL,
+			NULL, 0, 
+			NULL, 0,
+		    NULL, 0,
+			0,
+			TA_CIPHER, 
+			priCipherKeyByLmk, priCipherKeyByLmkLen,
+		//	 //保护密钥
+			NULL, 
+			NULL, 0,
+			TA_NO_PAD, TA_NOHASH, TA_NOHASH, 
+			NULL, 0,
+			TA_SYMM_KEY,
+			TA_SM4,
+		keyCipherBySm2, keyCipherBySm2Len, NULL, NULL,0,sm4CipherByLmk,
+		&sm4KeyCipherByLmkLen,
+		 symmKcv);
+	if (rt)
+	{
+		printf("Tass_ImportKey|Error|\n");
+	}
+	else
+	{
+		printf("Tass_ImportKey|Susses|\n");
+		printHex("sm4CipherByLmk", sm4CipherByLmk, sm4KeyCipherByLmkLen);
+	}
+	
+
+
+}
 int TassOtherFunctionsTest(void* hSess)
 {
 	while (1) {
@@ -5801,6 +6091,7 @@ int TassOtherFunctionsTest(void* hSess)
 		printf("[%d] T_Tass_DeriveKeyHKDF\n", ++i);
 		printf("[%d] T_Tass_CMACSingle_CMAC_PRKDF_CMAC\n", ++i);
 		printf("[%d] T_Tass_ExportMultiKeys\n", ++i);
+		printf("[%d] T_Tass_ExportAndImportKey\n", ++i);
 		printf("[0] Exit\n");
 		printf("Test Command Num: ");
 		int idx;
@@ -5822,12 +6113,455 @@ int TassOtherFunctionsTest(void* hSess)
 		case 14: T_Tass_DeriveKeyHKDF(hSess); break;
 		case 15: T_Tass_CMACSingle_CMAC_PRKDF_CMAC(hSess); break;
 		case 16: T_Tass_ExportMultiKeys(hSess); break;
+		case 17: T_Tass_ExportAndImportKey(hSess); break;
 		case 0: return 0;
 		default: printf("Invalid input\n"); continue;
 		}
 	}
 }
+#define SYSINDEX 1
+#define KGCINDEX 2
+#define USERINDEXM1 3
+#define USERINDEXM2 4
+#define USERINDEXM3 5
+#define KGCINDEXM2 6
+#define USERINDEXMB 7
+#define USERINDEXMF 8
 
+
+
+
+
+void TassHashSingleTest(void* hSess)
+{
+	unsigned char pubKeyX[2048] = { 0 };
+	unsigned int pubKeyXLen = 2048;
+	unsigned char pubKeyY[2048] = { 0 };
+	unsigned int pubKeyYLen = 2048;
+	unsigned char priKeyD[2048] = { 0 };
+	unsigned int priKeyDLen = 2048;
+	int rt = Tass_GeneratePlainECCKeyPair(hSess, TA_SM2, pubKeyX,&pubKeyXLen, pubKeyY,&pubKeyYLen, priKeyD,&priKeyDLen);
+	CHECK_RT(Tass_GeneratePlainECCKeyPair, rt);
+	PRINT_BIN(pubKeyX, pubKeyXLen);
+	PRINT_BIN(pubKeyY, pubKeyYLen);
+	unsigned char id[1] = { 0x01 };
+	unsigned int idLen = 1;
+	unsigned char data[512] = { 0 };
+	unsigned int detaLen = 512;
+	unsigned char hash[2048] = { 0 };
+	unsigned int hashLen = 2048;
+	TA_HASH_ALG hashAlg[7] = {
+	(TA_HASH_ALG)1,(TA_HASH_ALG)2,
+	TA_SHA224,
+	TA_SHA256,
+	TA_SHA384,
+	TA_SHA512,
+	TA_SM3 ,
+	//TA_SHA3_224,
+	//TA_SHA3_256,
+	//TA_SHA3_384,
+	//TA_SHA3_512
+	};
+	for (int i = 0;i < 7;i++)
+	{
+		printf("hash alg =%d\n", hashAlg[i]);
+		if (hashAlg[i] == TA_SM3)
+		{
+			rt = Tass_HashSingle(hSess, hashAlg[i], pubKeyX, 0, pubKeyY, 0, id, 0, data, detaLen, hash, &hashLen);
+			CHECK_RT(Tass_HashSingle, rt);
+			PRINT_BIN(hash, hashLen);
+		}
+
+		rt = Tass_HashSingle(hSess, hashAlg[i], pubKeyX, pubKeyXLen, pubKeyY, pubKeyYLen, id, idLen, data, detaLen, hash, &hashLen);
+		CHECK_RT(Tass_HashSingle, rt);
+		PRINT_BIN(hash, hashLen);
+
+	}
+	
+}
+
+#if 0
+int TassHash(void* hSess)
+{
+
+	FILE* p_file = fopen("bigdata.txt", "r");
+
+	long lSize;
+
+	string str_native_json("");
+	char* szBuf;
+	if (p_file)
+	{
+		fseek(p_file, 0, SEEK_END);
+		lSize = ftell(p_file);
+		fseek(p_file, 0, SEEK_SET);
+		szBuf = new char[lSize + 1]; 
+		fread(szBuf, 1, lSize, p_file);
+		fclose(p_file);
+		szBuf[lSize] = 0;
+		str_native_json = szBuf;
+		delete szBuf;
+
+	}
+	unsigned char ctx[1024] = { 0 };
+	unsigned  int ctxLen = 1024;
+	int rt = Tass_HashInit(hSess, TA_SHA224,NULL,0,NULL,0,NULL,0, ctx,&ctxLen);
+	CHECK_RT(Tass_HashInit, rt);
+
+	unsigned int aaa = lSize / 8192;
+	for (int i = 0;i < aaa;i++)
+	{
+		string bbb = str_native_json.substr(aaa * 0, 8192);
+		unsigned char ccc[8192] = { 0 };
+		unsigned int cccLen = 8192;
+		String2Bin(bbb, ccc, &cccLen);
+		int rt = Tass_HashUpdate(hSess, ctx, ctxLen, ccc, cccLen,);
+	}
+	int rt = Tass_HashUpdate(hSess);
+	int rt = Tass_HashFinal(hSess);
+}
+#endif
+
+
+
+void TassGetKeyInfoTest(void* hSess)
+{
+	unsigned int signBits_Curve = 0;
+	TA_RSA_E signE = (TA_RSA_E)0;
+	unsigned int encBits_Curve = 0;
+	TA_RSA_E encE= (TA_RSA_E)0;
+	unsigned int priKeyPwdFlag = 0;
+	unsigned char label[1024] = { 0 };
+	unsigned int labelLen = 0;
+	unsigned char kcv[8] = { 0 };
+	unsigned char updateTime[1024] = {0};
+	int rt = Tass_GetKeyInfo(hSess, TA_SYMM,1,&signBits_Curve,&signE,&encBits_Curve,&encE ,&priKeyPwdFlag, label,&labelLen,
+		kcv, updateTime);
+	
+	CHECK_RT(Tass_GetKeyInfo, rt);
+	PRINT_NUM(signBits_Curve);
+	PRINT_NUM(signE);
+	PRINT_NUM(encBits_Curve);
+	PRINT_NUM(encE);
+	PRINT_NUM(priKeyPwdFlag);
+
+	PRINT_STR(label, labelLen);
+	PRINT_BIN(kcv, 8);
+	PRINT_STR(updateTime, 19);
+
+}
+void TassBigFileEncryptDecryptTest(void* hSess)
+{
+	unsigned char iv[16] = { 0 };
+	unsigned int ivLen = 16;
+	int rt;
+	//while (1)
+	{
+		rt = Tass_BigFileEncryptDecrypt(hSess, TA_ENC, TA_CBC, TA_AES128, iv, ivLen, 1, NULL, 0, 16, 100, 4096, 20, "in2.txt", "out2.txt");
+		if (rt)
+		{
+			printf("\nEncrypt error\n");
+		}
+		else
+		{
+			printf("\nEncrypt success\n");
+		}
+		rt = Tass_BigFileEncryptDecrypt(hSess, TA_DEC, TA_CBC, TA_AES128, iv, ivLen, 1, NULL, 0, 16, 100, 4096, 20, "out2.txt", "out_in2.txt");
+		if (rt)
+		{
+			printf("\nDecrypt error\n");
+		}
+		else
+		{
+			printf("\nDecrypt success\n");
+		}
+	}
+	
+
+
+}
+
+void TassKeySynchronousTest(void* hSess)
+{
+	DefineBufLen(sm4key, 256);
+	DefineBufLen(kcv, 8);
+	int rt = Tass_GenerateSymmKeyWithLMK(hSess, TA_SM4, sm4key, &sm4keyLen, kcv, &kcvLen);
+	//CHECK_FUN_RT(Tass_GenerateSymmKeyWithLMK, rt);
+
+
+
+	TassCommAllMessage* message = NULL;
+	Tass_CommAllMessageNew(&message);
+
+	rt = Tass_ImportKeyCipherByLMKSynchronous(hSess, 999, TA_SYMM, TA_SM2, TA_SM4, TA_SIGN, NULL, 0, NULL, 0, sm4key, sm4keyLen, kcv, 1,
+		message);
+	printf("rt = %d\n ", rt);
+	if (rt)
+	{
+		printf("[Tass_ImportKeyCipherByLMKForAll] failed %#08x\n", rt);
+		PRINT_NUM(message->hostCnt);
+		for (int i = 0;i < message->hostCnt;i++) {
+			PRINT_STR(message->hostMessage[i].ip,1);
+			PRINT_NUM(message->hostMessage[i].code);
+		}
+
+	}
+	else
+	{
+		printf("[Tass_ImportKeyCipherByLMKForAll] success \n");
+		PRINT_NUM(message->hostCnt);
+		for (int i = 0;i < message->hostCnt;i++) {
+
+			PRINT_STR(message->hostMessage[i].ip,1);
+			PRINT_NUM(message->hostMessage[i].code);
+		}
+	}
+	Tass_CommAllMessageFree(message);
+	unsigned int test = 0;
+	printf("destroy key? yes-1 no-2 \n ");
+	scanf("%d", &test);
+	if (test == 1)
+	{
+		TassCommAllMessage* message2 = NULL;
+		Tass_CommAllMessageNew(&message2);
+
+		rt = Tass_DestroyKeySynchronous(hSess, TA_SYMM, 999, message2);
+		printf("rt = %d\n ", rt);
+		if (rt)
+		{
+			printf("[Tass_DestroyKeySynchronous] failed %#08x\n", rt);
+			PRINT_NUM(message2->hostCnt);
+			for (int i = 0;i < message2->hostCnt;i++) {
+				PRINT_STR(message2->hostMessage[i].ip,1);
+				PRINT_NUM(message2->hostMessage[i].code);
+			}
+
+		}
+		else
+		{
+			printf("[Tass_DestroyKeySynchronous] success \n");
+			PRINT_NUM(message2->hostCnt);
+			for (int i = 0;i < message2->hostCnt;i++) {
+
+				PRINT_STR(message2->hostMessage[i].ip,1);
+				PRINT_NUM(message2->hostMessage[i].code);
+			}
+		}
+		Tass_CommAllMessageFree(message2);
+	}
+}
+
+#include <fstream>
+int TassFileTest(void* hSess)
+{
+	std::ifstream inputFile("1.pdf", std::ios::binary);
+	std::ofstream outputFile("2.pdf", std::ios::binary);
+	unsigned char plainText[1024] = { 0 };
+	unsigned int plainTextLen = sizeof(plainText);
+	unsigned char cipherText[1024+16] = { 0 };
+	unsigned int cipherTextLen = sizeof(cipherText)-16;
+	int count = 0,i = 0;
+	bool flag = false;
+	int rt = 0;
+
+	streampos fileSize = inputFile.tellg();
+	if (fileSize % 1024 == 0) {
+		count = fileSize / 1024;
+		flag = true;
+	}
+	while (inputFile.read(reinterpret_cast<char*>(plainText), plainTextLen)) {
+		i++;
+		if (i == count - 1)
+		{
+			string padData = pkcs5_pad(string((char*)plainText, plainTextLen));
+			rt = Tass_SymmKeyOperation(hSess,
+				TA_ENC, TA_ECB,
+				NULL,
+				1,
+				NULL, 0,
+				TA_SM4,
+				CC_TO_UC(padData.data()), padData.length(),
+				cipherText, NULL);
+			if (rt) {
+				printf("Tass_ SymmKeyOperation failed at [%d|%08x]", rt, rt);
+				return -1;
+			}
+			outputFile.write(reinterpret_cast<char*>(cipherText), padData.length());
+		}
+		else
+		{
+			rt = Tass_SymmKeyOperation(hSess,
+				TA_ENC, TA_ECB,
+				NULL,
+				1,
+				NULL, 0,
+				TA_SM4,
+				ParamBufLen(plainText),
+				cipherText, NULL);
+			if (rt) {
+				printf("Tass_ SymmKeyOperation failed at [%d|%08x]", rt, rt);
+				return -1;
+			}
+			outputFile.write(reinterpret_cast<char*>(cipherText), plainTextLen);
+		}
+	}
+	if (inputFile.gcount() > 0)
+	{//填充
+		unsigned char tmp[1024] = { 0 };
+		int tmpLen = inputFile.gcount();
+		memcpy(tmp, plainText, tmpLen);
+		string lastData = pkcs5_pad(string((char*)tmp, tmpLen));
+
+		rt = Tass_SymmKeyOperation(hSess,
+			TA_ENC, TA_ECB,
+			NULL,
+			1,
+			NULL, 0,
+			TA_SM4,
+			CC_TO_UC(lastData.data()), lastData.length(),
+			cipherText, NULL);
+		if (rt)
+			printf("Tass_ SymmKeyOperation failed at [%d|%08x]", rt, rt);
+		outputFile.write(reinterpret_cast<char*>(cipherText), lastData.length());
+	}
+
+	inputFile.close();
+	outputFile.close();
+	std::ifstream encFile("2.pdf", std::ios::binary);
+	std::ofstream decFile("3.pdf", std::ios::binary);
+	memset(plainText, 0x00, 1024);
+	memset(cipherText, 0x00, 1024+16);
+	cipherTextLen = 1024;
+	plainTextLen = 1024;
+	while (encFile.read(reinterpret_cast<char*>(cipherText), cipherTextLen)) {
+		rt = Tass_SymmKeyOperation(hSess,
+			TA_DEC, TA_ECB,
+			NULL,
+			1,
+			NULL, 0,
+			TA_SM4,
+			ParamBufLen(cipherText),
+			plainText, NULL);
+		if (rt)
+			printf("Tass_ SymmKeyOperation failed at [%d|%08x]", rt, rt);
+		decFile.write(reinterpret_cast<char*>(plainText), cipherTextLen);
+	}
+	if (encFile.gcount() > 0)
+	{//去填充
+		if (!flag)
+		{
+			int lastLen = encFile.gcount();
+			rt = Tass_SymmKeyOperation(hSess,
+				TA_DEC, TA_ECB,
+				NULL,
+				1,
+				NULL, 0,
+				TA_SM4,
+				cipherText, lastLen,
+				plainText, NULL);
+			if (rt)
+				printf("Tass_ SymmKeyOperation failed at [%d|%08x]", rt, rt);
+			string lastData = pkcs5_unpad(string((char*)plainText, lastLen));
+			decFile.write(reinterpret_cast<char*>(plainText), lastLen);
+		}
+	}
+	encFile.close();
+	decFile.close();
+}
+
+int  TassOtherFunctionsTest2(void* hSess)
+{
+	while (1) {
+		int i = 0;
+		printf("\n");
+		printf("---------------------------Tass Management Functions Test-------------------------\n");
+		printf("[%d] TassHashSingleTest\n", ++i);
+		printf("[%d] TassGetKeyInfoTest\n", ++i);
+		printf("[%d] TassBigFileEncryptDecryptTest\n", ++i);
+		printf("[%d] TassKeySynchronousTest\n", ++i);
+		printf("[0] Exit\n");
+		printf("Test Command Num: ");
+		int idx;
+		cin >> idx;
+		//idx = 1;
+		switch (idx) {
+		case 1: TassHashSingleTest(g_hSess);break;
+		case 2: TassGetKeyInfoTest(g_hSess);break;
+		case 3: TassBigFileEncryptDecryptTest(g_hSess);break;
+		case 4: TassKeySynchronousTest(g_hSess);break;
+
+		case 0:return 0;
+
+		default: printf("Invalid input\n"); continue;
+		}
+	}
+}
+void TassCertReq(void* hSess)
+{
+	int rt = 0;
+
+
+	DefineBufLen(x,256);
+	DefineBufLen(y, 256);
+	DefineBufLen(pri, 256);
+
+
+	rt = Tass_GenerateAsymmKeyWithLMK(hSess,TA_ECC,0,TA_3,TA_SM2,x,&xLen,y,&yLen,pri,&priLen);
+	CheckFunctionRT(Tass_GenerateAsymmKeyWithLMK,rt);
+	printHex("x",x, xLen);
+	printHex("y",y, yLen);
+	printHex("pri",pri, priLen);
+
+	unsigned char dn[] = "CN=N,O=U";
+	unsigned int dnLen = sizeof(dn);
+	DefineBufLen(cert, 2048);
+	rt = Tass_GenerateSignRootCert(hSess,TA_ECC,0,TA_SIGN,TA_SM2,pri,priLen,0,dn,dnLen,TA_SHA1,3650,TA_PEM,cert,&certLen);
+	CheckFunctionRT(Tass_GenerateSignRootCert, rt);
+	printf("cert:%s\n\n", cert);
+
+	DefineBufLen(reqCert, 2048);
+	rt = Tass_GenerateCertReq(g_hSess, TA_ECC, 0, TA_EXKEY, TA_SM2, pri, priLen,0, dn, dnLen, TA_SHA1, TA_PEM, reqCert, &reqCertLen);
+	CheckFunctionRT(Tass_GenerateCertReq, rt);
+	printf("reqCert:%s\n\n", reqCert);
+	
+	unsigned char dn2[] = "CN=N,O=XZ";
+	unsigned int dn2Len = sizeof(dn2);
+	DefineBufLen(cert2, 2048);
+	DefineBufLen(pubDer, 2048);
+	memcpy(pubDer, "\x30\x59\x30\x13\x06\x07\x2A\x86\x48\xCE\x3D\x02\x01\x06\x08\x2A\x81\x1C\xCF\x55\x01\x82\x2D\x03\x42\x00\x04", 27);
+	memcpy(pubDer+27, x, 32);
+	memcpy(pubDer + 27+32, y, 32);
+	pubDerLen = 27 + 32 + 32;
+	rt = Tass_IssueSubordinateCert(g_hSess, TA_ECC, 0, TA_EXKEY, TA_SM2, pri, priLen, 0, dn, dnLen,
+		1, TA_PEM, reqCert, reqCertLen, TA_ECC, 0, TA_EXKEY, TA_SM2, pubDer, pubDerLen, 0, dn2, dn2Len,
+		TA_SHA1, 3650, TA_PEM, cert2, &cert2Len);
+	CheckFunctionRT(Tass_IssueSubordinateCert, rt);
+	printf("cert2:%s\n\n", cert2);
+
+	memset(cert, 0, sizeof(cert));
+	char nsComment[] = "nsComment";
+	unsigned int nsCommentLen = strlen(nsComment);
+	char basicConstraints[] = "CA:FALSE";
+	unsigned int basicConstraintsLen = strlen(basicConstraints);
+
+	rt = Tass_GenerateSignRootCert_V2(hSess, TA_ECC, 0, TA_SIGN, TA_SM2, pri, priLen, 0, dn, dnLen, TA_SHA1, 3650, TA_PEM,
+		3,(unsigned char*)nsComment, nsCommentLen, (unsigned char*)basicConstraints, basicConstraintsLen,cert, &certLen);
+	CheckFunctionRT(Tass_GenerateSignRootCert, rt);
+	printf("cert:%s\n\n", cert);
+
+	memset(cert2, 0, sizeof(cert2));
+	rt = Tass_IssueSubordinateCert_V2(g_hSess, TA_ECC, 0, TA_EXKEY, TA_SM2, pri, priLen, 0, dn, dnLen,
+		1, TA_PEM, reqCert, reqCertLen, TA_ECC, 0, TA_EXKEY, TA_SM2, pubDer, pubDerLen, 0, dn2, dn2Len,
+		TA_SHA1, 3650, TA_PEM, 
+		3, (unsigned char*)nsComment, nsCommentLen, (unsigned char*)basicConstraints, basicConstraintsLen,cert2, &cert2Len);
+	CheckFunctionRT(Tass_IssueSubordinateCert, rt);
+	printf("cert2:%s\n\n", cert2);
+
+
+
+
+	return;
+}
 int TassManagementFunctionsTest(int argc, char* argv[])
 {
 	int rt = SDF_OpenDevice(&g_hDev);
@@ -5851,6 +6585,9 @@ int TassManagementFunctionsTest(int argc, char* argv[])
 		printf("[%d] TassManagementFunctionsTest\n", ++i);
 		printf("[%d] TassCryptoOperationFunctionsTest\n", ++i);
 		printf("[%d] TassOtherFunctionsTest\n", ++i);
+		printf("[%d] TassOtherFunctionsTest2\n", ++i);
+		printf("[%d] TassFileTest\n", ++i);
+		printf("[%d] TassCertReq\n", ++i);
 		printf("[0] Exit\n");
 		printf("Test Command Num: ");
 		int idx;
@@ -5859,6 +6596,9 @@ int TassManagementFunctionsTest(int argc, char* argv[])
 		case 1: TassManagementFunctionsTest(g_hSess); break;
 		case 2: TassCryptoOperationFunctionsTest(g_hSess); break;
 		case 3: TassOtherFunctionsTest(g_hSess); break;
+		case 4: TassOtherFunctionsTest2(g_hSess);
+		case 5: TassFileTest(g_hSess);
+		case 6: TassCertReq(g_hSess);
 		case 0:
 			SDF_CloseSession(g_hSess);
 			SDF_CloseDevice(g_hDev);
@@ -5907,17 +6647,24 @@ int Test()
 		getchar();
 		return -1;
 	}
-
+	rt = SDF_OpenSession(g_hDev, &g_hSess);
+	if (rt) {
+		printf("SDF_OpenSession failed %#08x\n", rt);
+		SDF_CloseDevice(g_hDev);
+		getchar();
+		return -1;
+	}
 	while (1)
 	{
-		rt = SDF_OpenSession(g_hDev, &g_hSess);
-		if (rt) {
-			printf("SDF_OpenSession failed %#08x\n", rt);
-			SDF_CloseDevice(g_hDev);
-			getchar();
-			return -1;
-		}
+		unsigned char key[32] = { 0 };
+		unsigned int keyLen = 32;
+		memset(key, 1, 32);
 
+		void* hKeyHdl = NULL;
+
+
+		//rt = SDF_GetSymmKeyHandle();
+#if 0
 		void* hKeyHdl = NULL;
 		void* hKeyHdl1 = NULL;
 		unsigned char iv[] = "1122334455667788";
@@ -6017,25 +6764,82 @@ int Test()
 		hKeyHdl1 = NULL;
 
 		SDF_CloseSession(g_hSess);
+#endif
+	}
+	SDF_CloseSession(g_hSess);
+	SDF_CloseDevice(g_hDev);
+	return 0;
+}
+
+
+int TassFormatTlsPassword(TassTLSHostInfo* info,
+	char pwd[128 + 1],
+	unsigned char pwdSm2Cipher[32 + 32 + 32 + 128],
+	unsigned int* pwdSm2CipherLen)
+{
+	if (info->host.protocol == 4)
+	{
+		if (!strcmp(info->host.pfxPath, "./sm2.ClientByWenHuan.sig.pfx")){
+			memcpy(pwd, "12345678", 8);
+		}
+		else {
+			memcpy(pwd, "12345678", 8);
+		}
+		
+	}
+	else
+	{
+		return -1;
 	}
 	return 0;
 }
 
+int TassTLsPwdCallBackTest(int argc, char* argv[])
+{
+	Tass_SetCbTlsPassword(TassFormatTlsPassword);
+	int rt = SDF_OpenDevice(&g_hDev);
+	if (rt) {
+		printf("SDF_OpenDevice failed %#08x\n", rt);
+		getchar();
+		return -1;
+	}
+	else{
+		printf("SDF_OpenDevice success \n");
+	}
+	rt = SDF_OpenSession(g_hDev, &g_hSess);
+	if (rt) {
+		printf("SDF_OpenSession failed %#08x\n", rt);
+		SDF_CloseDevice(g_hDev);
+		getchar();
+		return -1;
+	}
+	else {
+		printf("SDF_OpenSession success \n");
+	}
+}
+
+
+
 int main(int argc, char* argv[])
 {
+	
 	while (1)
 	{
+
 		printf("\n");
 		printf("---------------------------GHSM/GVSM Functions Test-------------------------\n");
 		printf("[1] SDF Functions Test\n");
 		printf("[2] Tass Functions Test\n");
+		printf("[3] Tass TlsPwdCallBack Test\n");
 		printf("[0] Exit\n");
 		printf("Test Command Num: ");
 		int idx;
 		cin >> idx;
+		//idx = 2;
 		switch (idx) {
 		case 1: SDFFunctionsTest(argc, argv); break;
 		case 2: TassManagementFunctionsTest(argc, argv); break;
+		case 3: TassTLsPwdCallBackTest(argc, argv); break;
 		case 0: return 0;
 		default: printf("Invalid input\n"); break;
 		}

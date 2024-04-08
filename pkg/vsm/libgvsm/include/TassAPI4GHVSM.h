@@ -33,6 +33,7 @@ extern "C" {
 	}TA_CMAC_ALG;
 
 	typedef enum {
+		TA_DES64 = 0,
 		TA_DES128 = 1,
 		TA_DES192 = 2,
 		TA_AES128 = 3,
@@ -49,6 +50,35 @@ extern "C" {
 		TA_XOR_EK_MK = 99,
 		TA_XOR = 99,
 	}TA_SYMM_ALG;
+
+	typedef enum {
+		TA_ASYM_USAGE_SIGN = 1,
+		TA_ASYM_USAGE_ENC = 2,
+		TA_ASYM_USAGE_BOTH = 3,
+	}TA_ASYM_USAGE;
+
+	typedef enum {
+		TA_SM9_STREAM = 1,
+		TA_SM9_ECB = 2,
+		TA_SM9_CBC = 3,
+		TA_SM9_CFB = 4,
+		TA_SM9_OFB = 5,
+	}TA_SM9_ENC_MODE;
+
+
+	typedef enum {
+		TA_REQ = 0,
+		TA_RSP = 1,
+	}TA_EXKEY_MODE;
+	typedef enum {
+		TA_SESS_KEY_GEN_NO = 0x00,
+		TA_SESS_KEY_GEN_00 = 0x00,
+		TA_SESS_KEY_GEN_01 = 0x01,
+		TA_SESS_KEY_GEN_02 = 0x02,
+		TA_SESS_KEY_GEN_03 = 0x03,
+		TA_SESS_KEY_GEN_04 = 0x04,
+		TA_SESS_KEY_GEN_05 = 0x05,
+	}TA_SESS_KEY_GEN_MODE;
 
 	typedef enum {
 		TA_ECB = 0,
@@ -80,22 +110,75 @@ extern "C" {
 		TA_ECC = 2,
 	}TA_KEY_TYPE;
 
+
 	typedef enum {
 		TA_SM2 = 0X0007,
-		TA_NID_NISTP256 = 0X019F,
-		TA_NID_SECP256K1 = 0X02CA,
-		TA_NID_SECP384R1 = 0X02CB,
-		TA_NID_BRAINPOOLP192R1 = 0X039B,
-		TA_NID_BRAINPOOLP256R1 = 0X03A0,
+		TA_NID_BRAINPOOLP192R1 = 0x039B,
+		TA_NID_BRAINPOOLP192T1 = 0x039C,
+		TA_NID_BRAINPOOLP224R1 = 0x039D,
+		TA_NID_BRAINPOOLP224T1 = 0x039E,
+		TA_NID_BRAINPOOLP256R1 = 0x03A0,
+		TA_NID_BRAINPOOLP256T1 = 0x039F,
+		TA_NID_BRAINPOOLP320R1 = 0x03A1,
+		TA_NID_BRAINPOOLP320T1 = 0x03A2,
+		TA_NID_BRAINPOOLP384R1 = 0x03A3,
+		TA_NID_BRAINPOOLP384T1 = 0x03A4,
+		TA_NID_BRAINPOOLP512R1 = 0x03A5,
+		TA_NID_BRAINPOOLP512T1 = 0x03A6,
+		TA_NID_X9_62_PRIME192V1 = 0x0199,
+		TA_NID_X9_62_PRIME192V2 = 0x019A,
+		TA_NID_X9_62_PRIME192V3 = 0x019B,
+		TA_NID_X9_62_PRIME256V1 = 0x019F,
+		TA_NID_SECP192K1 = 0x02C7,
+		TA_NID_SECP256K1 = 0x02CA,
+		TA_NID_SECP224R1 = 0x02C9,
+		TA_NID_SECP384R1 = 0x02CB,
+		TA_NID_SECP521R1 = 0x02CC,
+		TA_NID_SECT233K1 = 0x02D6,
+		TA_NID_SECT283K1 = 0x02D9,
+		TA_NID_SECT409K1 = 0x02DB,
+		TA_NID_SECT571K1 = 0x02DD,
+		TA_NID_SECT233R1 = 0x02D7,
+		TA_NID_SECT283R1 = 0x02DA,
+		TA_NID_SECT409R1 = 0x02DC,
+		TA_NID_SECT571R1 = 0x02DE,
+		TA_NID_X25519 = 0x040A,
+		TA_NID_X448 = 0x040B,
+		TA_NID_ED25519 = 0x043F,
+		TA_NID_ED448 = 0x0440,
+
 		TA_NID_FRP256V1 = 0X03A8,
-		TA_NID_X25519 = 0X040A,
-	}TA_ECC_CURVE;
+
+		TA_NID_SECP256R1 = TA_NID_X9_62_PRIME256V1,
+
+		TA_NID_NISTP224 = TA_NID_SECP224R1,
+		TA_NID_NISTP256 = TA_NID_X9_62_PRIME256V1,
+		TA_NID_NISTP384 = TA_NID_SECP384R1,
+		TA_NID_NISTP521 = TA_NID_SECP521R1,
+		TA_NID_NISTK233 = TA_NID_SECT233K1,
+		TA_NID_NISTK283 = TA_NID_SECT283K1,
+		TA_NID_NISTK409 = TA_NID_SECT409K1,
+		TA_NID_NISTK571 = TA_NID_SECT571K1,
+		TA_NID_NISTB233 = TA_NID_SECT233R1,
+		TA_NID_NISTB283 = TA_NID_SECT283R1,
+		TA_NID_NISTB409 = TA_NID_SECT409R1,
+		TA_NID_NISTB571 = TA_NID_SECT571R1,
+
+		TA_NID_NISTP192V1 = TA_NID_X9_62_PRIME192V1,
+		TA_NID_NISTP192V2 = TA_NID_X9_62_PRIME192V2,
+		TA_NID_NISTP192V3 = TA_NID_X9_62_PRIME192V3,
+	}TA_ECC_CURVE;  //是否支持需根据密码机服务版本而定
 
 	typedef enum {
 		TA_3 = 3,
 		TA_65537 = 65537,
 	}TA_RSA_E;
 
+	typedef enum {
+		TA_DER = 0,
+		TA_PEM = 1
+	}
+	TA_CERT_TYPE;
 	typedef enum {
 		TA_NOPAD = 0,
 		TA_PKCS1_5 = 1,
@@ -104,6 +187,7 @@ extern "C" {
 	}TA_RSA_PAD;
 
 	typedef enum {
+		TA_SHA1 = 1,
 		TA_NOHASH = 4,
 		TA_SHA224 = 5,
 		TA_SHA256 = 6,
@@ -167,6 +251,11 @@ extern "C" {
 		TA_AGREE_SHA256 = 3,
 		TA_AGREE_SHA384 = 4,
 		TA_AGREE_SHA512 = 5,
+		TA_AGREE_SM3 = 20,
+		TA_AGREE_SHA3_224 = 35,
+		TA_AGREE_SHA3_256 = 36,
+		TA_AGREE_SHA3_384 = 37,
+		TA_AGREE_SHA3_512 = 38,
 
 		TA_ECDH_NO_HASH = TA_NO_AGREE,
 		TA_ECDH_SHA1 = TA_AGREE_SHA1,
@@ -174,12 +263,21 @@ extern "C" {
 		TA_ECDH_SHA256 = TA_AGREE_SHA256,
 		TA_ECDH_SHA384 = TA_AGREE_SHA384,
 		TA_ECDH_SHA512 = TA_AGREE_SHA512,
+		TA_ECDH_SHA3_224 = TA_AGREE_SHA3_224,
+		TA_ECDH_SHA3_256 = TA_AGREE_SHA3_256,
+		TA_ECDH_SHA3_384 = TA_AGREE_SHA3_384,
+		TA_ECDH_SHA3_512 = TA_AGREE_SHA3_512,
 		TA_HMAC_HASH_SHA1 = TA_AGREE_SHA1,
 		TA_HMAC_HASH_SHA224 = TA_AGREE_SHA224,
 		TA_HMAC_HASH_SHA256 = TA_AGREE_SHA256,
 		TA_HMAC_HASH_SHA384 = TA_AGREE_SHA384,
 		TA_HMAC_HASH_SHA512 = TA_AGREE_SHA512,
+		TA_HMAC_HASH_SHA3_224 = TA_AGREE_SHA3_224,
+		TA_HMAC_HASH_SHA3_256 = TA_AGREE_SHA3_256,
+		TA_HMAC_HASH_SHA3_384 = TA_AGREE_SHA3_384,
+		TA_HMAC_HASH_SHA3_512 = TA_AGREE_SHA3_512,
 	}TA_AGREE_ALG, TA_ECDH_ALG, TA_HMAC_HASH_ALG;
+
 	typedef enum {
 		PBKDF_HMAC_SHA1 = 1,
 		PBKDF_HMAC_SHA224 = 2,
@@ -194,6 +292,19 @@ extern "C" {
 		TA_DB_LAST = 3,
 	}TA_DATA_BLOCK_TYPE;
 
+
+	typedef enum {
+		TA_SM9_DES128 = 'X',
+		TA_SM9_DES128_VAR = 'U',
+		TA_SM9_DES192 = 'Y',
+		TA_SM9_DES192_VAR = 'T',
+		TA_SM9_SM1 = 'P',
+		TA_SM9_SM4 = 'R',
+		TA_SM9_AES128 = 'L',
+		TA_SM9_AES192 = 'M',
+		TA_SM9_AES256 = 'N',
+		TA_SM9_DES64 = 'Z',
+	}TA_SM9_SYMM_ALG;
 	typedef struct {
 		unsigned char* name;//in: 要加密的name/要解密的密文
 							//out: 输出的密文缓冲区/输出的明文name缓冲区
@@ -216,6 +327,14 @@ extern "C" {
 		TA_BOOL alive;
 	}TassHostInfos;
 
+
+	typedef struct {
+		unsigned int hostCnt;
+		struct HostMessage {
+			int code;
+			char* ip;
+		}*hostMessage;
+	}TassCommAllMessage;
 	/*
 	* 接口通用规则
 	* 1、当接口同时输出数据（记为buf）和数据长度（记为pBufLen）时
@@ -223,6 +342,45 @@ extern "C" {
 	*    b) 若buf为NULL但pBufLen不为NULL，则为*pBufLen赋值，表明实际所需空间，接口返回成功
 	*    c) 若buf和pBufLen均不为NULL，则*pBufLen的表示buf的实际大小，若*pBufLen不足则赋值为实际需要的大小，接口返回空间不足（TASSR_BUFFTOOSMALL）
 	*/
+
+	typedef struct {
+		struct {
+			unsigned int index;
+			const char* ip;
+			unsigned short port;
+			unsigned int protocol;
+			const char* pfxPath;
+		}host;
+		unsigned char pwdSm2Pk[64];
+	}TassTLSHostInfo;
+
+
+	/**
+	* @brief	证书密码回调
+	* @param	hostInfo			[IN]	待返回的主机信息 包含随机生成的sm2公钥
+	* @param	pwd					[IN]	证书密码明文（与密文选其一）
+	* @param	pwdSm2Cipher		[IN]	证书密码经返回的sm2公钥加密后的密文
+	* @param	pwdSm2CipherLen		[IN]	证书密码经返回的sm2公钥加密后的密文长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	* @note		
+	*/
+	typedef int (*Tass_CbTlsPassword)(
+		TassTLSHostInfo* hostInfo,
+		char pwd[128 + 1],
+		unsigned char pwdSm2Cipher[32 + 32 + 32 + 128],
+		unsigned int* pwdSm2CipherLen);
+
+
+	/**
+	* @brief	启用证书密码回调函数
+	* @param	cbTlsPwd		[IN]	证书密码回调
+	*
+	* @note		需在初始化前调用
+	*		
+	*/
+	void Tass_SetCbTlsPassword(Tass_CbTlsPassword cbTlsPwd);
 
 	/**
 	* @brief 打开密码设备，可通过不同的配置文件打开多个设备
@@ -352,6 +510,53 @@ extern "C" {
 		unsigned char* devSn,
 		unsigned int* devSnLen,
 		unsigned int* runMode);
+
+	/**
+	* @brief	获取密码机运行状态
+	* @param	hSessionHandle			[IN]		与设备建立的会话句柄
+	* @param	devSelfCheckStatus		[OUT]		设备自检状态
+	* @param	maxConn					[OUT]		支持的最大连接数
+	* @param	useConn					[OUT]		当前已被占用的连接数
+	* @param	cpuUtility				[OUT]		CPU 利用率
+	* @param	memoryUsage				[OUT]		内存使用率
+	* @param	amount					[OUT]		开机后总笔数
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GetDevOperationStatus(void* hSessionHandle,
+		unsigned char* devSelfCheckStatus,
+		unsigned char* maxConn,
+		unsigned char* useConn,
+		unsigned char* cpuUtility,
+		unsigned char* memoryUsage,
+		unsigned char* amount);
+
+	/**
+* @brief	获取密码机状态
+* @param	hSessionHandle			[IN]		与设备建立的会话句柄
+* @param	cpuUtility				[OUT]		CPU 利用率
+* @param	memoryUsage				[OUT]		内存使用率
+* @param	hsmVersion				[OUT]		hsm 版本号
+* @param	devConn					[OUT]		密码机服务当前连接数
+* @param	hsmSeries				[OUT]		hsm 序列号
+* @param	hsmSeriesLen			[OUT]		序列号长度
+* @param	dmkcv					[OUT]		dmk校验值
+* 
+* @return
+*   @retval	0		成功
+*   @retval	非0		失败，返回错误代码
+*/
+	int Tass_GetDevStatus(void* hSessionHandle,
+		unsigned char* cpuUtility,
+		unsigned char* memoryUsage,
+		unsigned char* hsmVersion,
+		unsigned int* devConn,
+		unsigned char* hsmSeries,
+		unsigned int* hsmSeriesLen,
+		unsigned char* dmkcv);
+
+
 
 	/***************************************************************************
 	* 随机数
@@ -1947,10 +2152,10 @@ extern "C" {
 	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
 	* @param	index			[IN]		ECC密钥索引
 	* @param	curve			[IN]		曲线标识，目前只支持TA_SM2，index为0时有效
-	* @param	pubKeyX			[IN]		公钥X，index为0时有效
-	* @param	pubKeyXLen		[IN]		pubKeyX长度，index为0时有效
-	* @param	pubKeyY			[IN]		公钥Y，index为0时有效
-	* @param	pubKeyYLen		[IN]		pubKeyY长度，index为0时有效
+	* @param	pubKeyX			[IN]		公钥X
+	* @param	pubKeyXLen		[IN]		pubKeyX长度
+	* @param	pubKeyY			[IN]		公钥Y
+	* @param	pubKeyYLen		[IN]		pubKeyY长度
 	* @param	srcEnvelope		[IN]		源数字信封
 	* @param	srcEnvelopeLen	[IN]		srcEnvelope长度
 	* @param	dstEnvelope		[OUT]		目的数字信封
@@ -2924,6 +3129,7 @@ extern "C" {
 	/**
 	* @brief	对称密钥 CMAC 运算，支持多包，单包最大8192字节
 	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
+	* @param	blockType		[IN]		数据块类型
 	* @param	hmacAlg			[IN]		HMAC算法，目前支持TA_HMAC_SHA224/TA_HMAC_SHA256/TA_HMAC_SHA384/TA_HMAC_SHA512/TA_HMAC_SM3
 	*														  TA_HMAC_SHA3_224/TA_HMAC_SHA3_256/TA_HMAC_SHA3_384/TA_HMAC_SHA3_512
 	* @param	index			[IN]		索引，大于0时有效，为0时使用外部密钥
@@ -2934,8 +3140,8 @@ extern "C" {
 	* @param	dataLen			[IN]		数据长度
 	* @param	ctx				[IN|OUT]	上下文
 	* @param	ctxLen			[IN|OUT]	ctx长度(首包时长度为0)
-	* @param	hmac			[OUT]		HMAC
-	* @param	hmacLen			[OUT]		HMAC长度
+	* @param	hmac			[OUT]		HMAC，blockType=TA_DB_LAST时有效
+	* @param	hmacLen			[OUT]		HMAC长度，blockType=TA_DB_LAST时有效
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -3164,6 +3370,1194 @@ extern "C" {
 		const unsigned char* iv, unsigned int ivLen,
 		unsigned int expKeyAlgs[],
 		unsigned char* expKeyCipherByProKey, unsigned int* expKeyCipherByProKeyLen);
+
+
+
+	/**
+* @brief    产生/装载 系统签名/加密主密钥
+*
+* @param    hSessionHandle			[in]    初始化获得的句柄
+* @param    sysIndex				[in]    系统密钥索引号：0001–1024/K+3B(0x000001-0xFFFFFF); 0为不存储
+* @param    keyType					[in]	1 – 签名主密钥; 2 – 加密主密钥; 3 – 签名主密钥和加密主密钥; 固定为 3;
+* @param    sysKeyBits				[in]    系统秘钥模长 固定为 256 bit
+* @param    storeLabel				[in]    用于在密钥内部存储时标记密钥的标签说明，0-16 个 ASCII 字符;
+* @param    sysSignPubKey			[out]   系统签名公钥
+* @param    sysSignPubKeyLen		[out]   系统签名公钥长度
+* @param    sysEncPubKey			[out]   系统加密公钥
+* @param    sysEncPubKeyLen			[out]   系统加密公钥长度
+* @param    signPriKeyByLmk			[out]   系统签名私钥
+* @param    signPriKeyByLmkLen		[out]   系统签名私钥长度
+* @param    encPriKeyByLmk			[out]   系统加密私钥
+* @param    encPriKeyByLmkLen		[out]   系统加密私钥长度
+*
+* @return
+* @retval	0		成功
+* @retval	其他	失败
+*/
+	int Tass_M0_GenerateSystemMasterKey(void* hSessionHandle, unsigned int sysIndex, 
+		TA_ASYM_USAGE keyType, unsigned int sysKeyBits,const char* storeLabel, unsigned int storeLabelLen,
+		unsigned char* sysSignPubKey, unsigned int* sysSignPubKeyLen, 
+		unsigned char* sysEncPubKey, unsigned int* sysEncPubKeyLen,
+		unsigned char* signPriKeyByLmk, unsigned int* signPriKeyByLmkLen, 
+		unsigned char* encPriKeyByLmk, unsigned int* encPriKeyByLmkLen);
+
+	/**
+	* @brief    产生用户私钥 (加密/签名、KGC 用)
+	*
+	* @param    hSessionHandle			[in]    初始化获得的句柄
+	* @param    keyType					[in]    1 – 签名主密钥; 2 – 加密主密钥; 3 – 签名主密钥和加密主密钥
+	* @param    userPubKeyIndex			[in]	用户主公钥索引  仅支持外部（0）
+	* @param    userSignPubKey			[in]    用户签名主公钥,如果为长度 0000，则不输入
+	* @param    userSignPubKeyBits		[in]    用户签名主公钥模长，当 KGC 密钥索引为 0 时存在 暂时只允许输入 0
+	* @param    userEncPubKey			[in]    用户加密公钥, 长度为模长*2
+	* @param    userEncPubKeyBits		[in]	用户加密公钥模长,当 KGC 密钥索引为 0 时存在，Bit
+	* @param    userEncMode				[in]	用户加密模式,1- 流加密 2- ECB 3- CBC
+	* @param    sysPubKeyIndex			[in]	系统主密钥索引,0001–1024/K+3B(0x000001-0xFFFFFF)
+	* @param    userId					[in]	用户id
+	* @param    userIdLen				[in]	用户id长度 1-256
+	* @param    userPriKeyIndex			[in]	用户私钥存储索引,0001–1024/K+3B(0x000001-0xFFFFFF)9999 为不存储
+	* @param    storeLabel				[in]	用户私钥密钥标签,当索引不为 0 时存在
+	* @param    signPriKeyPro			[out]	签名私钥保护结构,类型为 1/3 时候存在
+	* @param    signPriKeyProLen		[out]	签名私钥保护结构长度,类型为 1/3 时候存在
+	* @param    encPriKeyPro			[out]	加密私钥保护结构,类型为 2/3 时候存在
+	* @param    encPriKeyProLen			[out]	加密私钥保护结构长度,类型为 2/3 时候存在
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M1_GenerateUserPrivateKey(void* hSessionHandle, TA_ASYM_USAGE keyType, unsigned int userPubKeyIndex, const unsigned char* userSignPubKey, unsigned int userSignPubKeyBits,
+		const unsigned char* userEncPubKey, unsigned int userEncPubKeyBits, TA_SM9_ENC_MODE userEncMode, unsigned int sysPubKeyIndex,
+		const unsigned char* userId, unsigned int userIdLen, unsigned int userPriKeyIndex, const char* storeLabel,
+		unsigned char* signPriKeyPro, unsigned int* signPriKeyProLen, unsigned char* encPriKeyPro, unsigned int* encPriKeyProLen);
+
+	/**
+	* @brief    导入用户私钥(加密/签名、运算中心) 
+	*			（可同时导入kgc）
+	*
+	* @param    hSessionHandle			[in]    初始化获得的句柄
+	* @param    keyType					[in]    1 – 签名主密钥; 2 – 加密主密钥; 3 – 签名主密钥和加密主密钥
+	* @param    userEncPriKeyIndex		[in]	用户加密主私钥索引(系统主密钥),0001–1024/K+3B(0x000001-0xFFFFFF
+	* @param    signPriKeyPro			[in]    签名私钥保护结构,类型为 1/3 时候存在
+	* @param    signPriKeyProLen		[in]    签名私钥保护结构长度,类型为 1/3 时候存在
+	* @param    encPriKeyPro			[in]    加密私钥保护结构,类型为 2/3 时候存在
+	* @param    encPriKeyProLen			[in]	加密私钥保护结构长度,类型为 2/3 时候存在
+	* @param    userPriKeyIndex			[in]	用户私钥密钥存储索引,0001–1024/K+3B(0x000001-0xFFFFFF)
+	* @param    storeLabel				[in]	用户私钥密钥标签
+	* @param    KGCPubKeyIndex			[in]	KGC 主公钥存储索引,，当为 0 的时 候，KGC 主公钥不存入加密机
+	* @param    KGCstoreLabel			[in]	KGC主公钥存储标签,当索引不为 0 时存在
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M2_ImportUserPrivateKey(void* hSessionHandle, TA_ASYM_USAGE keyType, unsigned int userEncPriKeyIndex,
+		const unsigned char* signPriKeyPro, unsigned int signPriKeyProLen, const unsigned char* encPriKeyPro, unsigned int encPriKeyProLen,
+		unsigned int userPriKeyIndex, const char* storeLabel, unsigned int KGCPubKeyIndex, const  char* KGCstoreLabel);
+
+	/**
+	* @brief    生成 SM9 用户密钥(LMK加密)
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    keyType						[in]    1 – 签名主密钥; 2 – 加密主密钥; 3 – 签名主密钥和加密主密钥
+	* @param    preproccess					[in]    预处理域生成标识  
+	* @param    sysIndex					[in]    系统主密钥索引,0001–0064  0时使用外部密钥
+	* @param    sysSignPriKey				[in]    系统签名主私钥
+	* @param    sysSignPriKeyLen			[in]    系统签名主私钥长度
+	* @param    sysSignPubKey				[in]    系统签名主公钥
+	* @param    sysSignPubKeyLen			[in]    系统签名主公钥长度
+	* @param    sysEncPriKey				[in]    系统加密主私钥
+	* @param    sysEncPriKeyLen				[in]    系统加密主私钥长度
+	* @param    sysEncPubKey				[in]    系统加密主公钥
+	* @param    sysEncPubKeyLen				[in]    系统加密主公钥长度
+	* @param    userId						[in]	用户id
+	* @param    userIdLen					[in]    用户id长度 1-256
+	* @param    userPriKeyIndex				[in]    用户私钥存储索引 0001–1024/0/K+3B(0x000001-0xFFFFFF) 0 为不存储，
+	* @param    storeLabel					[in]	用户私钥存储标签 索引为0时不存在
+	* @param    signHid						[in]	签名私钥hid  传入NULL时使用默认0x01
+	* @param    encHid						[in]	加密私钥hid  传入NULL时使用默认0x03
+	* @param    userSignPriKeyByLmk			[out]	用户签名私钥密文,类型为 1/3 时候存在
+	* @param    userSignPriKeyByLmkLen		[out]	用户签名私钥密文长度,类型为 1/3 时候存在
+	* @param    userEncPriKeyByLmk			[out]	用户加密私钥密文,类型为 2/3 时候存在
+	* @param    userEncPriKeyByLmkLen		[out]	用户加密私钥密文长度,类型为 2/3 时候存在
+	* @param    P							[out]	预处理域P 仅当preproccess=TA_TURE时存在
+	* @param    PLen						[out]	预处理域P长度
+	* @param    QB							[out]	预处理域QB 仅当preproccess=TA_TURE时存在
+	* @param    QBLen						[out]	预处理域QB长度
+	* 
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_MB_SM9GenerateUserKey(void* hSessionHandle,
+		TA_ASYM_USAGE keyType, TA_BOOL preproccess, unsigned int sysIndex,
+		const unsigned char* sysSignPriKey, unsigned int sysSignPriKeyLen,
+		const unsigned char* sysSignPubKey, unsigned int sysSignPubKeyLen,
+		const unsigned char* sysEncPriKey, unsigned int sysEncPriKeyLen,
+		const unsigned char* sysEncPubKey, unsigned int sysEncPubKeyLen,
+		const unsigned char* userId, unsigned int userIdLen,
+		unsigned int userPriKeyIndex, const char* storeLabel,
+		const unsigned char signHid, const unsigned char encHid,
+		unsigned char* userSignPriKeyByLmk, unsigned int* userSignPriKeyByLmkLen,
+		unsigned char* userEncPriKeyByLmk, unsigned int* userEncPriKeyByLmkLen,
+		unsigned char* P, unsigned int* PLen,
+		unsigned char* QB, unsigned int* QBLen);
+
+	/**
+	* @brief    导出系统主公钥(加密/签名)
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    sysIndex					[in]    系统主公钥索引，0001–1024/K+3B(0x000001-0xFFFFFF);
+	* @param    keyType						[in]    1 – 签名主密钥; 2 – 加密主密钥; 3 – 签名主密钥和加密主密钥
+	* @param    sysSignPubKey				[out]	系统签名主公钥,类型为 1/3 时候存在
+	* @param    sysSignPubKeyLen			[out]	系统签名主公钥长度,类型为 1/3 时候存在
+	* @param    sysEncPubKey				[out]	系统加密主公钥,类型为 2/3 时候存在
+	* @param    sysEncPubKeyLen				[out]	系统加密主公钥长度,类型为 2/3 时候存在
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M3_ExportSystemMasterPublicKey(void* hSessionHandle, unsigned int sysIndex, TA_ASYM_USAGE keyType,
+		unsigned char* sysSignPubKey, unsigned int* sysSignPubKeyLen, unsigned char* sysEncPubKey, unsigned int* sysEncPubKeyLen);
+
+	/**
+	* @brief    导出 KGC 主公钥
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    KGCIndex					[in]    KGC主公钥索引，0001–1024/K+3B(0x000001-0xFFFFFF);
+	* @param    keyType						[in]    1 – 签名密钥; 2 – 加密密钥; 3 – 签名密钥和加密密钥
+	* @param    KGCSignPriKey				[out]	KGC签名主私钥,类型为 1/3 时候存在
+	* @param    KGCSignPriKeyLen			[out]	KGC签名主私钥长度,类型为 1/3 时候存在
+	* @param    KGCEncPriKey				[out]	KGC加密主私钥,类型为 2/3 时候存在
+	* @param    KGCEncPriKeyLen				[out]	KGC加密主私钥长度,类型为 2/3 时候存在
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_MH_ExportKGCMasterPublicKey(void* hSessionHandle, unsigned int KGCIndex, TA_ASYM_USAGE keyType,
+		unsigned char* KGCSignPriKey, unsigned int* KGCSignPriKeyLen, unsigned char* KGCEncPriKey, unsigned int* KGCEncPriKeyLen);
+
+	/**
+	* @brief    密钥封装,使用接收方的 ID 和 KGC 加密主公钥，生成双方的会话密钥。
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    KGCIndex					[in]    KGC 主公钥索引,0001–1024/0/K+3B(0x000001-0xFFFFFF),0时使用外部公钥,9999时使用预处理域
+	* @param    KGCEncPubKey				[in]    KGC 加密主公钥,索引为0时存在
+	* @param    KGCEncPubKeyBits			[in]	KGC 加密主公钥模长,索引为0时存在
+	* @param    g							[in]	预处理域g 仅当索引值为9999时存在
+	* @param    gLen						[in]    预处理域g长度 仅当索引值为9999时存在
+	* @param    QBId						[in]	预处理域QB 可选域 仅当索引值为9999时存在
+	* @param    QBLen						[in]    预处理域QB长度 仅当索引值为9999时存在
+	* @param    userId						[in]	用户id
+	* @param    userIdLen					[in]    用户id长度 1-256
+	* @param    alg							[in]    会话密钥算法,Z/X/Y/P/R/L/M/N/Q
+	* @param    hid							[in]    可选域  NULL时内部默认0x03
+	* @param	keyPro						[out]	密钥封装结构
+	* @param    keyProLen					[out]	密钥封装结构长度
+	* @param    sessKeyCipher				[out]	会话密钥密文
+	* @param    kcv							[out]	会话密钥校验值
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M4_KeyPackage(void* hSessionHandle, unsigned int KGCIndex,
+		const unsigned char* KGCEncPubKey, unsigned int KGCEncPubKeyBits,
+		const unsigned char* g, unsigned int gLen,
+		const unsigned char* QB, unsigned int QBLen,
+		const unsigned char* userId, unsigned int userIdLen, TA_SM9_SYMM_ALG alg,
+		const unsigned char hid,
+		unsigned char* keyPro, unsigned int* keyProLen, char* sessKeyCipher, unsigned char* kcv);
+
+
+	/**
+	* @brief   密钥解封装,将密钥封装功能生成的封装数据，通过接收方的 ID 和用户私钥，生成双方的会话密钥。
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    userPriKeyIndex				[in]    用户私钥索引,0001–1024/0/K+3B(0x000001-0xFFFFFF),0时使用外部私钥
+	* @param    userEncPriKeyByLmk			[in]    用户加密私钥 当传入索引为0时存在
+	* @param    userEncPriKeyByLmkLen		[in]    用户加密私钥长度 当传入索引为0时存在
+	* @param    userId						[in]	用户id
+	* @param    userIdLen					[in]    用户id长度 1-256
+	* @param	keyPro						[in]	密钥封装结构
+	* @param    keyProLen					[in]	密钥封装结构长度
+	* @param    alg							[in]    会话密钥算法,Z/X/Y/P/R/L/M/N/Q
+	* @param    sessKeyCipher				[out]	会话密钥密文
+	* @param    kcv							[out]	会话密钥校验值
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M5_KeyUnpackage(void* hSessionHandle, unsigned int userPriKeyIndex,
+		const unsigned char* userEncPriKeyByLmk,unsigned int userEncPriKeyByLmkLen,
+		const unsigned char* userId, unsigned int userIdLen, 
+		const unsigned char* keyPro, unsigned int keyProLen,
+		TA_SM9_SYMM_ALG alg,char* sessKeyCipher, unsigned char* kcv);
+
+	/**
+	* @brief    私钥签名,使用用户签名私钥和 KGC 签名主公钥对数据进行签名。
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    KGCSignPubKeyIndex			[in]    KGC 签名主公钥索引,0001–0064 0时使用外部公钥 9999时使用预处理域
+	* @param    KGCSignPubKey				[in]    KGC 签名主公钥,索引为0时存在
+	* @param    KGCSignPubKeyLen			[in]	KGC 签名主公钥长度,索引为0时存在
+	* @param    g							[in]	预处理域g 仅当索引值为9999时存在
+	* @param    gLen						[in]    预处理域g长度 仅当索引值为9999时存在
+	* @param    QBId						[in]	预处理域QB 可选域 仅当索引值为9999时存在
+	* @param    QBLen						[in]    预处理域QB长度 仅当索引值为9999时存在
+	* @param	userSignPriKeyIndex			[in]    用户签名私钥索引,0001–1024/0/K+3B(0x000001-0xFFFFFF),0时使用外部私钥
+	* @param	userSignPriKeyByLmk			[in]    用户签名私钥密文,索引为0时存在
+	* @param	userSignPriKeyByLmkLen		[in]	用户签名私钥密文长度,索引为0时存在
+	* @param	data						[in]	待签名数据
+	* @param	dataLen						[in]	待签名数据 1-4096
+	* @param    signData					[out]	签名结构数据
+	* @param    signDataLen					[out]	签名结构数据长度
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M6_PrivateKeySign(void* hSessionHandle, unsigned int KGCSignPubKeyIndex, 
+		const unsigned char* KGCSignPubKey, unsigned KGCSignPubKeyLen,
+		const unsigned char* g, unsigned int gLen,
+		unsigned int userSignPriKeyIndex, 
+		const unsigned char* userSignPriKeyByLmk, unsigned userSignPriKeyByLmkLen,
+		const unsigned char* data, unsigned int dataLen,
+		unsigned char* signData, unsigned int* signDataLen);
+
+	/**
+	* @brief    公钥验签(内部/外部)(M7)
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    KGCSignPubKeyIndex			[in]    KGC 签名主公钥索引,0001–0064 ,0时使用外部公钥 9999时使用预处理域
+	* @param    KGCSignPubKey				[in]    KGC 签名主公钥,索引为0时存在
+	* @param    KGCSignPubKeyLen			[in]	KGC 签名主公钥长度,索引为0时存在
+	* @param    g							[in]	预处理域g 仅当索引值为9999时存在
+	* @param    gLen						[in]    预处理域g长度 仅当索引值为9999时存在
+	* @param    P							[in]	预处理域P 可选域 仅当索引值为9999时存在
+	* @param    PLen						[in]    预处理域P长度 仅当索引值为9999时存在
+	* @param    userId						[in]	用户id
+	* @param    userIdLen					[in]    用户id长度 1-256
+	* @param	data						[in]	待签名数据
+	* @param	dataLen						[in]	待签名数据 1-4096
+	* @param    signData					[in]	签名结构数据
+	* @param    signDataLen					[in]	签名结构数据长度
+	* @param    hid							[in]	可选域 0x00-0xff
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M7_PublicKeyVerify(void* hSessionHandle, unsigned int KGCSignPubKeyIndex,
+		const unsigned char* KGCSignPubKey, unsigned KGCSignPubKeyLen,
+		const unsigned char* g, unsigned int gLen,
+		const unsigned char* P, unsigned int PLen,
+		const unsigned char* userId, unsigned int userIdLen,
+		const unsigned char* data, unsigned int dataLen, 
+		const unsigned char* signData, unsigned int signDataLen,
+		const unsigned char hid);
+
+	/**
+	* @brief    公钥加密(外部),使用 KGC 加密主公钥和 ID 加密数据。
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    encMode						[in]    加密类型 1-流加密 2-ECB 3-CBC 4-CFB 5-OFB
+	* @param    pad							[in]    填充模式 仅当类型非 1-流加密时存在 
+	* @param    iv							[in]    初始向量 仅当类型非 1-流加密 2-ECB 时存在 
+	* @param    KGCEncPubKeyIndex			[in]	KGC 加密主公钥索引,0001–0064 0时使用外部密钥 9999时使用预处理域
+	* @param    KGCEncPubKey				[in]    KGC 加密主公钥,索引为0时存在
+	* @param    KGCEncPubKeyLen				[in]	KGC 加密主公钥长度,索引为0时存在
+	* @param    g							[in]	预处理域g 仅当索引值为9999时存在
+	* @param    gLen						[in]    预处理域g长度 仅当索引值为9999时存在
+	* @param    QBId						[in]	预处理域QB 可选域 仅当索引值为9999时存在
+	* @param    QBLen						[in]    预处理域QB长度 仅当索引值为9999时存在
+	* @param    userId						[in]	用户id
+	* @param    userIdLen					[in]    用户id长度 1-256
+	* @param	data						[in]	待加密数据
+	* @param	dataLen						[in]	待加密数据 当类型为 1-流加密的时候 1-4096 否则为 1-4095
+	* @param	hid							[in]	可选域 传入NULL时为默认的0x03
+	* @param    cipher						[out]	密文
+	* @param    cipherLen					[out]	密文长度
+	*
+	* @return
+	* @retval	0		成功S
+	* @retval	其他	失败
+	*/
+	int Tass_M8_PublicKeyEncrypt(void* hSessionHandle, 
+		TA_SM9_ENC_MODE encMode, TA_PAD pad,
+		const unsigned char* iv,unsigned int KGCEncPubKeyIndex, 
+		const unsigned char* KGCEncPubKey, unsigned KGCEncPubKeyLen,
+		const unsigned char* g, unsigned int gLen,
+		const unsigned char* QB, unsigned int QBLen,
+		const unsigned char* userId, unsigned int userIdLen, 
+		const unsigned char* data, unsigned int dataLen, 
+		const unsigned char hid,
+		unsigned char* cipher, unsigned int* cipherLen);
+
+
+
+	/**
+	* @brief    私钥解密(M9),使用用户私钥和 ID 解密数据。
+	*
+	* @param    hSessionHandle				[in]    初始化获得的句柄
+	* @param    encMode						[in]    加密类型 1- 流加密 2- ECB 3- CBC
+	* @param    pad							[in]    填充模式 仅当类型非 1-流加密时存在 
+	* @param    iv							[in]    初始向量 仅当类型非 1-流加密 2-ECB 时存在 
+	* @param    userEncPriKeyIndex			[in]	用户加密私钥索引,0001–1024/0/K+3B(0x000001-0xFFFFFF)
+	* @param    userEncPriKeyByLmk			[in]    用户加密私钥密文,索引为0时存在
+	* @param    userEncPriKeyByLmkLen		[in]	用户加密私钥密文长度,索引为0时存在
+	* @param    userId						[in]	用户id
+	* @param    userIdLen					[in]    用户id长度 1-256
+	* @param	cipher						[in]	待加密数据
+	* @param	cipherLen					[in]	待加密数据 当类型为 1-流加密的时候 1-4096 否则为 1-4095
+	* @param    palin						[out]	密文
+	* @param    plainLen					[out]	密文长度
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_M9_PrivateKeyDecrypt(void* hSessionHandle, 
+		TA_SM9_ENC_MODE encMode, TA_PAD pad,
+		const unsigned char* iv, unsigned int userEncPriKeyIndex,
+		const unsigned char* userEncPriKeyByLmk, unsigned userEncPriKeyByLmkLen,
+		const unsigned char* userId, unsigned int userIdLen, 
+		const unsigned char* cipher, unsigned int cipherLen, 
+		unsigned char* plain, unsigned int* plainLen);
+
+	/**
+	* @brief   保护导出用户私钥
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    encMode                     [in]    标识保护密钥加密被导出密钥时的算法模式 00 – ECB 01 – CBC
+	* @param    proKeyType                  [in]    用于加密保护被导出密钥的源密钥类型 000 – ZMK/KEK; 109 – MDK; 011 – KMC;
+	* @param    proKeyIndex                 [in]    保护密钥索引
+	* @param    proKeyCipherByLmk           [in]    保护密钥的密文
+	* @param    proDeriveCnt                [in]    保护密钥分散级数，取值范围：0-8
+	* @param    proDeriveFactor             [in]    保护密钥分散因子(串联),每级8字节,最多8级
+	* @param    sessKeyGenMode              [in]    会话密钥产生模式,TA_SESS_KEY_GEN_NO:00-TA_SESS_KEY_GEN_05:05
+	* @param    sessFactor                  [in]    会话密钥因子,当sessKeyGenMode值为01/02/05时有效,01时8字节,02/05时16字节
+	* @param    sessFactorLen               [in]    会话密钥因子长度
+	* @param    iv				            [in]    初始向量 仅 CBC 加密使用
+	* @param    userPriIndex                [in]    被保护密钥索引(用户私钥)0001–1024/0/K+3B(0x000001-0xFFFFFF) 索引为0时使用外部私钥
+	* @param    userId						[in]    用户ID 内部索引有效
+	* @param    userIdLen					[in]    用户ID长度 内部索引有效
+	* @param    userkeyType					[in]    被保护密钥类型(用户私钥)1-签名私钥 2-加密私钥 3-加密/签名私钥
+	* @param    userSignPriKey				[in]	用户签名私钥,索引为0时有效
+	* @param    userSignPriKeyLen			[in]	用户签名私钥长度,索引为0时有效
+	* @param    userEncPriKey				[in]	用户加密私钥,索引为0时有效
+	* @param    userEncPriKeyLen			[in]	用户加密私钥长度,索引为0时有效
+	* @param    userSignPriKeyPro		    [out]   用户签名私钥保护结构
+	* @param    userSignPriKeyProLen	    [out]   用户签名私钥保护结构长度
+	* @param    userEncPriKeyPro		    [out]   用户加密私钥保护结构
+	* @param    userEncPriKeyProLen			[out]   用户加密私钥保护结构长度
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_ME_ProtectExportUserPrikey(void* hSessionHandle, TA_SYMM_MODE encMode, TA_SYMM_ALG proKeyType, unsigned int proKeyIndex, const unsigned char* proKeyCipherByLmk, unsigned int proKeyCipherByLmkLen,
+		unsigned int proDeriveCnt, const unsigned char* proDeriveFactor, TA_SESS_KEY_GEN_MODE sessKeyGenMode, const unsigned char* sessFactor, unsigned int sessFactorLen,
+		const unsigned char* iv, unsigned int ivLen, unsigned int userPriIndex, const unsigned char* userId, unsigned int userIdLen, TA_ASYM_USAGE userkeyType,
+		const unsigned char* userSignPriKey, unsigned int userSignPriKeyLen, const unsigned char* userEncPriKey, unsigned int userEncPriKeyLen,
+		unsigned char* userSignPriKeyPro, unsigned int* userSignPriKeyProLen, unsigned char* userEncPriKeyPro, unsigned int* userEncPriKeyProLen);
+
+	/**
+	* @brief    保护导入用户私钥
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    encMode                     [in]    标识保护密钥加密被导出密钥时的算法模式 00 – ECB 01 – CBC
+	* @param    proKeyType                  [in]    用于加密保护被导出密钥的源密钥类型 000 – ZMK/KEK; 109 – MDK; 011 – KMC;
+	* @param    proKeyIndex                 [in]    保护密钥索引
+	* @param    proKeyCipherByLmk           [in]    保护密钥的密文
+	* @param    proDeriveCnt                [in]    保护密钥分散级数，取值范围：0-8
+	* @param    proDeriveFactor             [in]    保护密钥分散因子(串联),每级8字节,最多8级
+	* @param    sessKeyGenMode              [in]    会话密钥产生模式,TA_SESS_KEY_GEN_NO:00-TA_SESS_KEY_GEN_05:05
+	* @param    sessFactor                  [in]    会话密钥因子,当sessKeyGenMode值为01/02/05时有效,01时8字节,02/05时16字节
+	* @param    sessFactorLen               [in]    会话密钥因子长度
+	* @param    iv				            [in]    初始向量 仅 CBC 加密使用
+	* @param    ivlen				        [in]    初始向量长度 仅 CBC 加密使用
+	* @param    userkeyType					[in]    被保护密钥类型(用户私钥)1-签名私钥 2-加密私钥 3-加密/签名私钥(目前仅支持3)
+	* @param    userPriIndex                [in]    被保护密钥存储索引(用户私钥)0001–1024/0/K+3B(0x000001-0xFFFFFF) 索引为0时不存储
+	* @param    storeLabel					[in]    被保护密钥存储标签
+	* @param    storeLabelLen               [in]    被保护密钥存储标签长度
+	* @param    userId						[in]    用户ID 内部索引有效
+	* @param    userIdLen					[in]    用户ID长度 内部索引有效
+	* @param    userSignPriKeyPro		    [in]	用户签名私钥保护结构
+	* @param    userSignPriKeyProLen	    [in]	用户签名私钥保护结构长度
+	* @param    userEncPriKeyPro		    [in]	用户加密私钥保护结构
+	* @param    userEncPriKeyProLen			[in]	用户加密私钥保护结构长度
+	* @param    userSignPriKeyByLmk			[out]	用户签名私钥密文,索引为0时有效
+	* @param    userSignPriKeyByLmkLen		[out]	用户签名私钥密文长度,索引为0时有效
+	* @param    userEncPriKeyByLmk			[out]	用户加密私钥密文,索引为0时有效
+	* @param    userEncPriKeyByLmkLen		[out]	用户加密私钥密文长度,索引为0时有效
+	*
+	* @Tass_M1_GenerateUserPrivateKey
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_MF_ProtectImportUserPrikey(void* hSessionHandle, TA_SYMM_MODE encMode, TA_SYMM_ALG proKeyType, unsigned int proKeyIndex, const unsigned char* proKeyCipherByLmk, unsigned int proKeyCipherByLmkLen,
+		unsigned int proDeriveCnt, const unsigned char* proDeriveFactor, TA_SESS_KEY_GEN_MODE sessKeyGenMode, const unsigned char* sessFactor, unsigned int sessFactorLen,
+		const unsigned char* iv, unsigned int ivLen, TA_ASYM_USAGE userkeyType, unsigned int userPriIndex, const char* storeLabel, unsigned int storeLabelLen,const unsigned char* userId, unsigned int userIdLen,
+		const unsigned char* userSignPriKeyPro, unsigned int userSignPriKeyProLen, const unsigned char* userEncPriKeyPro, unsigned int userEncPriKeyProLen,
+		unsigned char* userSignPriKeyByLmk, unsigned int* userSignPriKeyByLmkLen, unsigned char* userEncPriKeyByLmk, unsigned int* userEncPriKeyByLmkLen);
+
+	/**
+	* @brief    导出用户私钥（lmk）
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    userPriKeyIndex             [in]    用户加密私钥索引 0001–1024/K+3B(0x000001-0xFFFFFF);
+	* @param    keyType						[in]    密钥类型 1 – 签名密钥; 2 – 加密密钥; 3 – 签名密钥和加密密钥;
+	* @param    userSignPriKey				[out]	用户签名私钥
+	* @param    userSignPriKeyLen			[out]	用户签名私钥长度
+	* @param    userEncPriKey				[out]	用户加密私钥
+	* @param    userEncPriKeyLen			[out]	用户加密私钥长度
+	*
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_MG_ExportUserKey(void* hSessionHandle, unsigned int userPriKeyIndex, TA_ASYM_USAGE keyType,
+		unsigned char* userSignPriKey, unsigned int* userSignPriKeyLen, unsigned char* userEncPriKey, unsigned int* userEncPriKeyLen);
+
+
+
+
+	/**
+	* @brief    密钥协商--生成临时密钥
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    KGCEncMasPubKeyIndex        [in]    KGC加密主公钥索引 默认0001-0064. 0时使用外部密钥 9999时使用预处理域Q
+	* @param    KGCEncMasPubKey				[in]    KGC加密主公钥 索引为0时存在
+	* @param    KGCEncMasPubKeyLen			[in]	KGC加密主公钥长度 
+	* @param    peerId						[in]	对方ID  1-256 索引非9999时存在
+	* @param    peerIdLen					[in]	对方ID长度
+	* @param    Q							[in]	预处理域Q 索引9999时存在
+	* @param    QLen						[in]	预处理域Q长度
+	* @param    sinHid						[in]	签名私钥hid 传入NULL时使用内部默认hid 0x03
+	* @param    randomByLmk					[out]	LMK 加密的随机数 r
+	* @param    randomByLmkLen				[out]	LMK 加密的随机数 r长度
+	* @param    tmpKey						[out]	临时密钥
+	* @param    tmpKeyLen					[out]	临时密钥长度
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_MI_GenerateTemporarySM9Key(void* hSessionHandle, unsigned int KGCEncMasPubKeyIndex,
+		const unsigned char* KGCEncMasPubKey, unsigned int KGCEncMasPubKeyLen,
+		const unsigned char* peerId, unsigned int peerIdLen,
+		const unsigned char* Q, unsigned int QLen,
+		const unsigned char sinHid,
+		unsigned char* randomByLmk, unsigned int* randomByLmkLen,
+		unsigned char* tmpKey, unsigned int* tmpKeyLen);
+
+
+
+
+
+
+
+
+
+	/**
+	* @brief    预处理
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    preAlg						[in]    预处理标识
+	*													0 - 签名 or 验签流程预处理g			  g = e(P1, Ppub-s)
+	*													1 - 签名 or 验签流程预处理P			  P = [H1(IDA||hid, N)]P2+Ppub-s
+	*													2 - 封装 or 加密流程预处理g			  g = e(Ppub-e, P2)
+	*													3 - 封装 or 加密 or 协商流程预处理 QB QB = [H1(IDB||hid, N)]P1+Ppub-e
+	* @param    Ppub						[in]    当为签名、验签流程时，此域表示 Ppub-s，格式为xa||xb||ya||yb；
+	*												当为其他流程时，此域表示 Ppub-e，格式为 x||y
+	* @param    PpubLen						[in]	PpubLen
+	* @param    userId						[in]	用户ID  可选域，仅当预处理标识为 1 or 3 时存在
+	*													当为验签流程时，此域为 IDA 长度 取值 1-256
+	*													当为其他流程时，此域为 IDB 长度 取值 1-256
+	* @param    userIdLen					[in]	用户ID 长度
+	* @param    signHid						[in]	仅当预处理标识为 1 or 3 时存在 传入NULL时内部默认签名验签 hid 为 0x01，其他流程默认 hid 为 0x03
+	* @param    outData						[out]	预处理结果
+	* @param    outDataLen					[out]	预处理结果长度
+	* @return
+	* @retval	0		成功
+	* @retval	其他	失败
+	*/
+	int Tass_MK_SM9Pretreatment(void* hSessionHandle, unsigned int preAlg,
+		const unsigned char* Ppub, unsigned int PpubLen,
+		const unsigned char* userId, unsigned int userIdLen,
+		const unsigned char signHid,
+		unsigned char* outData, unsigned int* outDataLen);
+
+
+	
+
+	int Tass_MJ_SM9ExchangeKeyOutCipherByLMK(void* hSessionHandle,
+		TA_EXKEY_MODE mode, unsigned int KGCEncMasPubKeyIndex,
+		const unsigned char* KGCEncMasPubKey, unsigned int KGCEncMasPubKeyLen,
+		const unsigned char* g, unsigned int gLen,
+		unsigned int localEncPriKeyIdx, const unsigned char* localEncPriKey, unsigned int localEncPriKeyLen,
+		const unsigned char* localId, unsigned int localIdLen,
+		const unsigned char* peerId, unsigned int peerIdLen,
+		const unsigned char* localRandomByLmk, unsigned int localRandomByLmkLen,
+		const unsigned char* localTmpKey, unsigned int localTmpKeyLen,
+		const unsigned char* peerTmpKey, unsigned int peerTmpKeyLen,
+		unsigned int exKeyBytes, TA_BOOL operationAlg,
+		unsigned char* exKeyByLmk, unsigned int* exKeyByLmkLen,
+		unsigned char* option1, unsigned int* option1Len,
+		unsigned char* option2, unsigned int* option2Len);
+
+	/**
+	* @brief    单包哈希运算
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    alg							[in]    哈希算法标识
+	* @param    pubKeyX						[in]    SM2 公钥 X 数据(HASH 算法标识为 20 长度不为 0 时存在);
+	* @param    pubKeyXLen					[in]	SM2 公钥 X 长度(HASH 算法标识为 20 时存在)
+	* @param    pubKeyY						[in]	SM2 公钥 Y 数据(HASH 算法标识为 20 长度不为 0 时存在);
+	* @param    pubKeyYLen					[in]	SM2 公钥 Y 长度(HASH 算法标识为 20 时存在)
+	* @param    userId						[in]	用户 ID 仅当 HASH 算法标识为 20 长度不为 0 时存在
+	* @param    userIdLen					[in]	用户 ID 长度(范围 0000-0032)仅当 HASH 算法标识为 20 时存在
+	* @param    data						[in]	用户加密私钥长度
+	* @param    dataLen						[in]	用户加密私钥长度
+	* @param    hash						[out]	用于 Hash 的数据
+	* @param    hashLen						[out]	用于 Hash 的数据长度（1-8192）
+	* 
+	* @return
+	* @retval	0		成功S
+	* @retval	其他	失败
+	*/
+	int Tass_HashSingle(void* hSessionHandle,
+		TA_HASH_ALG alg,
+		const unsigned char* pubKeyX, unsigned int pubKeyXLen,
+		const unsigned char* pubKeyY, unsigned int pubKeyYLen,
+		const unsigned char* userId, unsigned int userIdLen,
+		const unsigned char* data, unsigned int dataLen,
+		unsigned char* hash, unsigned int* hashLen);
+
+
+	/**
+ * @brief    获取密钥索引信息（支持大密钥容量）
+ *
+ * @param	hSessionHandle				[in]  初始化获得的句柄
+ * @param	type						[in]  密钥类型
+ * @param	indexBegin					[in]  密钥偏移值=索引，标识从本索引（包括本索引）开始查找索引信息
+ * @param	indexs						[out] 本次查找到的密钥数量（目前最大 1500）
+ * @param	nextIndexBegin				[out] 下一次密钥偏移值
+ * @param	indexCnt					[out] 获取到的密钥索引的合集
+ *
+ * @return
+ * @retval 0  成功S
+ * @retval 其他 失败
+ */
+	int Tass_GetValidIndex(void* hSessionHandle,
+		TA_KEY_TYPE type,
+		unsigned int indexBegin,
+		unsigned int* indexs,
+		unsigned int* nextIndexBegin,
+		unsigned int* indexCnt);
+
+	/**
+	* @brief    获取当前支持索引存储最大值
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    maxSymmKeyCap				[out]   对称密钥最大支持索引存储的最大值
+	* @param    maxRsaCap					[out]   rsa密钥最大支持索引存储的最大值
+	* @param    maxEccCap					[out]	ecc密钥最大支持索引存储的最大值
+	* @param    maxSm9SysKeyCap				[out]	sm9系统主密钥最大支持索引存储的最大值
+	* @param    maxSm9KgcKeyCap				[out]	sm9KGC主密钥最大支持索引存储的最大值
+	* @param    maxSm9UserKeyCap			[out]	sm9用户密钥最大支持索引存储的最大值
+	* @param    curSymmKeyCap				[out]   对称密钥当前支持索引存储的最大值
+	* @param    curRsaCap					[out]   rsa密钥当前支持索引存储的最大值
+	* @param    curEccCap					[out]	ecc密钥当前支持索引存储的最大值
+	* @param    curSm9SysKeyCap				[out]	sm9系统主密钥当前支持索引存储的最大值
+	* @param    curSm9KgcKeyCap				[out]	sm9KGC主密钥当前支持索引存储的最大值
+	* @param    curSm9UserKeyCap			[out]	sm9用户密钥当前支持索引存储的最大值
+	* 
+	* @return
+	* @retval	0		成功S
+	* @retval	其他	失败
+	*/
+	int Tass_GetIndexCapacity(void* hSessionHandle,
+		unsigned int* maxSymmKeyCap, unsigned int* maxRsaCap, unsigned int* maxEccCap,
+		unsigned int* maxSm9SysKeyCap, unsigned int* maxSm9KgcKeyCap, unsigned int* maxSm9UserKeyCap,
+		unsigned int* curSymmKeyCap, unsigned int* curRsaCap, unsigned int* curEccCap,
+		unsigned int* curSm9SysKeyCap, unsigned int* curSm9KgcKeyCap, unsigned int* curSm9UserKeyCap);
+
+
+	/**
+	* @brief    大数据加解密
+	*
+	* @param    hSessionHandle              [in]    初始化获得的句柄
+	* @param    op							[in]    加密或解密
+	* @param    mode						[in]    加/解密模式 支持TA_ECB
+	* @param    alg							[in]	算法，使用内部密钥时须与其算法一致，实际支持的算法以实际设备为准
+	* @param    iv							[in]	输入IV，mode不是TA_ECB时有效，
+	* @param    ivLen						[in]	inIv长度，mode=TA_XTS时，取值1~16字节
+	* @param    index						[in]	索引，大于0时有效，为0时使用外部密钥
+	* @param    key							[in]    密钥，index为0时有效
+	* @param    keyLen						[in]    密钥长度，index为0时有效
+	* @param    groupSize					[in]	输出填充大小最大值
+	* @param    cacheCnt					[in]	缓存块
+	* @param    cacheBlockSize				[in]	缓存块大小
+	* @param    threadNum					[in]	线程数
+	* @param    inPath						[in]	输入文件
+	* @param    outPath						[out]	输出文件
+	* 
+	* @return
+	* @retval	0		成功S
+	* @retval	其他	失败
+	*/
+	int Tass_BigFileEncryptDecrypt(void* hSessionHandle,
+		TA_SYMM_OP op,
+		TA_SYMM_MODE mode,
+		TA_SYMM_ALG alg,
+		unsigned char *iv,unsigned int ivLen,
+		unsigned int index, const unsigned char* key,unsigned int keyLen,
+		unsigned int groupSize,
+		unsigned int cacheCnt,
+		unsigned int cacheBlockSize,
+		unsigned int threadNum,
+		const char* inPath,
+		const char* outPath);
+
+
+
+
+	
+	/**
+	* @brief	创建同步信息
+	* @param	message						[IN/OUT]	同步信息 传入前需置空
+	* @return
+	*/
+	TassCommAllMessage* Tass_CommAllMessageNew(TassCommAllMessage** message);
+
+	/**
+	* @brief	释放同步信息
+	* @param	message						[IN]		同步信息
+	* @return
+	*/
+	void Tass_CommAllMessageFree(TassCommAllMessage* message);
+
+	/**
+	* @brief	向所有设备导入LMK加密的密钥
+	* @param	hSessionHandle				[IN]		与设备建立的会话句柄
+	* @param	index						[IN]		要导入的索引
+	* @param	type						[IN]		密钥类型
+	* @param	curve						[IN]		ECC曲线，type为TA_ECC时有效
+	* @param	alg							[IN]		对称密钥算法，type为TA_SYMM时有效
+	* @param	usage						[IN]		非对称密钥用途，type不为TA_SYMM时有效
+	* @param	pubKeyN_X					[IN]		公钥N（RSA)或X（ECC)，type不为TA_SYMM时有效
+	* @param	pubKeyN_XLen				[IN]		pubKeyN_XLen长度，type不为TA_SYMM时有效
+	* @param	pubKeyE_Y					[IN]		公钥E（RSA)或Y（ECC)，type不为TA_SYMM时有效
+	* @param	pubKeyE_YLen				[IN]		pubKeyE_YLen长度，type不为TA_SYMM时有效
+	* @param	pri_symmKeyCipherByLmk		[IN]		私钥或对称密钥密文
+	* @param	pri_symmKeyCipherByLmkLen	[IN]		pri_symmKeyCipherByLmkLen长度
+	* @param	symmKcv						[IN]		对称密钥校验值，type为TA_SYMM时有效
+	* @param	coverFlag    				[IN]		密钥存在时是否覆盖密钥，0：不覆盖，非0：覆盖
+	* @param	message    					[IN]		密钥导入信息
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_ImportKeyCipherByLMKSynchronous(void* hSessionHandle,
+		unsigned int index,
+		TA_KEY_TYPE type,
+		TA_ECC_CURVE curve,
+		TA_SYMM_ALG alg,
+		TA_ASYMM_USAGE usage,
+		const unsigned char* pubKeyN_X, unsigned int pubKeyN_XLen,
+		const unsigned char* pubKeyE_Y, unsigned int pubKeyE_YLen,
+		const unsigned char* pri_symmKeyCipherByLmk, unsigned int pri_symmKeyCipherByLmkLen,
+		const unsigned char symmKcv[8],
+		unsigned int coverFlag,
+		TassCommAllMessage* message);
+
+	/**
+	* @brief	销毁所有设备指定索引的密钥
+	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
+	* @param	type			[IN]	密钥类型
+	* @param	index			[IN]	密钥索引
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_DestroyKeySynchronous(void* hSessionHandle,
+		TA_KEY_TYPE type,
+		unsigned int index,
+		TassCommAllMessage* message);
+
+
+	/**
+	* @brief	获取密钥同步状态
+	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
+	* @param	type			[IN]	密钥类型
+	* @param	index			[IN]	密钥索引
+	* @param	keyStatus		[IN]	密钥状态 0-正常 1-创建中 2-删除中
+	* @param	message			[OUT]	状态信息
+	* 
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GetKeyStatusSynchronous(void* hSessionHandle, TA_KEY_TYPE type,
+		unsigned int index, unsigned int* keyStatus, TassCommAllMessage* message);
+
+	/**
+	* @brief	同步创建文件
+	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
+	* @param	name			[IN]		文件名
+	* @param	nameLen			[IN]		name长度，最大128字节
+	* @param	size			[IN]		文件大小，最大8192字节
+	* @param	message			[OUT]		状态信息
+	*
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_CreateFileSynchronous(void* hSessionHandle,
+		const unsigned char* name, unsigned int nameLen,
+		unsigned int size, TassCommAllMessage* message);
+
+	/**
+	* @brief	同步写文件
+	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
+	* @param	name			[IN]		文件名
+	* @param	nameLen			[IN]		name长度，最大128字节
+	* @param	offset			[IN]		偏移
+	* @param	data			[IN]		写入的数据，最大4096字节
+	* @param	dataLen			[IN]		data长度
+	* @param	message			[OUT]		状态信息
+	*
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_WriteFileSynchronous(void* hSessionHandle,
+		const unsigned char* name, unsigned int nameLen,
+		unsigned int offset,
+		const unsigned char* data, unsigned int dataLen, TassCommAllMessage* message);
+
+	/**
+	* @brief	同步删除文件
+	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
+	* @param	name			[IN]		文件名
+	* @param	nameLen			[IN]		name长度，最大128字节
+	* @param	message			[OUT]		状态信息
+	* 
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_DeleteFileSynchronous(void* hSessionHandle,
+		const unsigned char* name, unsigned int nameLen, TassCommAllMessage* message);
+
+
+	/**
+	* @brief	导入受 KEK 加密的会话密钥密文并进行加解密运算（密钥分散）
+	* @param	hSessionHandle				[IN]		与设备建立的会话句柄
+	* @param	proKeyIdx					[IN]		保护密钥索引 0为使用外部密钥
+	* @param	proKeyAlgm					[IN]		保护密钥算法标识
+	* @param	proKeyCipherByLmk			[IN]		保护密钥密文		当proKeyIdx=0时存在
+	* @param	proKeyCipherByLmkLen		[IN]		保护密钥密文长度	当proKeyIdx=0时存在
+	* @param	proKeyKcv					[IN]		保护密钥校验值		当proKeyIdx=0时存在
+	* @param	proKeyEncpad				[IN]		保护密钥加密填充方式 仅支持 TA_PAD_PKCS_7 - PKCS#7填充
+	* @param	sessKeyCipher				[IN]		会话密钥密文
+	* @param	sessKeyCipherLen			[IN]		会话密钥密文长度
+	* @param	sessKeyIV					[IN]		会话密钥IV 用于计算会话密钥MAC 固定传入16字节数据 当为DES算法时自动取前8字节
+	* @param	sessKeyMac					[IN]		会话密钥MAC （注：此MAC为保护密钥CBC加密会话密钥的结果的后16/8字节，iv为sessKeyIV）
+	* @param	sessKeyMacLen				[IN]		会话密钥MAC长度 
+	* @param	proKeyEncMode				[IN]		保护密钥加密时的加密模式 仅支持 ECB CBC GCM
+	* @param	proKeyEncIV					[IN]		保护密钥加密时的IV		当proKeyEncMode为 CBC GCM 时存在
+	* @param	proKeyEncIVLen				[IN]		保护密钥加密时的IV长度  当proKeyEncMode为 CBC GCM 时存在
+	* @param	proKeyEncAdd				[IN]		保护密钥加密时的ADD认证数据		当proKeyEncMode为 GCM ，且 proKeyAlgm 不为 DES 算法时存在
+	* @param	proKeyEncAddLen				[IN]		保护密钥加密时的ADD认证数据长度 当proKeyEncMode为 GCM ，且 proKeyAlgm 不为 DES 算法时存在
+	* @param	proKeyEncTags				[IN]		保护密钥加密时的tags		当proKeyEncMode为 GCM 时存在
+	* @param	proKeyEncTagsLen			[IN]		保护密钥加密时的tags长度	当proKeyEncMode为 GCM 时存在
+	* @param	sessKeyAlg					[IN]		解密后的会话密钥算法标识
+	* @param	deriveCnt					[IN]		会话密钥分散级数 0-8 0时为不分散
+	* @param	deriveMode					[IN]		会话密钥分散模式 0-4  当deriveCnt不为0时存在
+	*															0 – PBOC 子密钥分散算法;用于分散产生应用子密钥;8 字节分散因子 D，使用源密钥对 16 字节[D|D 的非]采用源密钥的算法标识进行 ECB 模式加密;
+	*															1 – ECB 模式加密 16 字节分散因子;
+	*															2 – ECB 模式加密 16 字节分散因子，并复制扩展为 32字节长度密钥（仅限会话密钥类型为 05）;
+	*															3 – CBC 模式加密 16 字节分散因子;
+	*															4 – ECB 模式加密分散因子，分散因子必须为 8 字节倍数，且至少 16 字节。截取加密结果的前后各 8 字节作为子密钥（仅限会话密钥类型为 01）;
+	* @param	deriveFactor				[IN]		分散因子 多级分散因子串联 当deriveCnt不为0时存在
+	* @param	deriveFactorLen				[IN]		分散因子长度 多级分散因子串联 当deriveCnt不为0时存在
+	* @param	subKeyAlg					[IN]		会话密钥分散的子密钥类型  当deriveCnt不为0时存在 仅支持 DES128 AES128 AES256 SM1 SM4
+	* @param	op							[IN]		运算类型 TA_ENC为加密  TA_DEC为解密
+	* @param	subKeyMode					[IN]		加解密算法模式  仅支持 ECB CBC GCM
+	* @param	data						[IN]		需要运算的数据
+	*v@param	dataLen						[IN]		需要运算的数据长度 加密小于8192字节 解密小于8192+32字节
+	* @param	pad							[IN]		数据填充方式 仅支持 TA_PAD_PKCS_7 - PKCS#7填充
+	* @param	iv							[IN]		运算IV		仅当subKeyMode为CBC GCM 时存在
+	* @param	ivLen						[IN]		运算IV长度  仅当subKeyMode为CBC GCM 时存在
+	* @param	add							[IN]		运算认证数据 AAD		仅当subKeyMode为 GCM 时存在
+	* @param	addLen						[IN]		运算认证数据 AAD长度	仅当subKeyMode为 GCM 时存在 取值0-8192
+	* @param	tags						[IN]		tags		仅当op=TA_DEC(解密) 且subKeyAlg为GCM时存在
+	* @param	tagsLen						[IN]		tags长度	仅当op=TA_DEC(解密) 且subKeyAlg为GCM时存在
+	* @param	outData						[OUT]		输出数据
+	* @param	outDataLen					[OUT]		输出数据长度
+	* @param	outTags						[IN]		输出tags		仅当op=TA_ENC(加密) 且subKeyAlg为GCM时存在
+	* @param	outTagsLen					[OUT]		输出tags长度	仅当op=TA_ENC(加密) 且subKeyAlg为GCM时存在
+	*
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_ProKeyDiversifyOperation(void* hSessionHandle,
+		unsigned int proKeyIdx, TA_SYMM_ALG proKeyAlgm,
+		const unsigned char* proKeyCipherByLmk, unsigned int proKeyCipherByLmkLen,
+		const unsigned char proKeyKcv[8], TA_PAD proKeyEncpad,
+		const unsigned char* sessKeyCipher, unsigned int sessKeyCipherLen,
+		const unsigned char* sessKeyIV, const unsigned char* sessKeyMac, unsigned int sessKeyMacLen,
+		TA_SYMM_MODE proKeyEncMode, const unsigned char* proKeyEncIV, unsigned int proKeyEncIVLen,
+		const unsigned char* proKeyEncAdd, unsigned int proKeyEncAddLen,
+		const unsigned char* proKeyEncTags, unsigned int proKeyEncTagsLen,
+		TA_SYMM_ALG sessKeyAlg, unsigned int deriveCnt, unsigned int deriveMode, const unsigned char* deriveFactor,unsigned int deriveFactorLen,
+		TA_SYMM_ALG subKeyAlg, TA_SYMM_OP op, TA_SYMM_MODE subKeyMode,
+		const unsigned char* data, unsigned int dataLen, TA_PAD pad,
+		const unsigned char* iv, unsigned int ivLen,
+		const unsigned char* add, unsigned int addLen,
+		const unsigned char* tags, unsigned int tagsLen,
+		unsigned char* outData, unsigned int* outDataLen,
+		unsigned char* outTags, unsigned int* outTagsLen);
+
+
+
+	/**
+	* @brief	将lmk加密的对称密钥密文转换为密钥句柄
+	* @param	hSessionHandle			[IN]		与设备建立的会话句柄
+	* @param	keyCipherByLmk			[IN]		lmk加密的对称密钥密文
+	* @param	keyCipherByLmkLen		[IN]		lmk加密的对称密钥密文长度
+	* @param	keyHandle				[OUT]		密钥句柄
+	*
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GetKeyHandleFromKeyCipherByLmk(void* hSessionHandle, const unsigned char* keyCipherByLmk, unsigned int keyCipherByLmkLen, void** keyHandle);
+
+
+
+	/**
+	* @brief	将密钥句柄转换为lmk加密的对称密钥密文
+	* @param	hSessionHandle			[IN]		与设备建立的会话句柄
+	* @param	keyHandle				[IN]		密钥句柄
+	* @param	keyCipherByLmk			[OUT]		lmk加密的对称密钥密文
+	* @param	keyCipherByLmkLen		[OUT]		lmk加密的对称密钥密文长度
+
+	*
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GetKeyCipherByLmkFromKeyHandle(void* hSessionHandle, void* keyHandle, unsigned char* keyCipherByLmk, unsigned int* keyCipherByLmkLen);
+
+
+	/**
+	* @brief	对称密钥计算MAC
+	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
+	* @param	mode			[IN]		计算MAC模式
+	* @param	iv				[IN]		IV
+	* @param	index			[IN]		索引，大于0时有效，为0时使用外部密钥
+	* @param	plain			[IN]		是否为明文密钥
+	* @param	key				[IN]		密钥，index为0时有效
+	* @param	keyLen			[IN]		密钥长度，index为0时有效
+	* @param	alg				[IN]		算法，使用内部密钥时须与其算法一致，实际支持的算法以实际设备为准
+	* @param	data			[IN]		数据
+	* @param	dataLen			[IN]		data长度，必须为分组长度的整数倍，最大8192字节
+	* @param	mac				[OUT]		MAC
+	* @param	macLen			[IN|OUT]	输入时：mac大小，输出时：mac长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_CalculateMAC_V2(void* hSessionHandle,
+		TA_SYMM_MAC_MODE mode,
+		const unsigned char* iv,
+		unsigned int index,
+		TA_BOOL plain,
+		const unsigned char* key, unsigned int keyLen,
+		TA_SYMM_ALG alg,
+		const unsigned char* data, unsigned int dataLen,
+		unsigned char* mac, unsigned int* macLen);
+
+
+
+	/**
+	* @brief	产生自签名根证
+	* @param	hSessionHandle	            [IN]		与设备建立的会话句柄
+	* @param	keyType			            [IN]		密钥类型,仅支持TA_RSA,TA_ECC
+	* @param	index		            	[IN]		非对称密钥索引 0-1024 0时使用外部密钥
+	* @param	usage			            [IN]		密钥使用标识 仅当密钥索引非0时存在
+	* @param	curve			            [IN]		ecc曲线标识 仅当密钥索引为0，且密钥类型为TA_SM2时存在
+	* @param	priKeyCipherByLmk			[IN]		LMK加密的私钥密文 仅当index=0时存在
+	* @param	priKeyCipherByLmkLen		[IN]		LMK加密的私钥密文长度
+	* @param	dnType				        [IN]		DN间隔符类型 0 - 逗号分隔 1 - 斜线分隔
+	* @param	dn			                [IN]		证书DN
+	* @param	dnLen			            [IN]		证书DN长度
+	* @param	alg			                [IN]		算法标识TA_SHA1 - Sha1WithRSA/SHA1（非SM2）
+																TA_SHA256 - Sha256WithRSA/SHA256（非SM2）
+																TA_SM3 - SM3WithSM2（仅SM2）
+	* @param	vaildTime			        [IN]	    有效期(天)1 - 3650
+	* @param	outCertType			        [IN]		证书输出格式
+	* @param	cert			            [OUT]		输出的自签名证书
+	* @param	certLen			            [OUT]		输出的自签名证书长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GenerateSignRootCert(void* hSessionHandle,
+		TA_KEY_TYPE keyType,
+		unsigned int index,
+		TA_ASYMM_USAGE usage,
+		TA_ECC_CURVE curve,
+		const unsigned  char* priKeyCipherByLmk,
+		unsigned int priKeyCipherByLmkLen,
+		unsigned int dnType,
+		const unsigned  char* dn,
+		unsigned int dnLen,
+		TA_HASH_ALG alg,
+		unsigned int vaildTime,
+		TA_CERT_TYPE outCertType,
+		unsigned  char* cert,
+		unsigned  int* certLen);
+
+
+	/**
+	* @brief	产生自签名根证(带扩展属性)
+	* @param	hSessionHandle	            [IN]		与设备建立的会话句柄
+	* @param	keyType			            [IN]		密钥类型,仅支持TA_RSA,TA_ECC
+	* @param	index		            	[IN]		非对称密钥索引 0-1024 0时使用外部密钥
+	* @param	usage			            [IN]		密钥使用标识 仅当密钥索引非0时存在
+	* @param	curve			            [IN]		ecc曲线标识 仅当密钥索引为0，且密钥类型为TA_SM2时存在
+	* @param	priKeyCipherByLmk			[IN]		LMK加密的私钥密文 仅当index=0时存在
+	* @param	priKeyCipherByLmkLen		[IN]		LMK加密的私钥密文长度
+	* @param	dnType				        [IN]		DN间隔符类型 0 - 逗号分隔 1 - 斜线分隔
+	* @param	dn			                [IN]		证书DN
+	* @param	dnLen			            [IN]		证书DN长度
+	* @param	alg			                [IN]		算法标识TA_SHA1 - Sha1WithRSA/SHA1（非SM2）
+																TA_SHA256 - Sha256WithRSA/SHA256（非SM2）
+																TA_SM3 - SM3WithSM2（仅SM2）
+	* @param	vaildTime			        [IN]	    有效期(天)1 - 3650
+	* @param	outCertType			        [IN]		证书输出格式
+	* @param	extendedAlg			        [IN]		扩展属性类型 0-3
+																0 - 无扩展属性
+																1 - nsComment
+																2 - basicConstraints
+																3 - nsComment + basicConstraints
+	* @param	nsComment			        [IN]		扩展属性1 nsComment 仅当扩展属性域标识为1或3时存在
+	* @param	nsCommentLen			    [IN]		扩展属性1 nsComment长度 仅当扩展属性域标识为1或3时存在
+	* @param	basicConstraints			[IN]		扩展属性2 basicConstraints 仅当扩展属性域标识为2或3时存在
+	* @param	basicConstraintsLen			[IN]		扩展属性2 basicConstraintsLen 仅当扩展属性域标识为2或3时存在
+	* @param	cert			            [OUT]		输出的自签名证书
+	* @param	certLen			            [OUT]		输出的自签名证书长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GenerateSignRootCert_V2(void* hSessionHandle,
+		TA_KEY_TYPE keyType,
+		unsigned int index,
+		TA_ASYMM_USAGE usage,
+		TA_ECC_CURVE curve,
+		const unsigned  char* priKeyCipherByLmk,
+		unsigned int priKeyCipherByLmkLen,
+		unsigned int dnType,
+		const unsigned  char* dn,
+		unsigned int dnLen,
+		TA_HASH_ALG alg,
+		unsigned int vaildTime,
+		TA_CERT_TYPE outCertType,
+		unsigned int extendedAlg,
+		const unsigned char* nsComment,
+		unsigned int nsCommentLen,
+		const unsigned char* basicConstraints,
+		unsigned int basicConstraintsLen,
+		unsigned  char* cert,
+		unsigned  int* certLen);
+
+
+	/**
+	* @brief	签发下级证书
+	* @param	hSessionHandle	            [IN]		与设备建立的会话句柄
+	* @param	supKeyType					[IN]		上级密钥类型，仅支持 TA_RSA TA_ECC
+	* @param	supIndex		            [IN]		上级密钥索引 0-1024 0时使用外部密钥
+	* @param	supUsage			        [IN]		上级密钥使用标识 仅当上级密钥索引非0时存在
+	* @param	supCurve			        [IN]		上级ECC密钥曲线标识，仅当上级密钥索引为0，且密钥类型为TA_ECC时存在
+	* @param	supPriKeyCipherByLmk	    [IN]		上级LMK加密的私钥密文，仅当上级密钥索引为0时存在
+	* @param	supPriKeyCipherByLmkLen		[IN]		上级LMK加密的私钥密文长度
+	* @param	supDNType				    [IN]		 DN间隔符类型 : 0 - 逗号分隔 1 - 斜线分隔
+	* @param	superDN			            [IN]		上级证书DN 1-256字节
+	* @param	superDNLen			        [IN]		上级证书DN长度
+	* @param	issueType					[IN]		签发类型:0 - 证书请求签发  1 - 密钥签发
+	* @param	reqCertType			        [IN]	    证书请求类型: TA_DER - DER编码   TA_PEM - PEM格式 ，仅当签发类型为0时存在
+	* @param	reqCert			            [IN]		证书请求，仅当签发类型为0时存在
+	* @param    reqCertLen                  [IN]        证书请求长度
+	* @param	subKeyType					[IN]  		下级密钥类型 仅支持 TA_RSA TA_ECC 仅当签发类型为1时存在
+	* @param	subIndex		            [IN]  	    下级密钥索引 仅当签发类型为1时存在 0-1024 0时使用外部密钥
+	* @param	subUsage			        [IN]  		下级密钥使用标识 仅当下级密钥索引非0时存在
+	* @param	subCurve		            [IN]  	    下级ECC密钥曲线标识 仅当下级密钥索引为0，且密钥类型为TA_ECC时存在
+	* @param	subPucKeyDer			    [IN]  		下级密钥公钥（Der编码格式） 仅当签发类型为1且下级密钥索引为0时存在
+	* @param	subPucKeyDerLen				[IN]  	    下级密钥公钥（Der编码格式）长度 仅当签发类型为1且下级密钥索引为0时存在
+	* @param	subDNType			        [IN]  		DN间隔符类型: 0 - 逗号分隔 1 - 斜线分隔 仅当签发类型为1时存在
+	* @param	subDN			            [IN]  		下级证书DN 仅当签发类型为1时存在
+	* @param	subDNLen		            [IN]  	    下级证书DN长度                        
+	* @param	alg			                [IN]  		算法标识 TA_SHA1 - Sha1WithRSA/SHA1（非SM2）
+																 TA_SHA256 - Sha256WithRSA/SHA256（非SM2）
+																 TA_SM3 - SM3WithSM2（SM2）
+	* @param	vaildTime		            [IN]  	    有效期(天) 1-3650
+	* @param	outCertType		            [IN]  	    输出格式： TA_DER - der编码格式   TA_PEM - PEM格式
+	* @param	extendedAlg			        [IN]		扩展属性类型 0-3
+																0 - 无扩展属性
+																1 - nsComment
+																2 - basicConstraints
+																3 - nsComment + basicConstraints
+	* @param	nsComment			        [IN]		扩展属性1 nsComment 仅当扩展属性域标识为1或3时存在
+	* @param	nsCommentLen			    [IN]		扩展属性1 nsComment长度 仅当扩展属性域标识为1或3时存在
+	* @param	basicConstraints			[IN]		扩展属性2 basicConstraints 仅当扩展属性域标识为2或3时存在
+	* @param	basicConstraintsLen			[IN]		扩展属性2 basicConstraintsLen 仅当扩展属性域标识为2或3时存在
+	* @param	cert			            [OUT]		输出的自签名证书
+	* @param	certLen			            [OUT]	    输出的自签名证书长度
+	* @return
+	* @retval	0		成功
+	* @retval	非0		失败，返回错误代码
+	*/
+	int Tass_IssueSubordinateCert_V2(void* hSessionHandle,
+		TA_KEY_TYPE supKeyType,//上级密钥类型
+		unsigned int supIndex,
+		TA_ASYMM_USAGE supUsage,
+		TA_ECC_CURVE supCurve,
+		const unsigned  char* supPriKeyCipherByLmk,
+		unsigned int supPriKeyCipherByLmkLen,
+		unsigned int supDNType,
+		const unsigned  char* supDN,
+		unsigned int supDNLen,
+		unsigned int issueType, TA_CERT_TYPE reqCertType,
+		unsigned char* reqCert, unsigned int reqCertLen,
+		//下级密钥类型
+		TA_KEY_TYPE subKeyType,
+		unsigned int subIndex,
+		TA_ASYMM_USAGE subUsage,
+		TA_ECC_CURVE subCurve,
+		const unsigned  char* subPucKeyDer,
+		unsigned int subPucKeyDerLen,
+		unsigned int subDNType,
+		const unsigned   char* subDN,
+		unsigned int subDNLen,
+		TA_HASH_ALG alg,
+		unsigned int vaildTime, TA_CERT_TYPE outCertType,
+		unsigned int extendedAlg,
+		const unsigned char* nsComment,
+		unsigned int nsCommentLen,
+		const unsigned char* basicConstraints,
+		unsigned int basicConstraintsLen,
+		unsigned char* cert, unsigned int* certLen);
+
+
+
+
+	/**
+	* @brief	签发下级证书（带扩展属性）
+	* @param	hSessionHandle	            [IN]		与设备建立的会话句柄
+	* @param	supKeyType					[IN]		上级密钥类型，仅支持 TA_RSA TA_ECC
+	* @param	supIndex		            [IN]		上级密钥索引 0-1024 0时使用外部密钥
+	* @param	supUsage			        [IN]		上级密钥使用标识 仅当上级密钥索引非0时存在
+	* @param	supCurve			        [IN]		上级ECC密钥曲线标识，仅当上级密钥索引为0，且密钥类型为TA_ECC时存在
+	* @param	supPriKeyCipherByLmk	    [IN]		上级LMK加密的私钥密文，仅当上级密钥索引为0时存在
+	* @param	supPriKeyCipherByLmkLen		[IN]		上级LMK加密的私钥密文长度
+	* @param	supDNType				    [IN]		 DN间隔符类型 : 0 - 逗号分隔 1 - 斜线分隔
+	* @param	superDN			            [IN]		上级证书DN 1-256字节
+	* @param	superDNLen			        [IN]		上级证书DN长度
+	* @param	issueType					[IN]		签发类型:0 - 证书请求签发  1 - 密钥签发
+	* @param	reqCertType			        [IN]	    证书请求类型: TA_DER - DER编码   TA_PEM - PEM格式 ，仅当签发类型为0时存在
+	* @param	reqCert			            [IN]		证书请求，仅当签发类型为0时存在
+	* @param    reqCertLen                  [IN]        证书请求长度
+	* @param	subKeyType					[IN]  		下级密钥类型 仅支持 TA_RSA TA_ECC 仅当签发类型为1时存在
+	* @param	subIndex		            [IN]  	    下级密钥索引 仅当签发类型为1时存在 0-1024 0时使用外部密钥
+	* @param	subUsage			        [IN]  		下级密钥使用标识 仅当下级密钥索引非0时存在
+	* @param	subCurve		            [IN]  	    下级ECC密钥曲线标识 仅当下级密钥索引为0，且密钥类型为TA_ECC时存在
+	* @param	subPucKeyDer			    [IN]  		下级密钥公钥（Der编码格式） 仅当签发类型为1且下级密钥索引为0时存在
+	* @param	subPucKeyDerLen				[IN]  	    下级密钥公钥（Der编码格式）长度 仅当签发类型为1且下级密钥索引为0时存在
+	* @param	subDNType			        [IN]  		DN间隔符类型: 0 - 逗号分隔 1 - 斜线分隔 仅当签发类型为1时存在
+	* @param	subDN			            [IN]  		下级证书DN 仅当签发类型为1时存在
+	* @param	subDNLen		            [IN]  	    下级证书DN长度
+	* @param	alg			                [IN]  		算法标识 TA_SHA1 - Sha1WithRSA/SHA1（非SM2）
+																 TA_SHA256 - Sha256WithRSA/SHA256（非SM2）
+																 TA_SM3 - SM3WithSM2（SM2）
+	* @param	vaildTime		            [IN]  	    有效期(天) 1-3650
+	* @param	outCertType		            [IN]  	    输出格式： TA_DER - der编码格式   TA_PEM - PEM格式
+	* @param	cert			            [OUT]		输出的自签名证书
+	* @param	certLen			            [OUT]	    输出的自签名证书长度
+	* @return
+	* @retval	0		成功
+	* @retval	非0		失败，返回错误代码
+	*/
+	int Tass_IssueSubordinateCert(void* hSessionHandle,
+		TA_KEY_TYPE supKeyType,//上级密钥类型
+		unsigned int supIndex,
+		TA_ASYMM_USAGE supUsage,
+		TA_ECC_CURVE supCurve,
+		const unsigned  char* supPriKeyCipherByLmk,
+		unsigned int supPriKeyCipherByLmkLen,
+		unsigned int supDNType,
+		const unsigned  char* supDN,
+		unsigned int supDNLen,
+		unsigned int issueType, TA_CERT_TYPE reqCertType,
+		unsigned char* reqCert, unsigned int reqCertLen,
+		//下级密钥类型
+		TA_KEY_TYPE subKeyType,
+		unsigned int subIndex,
+		TA_ASYMM_USAGE subUsage,
+		TA_ECC_CURVE subCurve,
+		const unsigned  char* subPucKeyDer,
+		unsigned int subPucKeyDerLen,
+		unsigned int subDNType,
+		const unsigned   char* subDN,
+		unsigned int subDNLen,
+		TA_HASH_ALG alg,
+		unsigned int vaildTime, TA_CERT_TYPE outCertType,
+		unsigned char* cert, unsigned int* certLen);
+
+	/**
+	* @brief	产生证书请求
+	* @param	hSessionHandle	            [IN]		与设备建立的会话句柄
+	* @param	keyType			            [IN]		上级密钥类型 仅支持 TA_RSA/TA_ECC
+	* @param	index		            	[IN]		非对称密钥索引 0-1024 0时使用外部密钥
+	* @param	usage			            [IN]		密钥使用标识 仅当密钥索引非0时存在
+	* @param	curve			            [IN]		ECC曲线标识 仅当密钥索引为0，且密钥类型为TA_ECC时存在
+	* @param	priKeyCipherByLmk			[IN]		LMK加密的私钥密文  index为0时有效
+	* @param	priKeyCipherByLmkLen		[IN]		LMK加密的私钥密文长度  index为0时有效
+	* @param	dnType				        [IN]		DN间隔符类型 0 - 逗号分隔  1 - 斜线分隔
+	* @param	dn			                [IN]		证书DN
+	* @param	dnLen			            [IN]		证书DN长度
+	* @param	alg			                [IN]		算法标识 TA_SHA1 - Sha1WithRSA/SHA1（非SM2）
+																 TA_SHA256 - Sha256WithRSA/SHA256（非SM2）
+																 TA_SM3 - SM3WithSM2（SM2）
+	* @param	outType				        [IN]		输出格式 ： TA_DER - der编码格式   TA_PEM - PEM格式
+	* @param	reqCert			            [OUT]		输出的证书请求
+	* @param	reqCertLen			        [OUT]	    输出的证书请求长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int Tass_GenerateCertReq(void* hSessionHandle,
+		TA_KEY_TYPE keyType,
+		unsigned int index,
+		TA_ASYMM_USAGE usage,
+		TA_ECC_CURVE curve,
+		const unsigned char* priKeyCipherByLmk,
+		unsigned int priKeyCipherByLmkLen,
+		unsigned int dnType,
+		const unsigned  char* dn, unsigned int dnLen,
+		TA_HASH_ALG alg,
+		TA_CERT_TYPE outType,
+		unsigned  char* reqCert, unsigned int* reqCertLen);
+
 
 #ifdef __cplusplus
 }

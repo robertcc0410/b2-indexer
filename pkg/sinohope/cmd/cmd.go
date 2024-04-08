@@ -8,7 +8,9 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
+	"github.com/b2network/b2-indexer/pkg/crypto"
 	"github.com/b2network/b2-indexer/pkg/vsm"
 	"github.com/google/uuid"
 	"github.com/sinohope/sinohope-golang-sdk/common"
@@ -25,6 +27,8 @@ var (
 	FlagChainSymbol         = "chainSymbol"
 	FlagEncrypt             = "encryptModel"
 	FlagVSMInternalKeyIndex = "vsmInternalKeyIndex"
+	FlagVsmIv               = "vsmIv"
+	FlagLocalEncryptKey     = "localCryptKey"
 )
 
 var (
@@ -42,6 +46,9 @@ func Sinohope() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if len(key) == 0 {
+				return fmt.Errorf("invalid private key")
+			}
 			enableEncrypt, err := cmd.Flags().GetBool(FlagEncrypt)
 			if err != nil {
 				return err
@@ -51,15 +58,41 @@ func Sinohope() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				localKey, err := cmd.Flags().GetString(FlagLocalEncryptKey)
+				if err != nil {
+					return err
+				}
+				if len(localKey) == 0 {
+					return fmt.Errorf("invalid local encrypt key")
+				}
+
+				localKeyByte, err := hex.DecodeString(localKey)
+				if err != nil {
+					return err
+				}
+
 				tassInputData, err := hex.DecodeString(key)
 				if err != nil {
 					return err
 				}
-				decKey, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, internalKeyIndex)
+				vsmIv, err := cmd.Flags().GetString(FlagVsmIv)
+				if err != nil {
+					return err
+				}
+				decKey, _, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, []byte(vsmIv), internalKeyIndex)
 				if err != nil {
 					return err
 				}
 				key = string(bytes.TrimRight(decKey, "\x00"))
+				decodeLocalData, err := hex.DecodeString(key)
+				if err != nil {
+					return err
+				}
+				localEncData, err := crypto.AesDecrypt(decodeLocalData, localKeyByte)
+				if err != nil {
+					return err
+				}
+				key = string(localEncData)
 			}
 			url, err := cmd.Flags().GetString(FlagBaseURL)
 			if err != nil {
@@ -82,8 +115,10 @@ func Sinohope() *cobra.Command {
 	cmd.PersistentFlags().String(FlagVaultID, "", "Sinohope VaultId")
 	cmd.PersistentFlags().String(FlagWalletID, "", "Sinohope wallet id")
 	cmd.PersistentFlags().String(FlagChainSymbol, "BTC", "Sinohope ChainSymbol")
-	cmd.PersistentFlags().Bool(FlagEncrypt, true, "enable encrypt model")
+	cmd.PersistentFlags().Bool(FlagEncrypt, false, "enable encrypt model")
 	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
+	cmd.PersistentFlags().String(FlagVsmIv, "", "vsm iv data")
+	cmd.PersistentFlags().String(FlagLocalEncryptKey, "", "local encryption/decryption  key")
 	return cmd
 }
 

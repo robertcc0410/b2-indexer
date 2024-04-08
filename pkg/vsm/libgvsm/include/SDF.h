@@ -59,6 +59,7 @@ extern "C" {
 #define SGD_SM7_CBC		0X00008002		//SM7算法CBC加密模式
 #define SGD_SM7_MAC		0X00008010		//SM7算法MAC运算
 
+
 	/**
 	*非对称密码算法标识
 	*/
@@ -68,11 +69,25 @@ extern "C" {
 #define SGD_SM2_2		0X00020400		//SM2椭圆曲线密钥交换协议
 #define SGD_SM2_3		0X00020800		//SM2椭圆曲线加密算法
 
+#define SGD_SM9			0X00040100		//SM9标识密码算法
+#define SGD_SM9_1		0X00040200		//SM9数字签名算法
+#define SGD_SM9_2		0X00040400		//SM9密钥交换协议
+#define SGD_SM9_3		0X00040800		//SM9密钥封装机制和公钥加密算法
+
 	/**
 	*密码杂凑算法标识
 	*/
-#define SGD_SM3			0X00000001		//SM3杂凑算法
-#define SGD_SHA256		0X00000004		//SHA_256杂凑算法
+#define SGD_SM3          0x00000001 // SM3杂凑算法 SM3-256
+#define SGD_SHA1         0x00000002 // SHA_1杂凑算法
+#define SGD_SHA256       0x00000004 // SHA_256杂凑算法
+#define SGD_MD5          0x00000008 // MD5杂凑算法
+#define SGD_SHA224       0x00000010 // SHA_224杂凑算法
+#define SGD_SHA384       0x00000020 // SHA_384杂凑算法
+#define SGD_SHA512       0x00000040 // SHA_512杂凑算法
+
+
+
+
 
 	typedef struct DeviceInfo_st {
 		unsigned char IssuerName[40];//设备生产厂商名称
@@ -147,6 +162,119 @@ extern "C" {
 		ECCPUBLICKEYBLOB PubKey;
 		unsigned char cbEncryptedPriKey[ECCref_MAX_LEN];
 	}ENVELOPEDKEYBLOB, * PENVELOPEDKEYBLOB;
+
+
+	/**
+	*@brief	SM9密钥数据结构定义
+	*/
+#define SM9ref_MAX_BITS			256
+#define SM9ref_MAX_LEN			((SM9ref_MAX_BITS+7) / 8)
+
+	//SM9签名主私钥数据结构
+	typedef struct SM9refSignMastPrivateKey_st
+	{
+		unsigned int  bits;
+		unsigned char s[SM9ref_MAX_LEN];
+	} SM9SignMastPrivateKey;
+
+	//SM9签名主公钥数据结构
+	typedef struct SM9refSignMastPublicKey_st
+	{
+		unsigned int  bits;
+		unsigned char xa[SM9ref_MAX_LEN];
+		unsigned char xb[SM9ref_MAX_LEN];
+		unsigned char ya[SM9ref_MAX_LEN];
+		unsigned char yb[SM9ref_MAX_LEN];
+	} SM9SignMastPublicKey;
+
+	//SM9加密主私钥数据结构
+	typedef struct SM9refEncMastPrivateKey_st
+	{
+		unsigned int  bits;
+		unsigned char s[SM9ref_MAX_LEN];
+	} SM9EncMastPrivateKey;
+
+	//SM9加密主公钥数据结构
+	typedef struct SM9refEncMastPublicKey_st
+	{
+		unsigned int  bits;
+		unsigned char x[SM9ref_MAX_LEN];
+		unsigned char y[SM9ref_MAX_LEN];
+	} SM9EncMastPublicKey;
+
+	//SM9用户签名私钥数据结构
+	typedef struct SM9refUserSignPrivateKey_st
+	{
+		unsigned int  bits;
+		unsigned char x[SM9ref_MAX_LEN];
+		unsigned char y[SM9ref_MAX_LEN];
+	} SM9UserSignPrivateKey;
+
+
+	//SM9用户加密私钥数据结构
+	typedef struct SM9refUserEncPrivateKey_st
+	{
+		unsigned int  bits;
+		unsigned char xa[SM9ref_MAX_LEN];
+		unsigned char xb[SM9ref_MAX_LEN];
+		unsigned char ya[SM9ref_MAX_LEN];
+		unsigned char yb[SM9ref_MAX_LEN];
+	} SM9UserEncPrivateKey;
+
+	//SM9加密数据结构
+	typedef struct SM9refCipher_st
+	{
+		unsigned char  enType;
+		unsigned char x[SM9ref_MAX_LEN];
+		unsigned char y[SM9ref_MAX_LEN];
+		unsigned char h[SM9ref_MAX_LEN];
+		unsigned int  L;
+		unsigned char C[1024];
+	} SM9Cipher;
+
+	//SM9签名数据结构
+	typedef struct SM9refSignature_st
+	{
+		unsigned char h[SM9ref_MAX_LEN];
+		unsigned char x[SM9ref_MAX_LEN];
+		unsigned char y[SM9ref_MAX_LEN];
+	} SM9Signature;
+	
+	//SM9密钥封装数据结构
+	typedef struct SM9refKeyPackage_st
+	{
+		unsigned char k[SM9ref_MAX_LEN];
+		unsigned char x[SM9ref_MAX_LEN];
+		unsigned char y[SM9ref_MAX_LEN];
+	} SM9KeyPackage;
+
+	//SM9用户加密密钥对保护结构
+	typedef struct SM9refPairEncEnvelopedKey_st
+	{
+		unsigned int  version;
+		unsigned int  symAlgID;
+		unsigned int  bits;
+		unsigned char encryptedPriKey[128];
+		SM9EncMastPublicKey encMastPubKey;
+		unsigned char userID[50];
+		unsigned int userIDLen;
+		SM9Cipher pairCipher;
+	} SM9PairEncEnvelopedKey;
+
+	//SM9用户签名密钥对保护结构
+	typedef struct SM9refPairSignEnvelopedKey_st
+	{
+		unsigned int  version;
+		unsigned int   symAlgID;
+		unsigned int   bits;
+		unsigned char 	encryptedPriKey[64];
+		SM9SignMastPublicKey  encMastPubKey;
+		unsigned int userIDLen;
+		unsigned char userID[50];
+		SM9Cipher pairCipher;
+	} SM9PairSignEnvelopedKey;
+
+
 
 	/**
 	*以下设备管理类函数
@@ -283,12 +411,9 @@ extern "C" {
 	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
 	* @param	uiKeyBits		[IN]	指定密钥模长
 	* @param	pucPublicKey	[OUT]	RSA公钥结构
-	*									TASS补充：若需要保存到加密机内部加密密钥对
-	*											  可设置pucPublicKey->bits为索引值，此时不输出pucPrivateKey
+	
 	* @param	pucPrivateKey	[OUT]	RSA私钥结构
-	*									TASS补充：若需要保存到加密机内部签名密钥对
-	*											  可设置pucPrivateKey->bits为索引值，此时不输出pucPrivateKey
-
+	*
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -308,12 +433,6 @@ extern "C" {
 	* @param	puiKeyLength	[OUT]	返回的密钥密文长度
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部，可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*                                             uiKeyBits=192，导入DES192算法
-	*                                             uiKeyBits=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -335,12 +454,6 @@ extern "C" {
 	* @param	pucKey			[OUT]	缓冲区指针，用于存放返回的密钥密文
 	* @param	puiKeyLength	[OUT]	返回的密钥密文长度
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*                                             uiKeyBits=192，导入DES192算法
-	*                                             uiKeyBits=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -359,14 +472,8 @@ extern "C" {
 	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
 	* @param	uiISKIndex		[IN]	密码设备内部存储加密私钥的索引值，对应于加密时的公钥
 	* @param	pucKey			[IN]	缓冲区指针，用于存放输入的密钥密文
-	* @param	puiKeyLength	[IN]	输入密钥密文长度
+	* @param	uiKeyLength		[IN]	输入密钥密文长度
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             密钥长度=128，导入SM4算法
-	*                                             密钥长度=192，导入DES192算法
-	*                                             密钥长度=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -436,14 +543,10 @@ extern "C" {
 	* @param	uiAlgID			[IN]	指定算法标识
 	* @param	uiKeyBits		[IN]	指定密钥模长，只支持256bit（32字节）
 	* @param	pucPublicKey	[OUT]	ECC公钥结构
-	*									TASS补充：若需要保存到加密机内部加密密钥对
-	*											  可设置pucPublicKey->bits为索引值，此时不输出pucPrivateKey
-	* @param	pucPrivateKey	[OUT]	RSA私钥结构
-	*									TASS补充：若需要保存到加密机内部签名密钥对，
-	*											  可设置pucPrivateKey->bits为索引值，此时不输出pucPrivateKey
+	* @param	pucPrivateKey	[OUT]	ECC私钥结构
 	* @return
 	*   @retval	0		成功
-	*   @retval	非0		失败，返回错误代码
+	*   @retval	非0		失败，返回错误代码c
 	*/
 	int SDF_GenerateKeyPair_ECC(
 		void* hSessionHandle,
@@ -459,12 +562,6 @@ extern "C" {
 	* @param	uiKeyBits		[IN]	指定产生的会话密钥长度，支持128bits（16字节）/192bits（32字节）/256bits（32字节）
 	* @param	pucKey			[OUT]	缓冲区指针，用于存放返回的密钥密文
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*                                             uiKeyBits=192，导入DES192算法
-	*                                             uiKeyBits=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -485,12 +582,6 @@ extern "C" {
 	* @param	pucPublicKey	[IN]	输入的外部ECC公钥结构
 	* @param	pucKey			[OUT]	缓冲区指针，用于存放返回的密钥密文
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*                                             uiKeyBits=192，导入DES192算法
-	*                                             uiKeyBits=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -510,12 +601,6 @@ extern "C" {
 	* @param	uiISKIndex		[IN]	密码设备内部存储加密私钥的索引值，对应于加密时的公钥
 	* @param	pucKey			[IN]	缓冲区指针，用于存放输入的密钥密文
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             密钥长度=128，导入SM4算法
-	*                                             密钥长度=192，导入DES192算法
-	*                                             密钥长度=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -561,12 +646,6 @@ extern "C" {
 	* @param	pucResponseTmpPublicKey	[IN]	外部输入的响应方临时ECC公钥结构
 	* @param	hAgreementHandle		[IN]	协商句柄，用于计算协商密钥
 	* @param	phKeyHandle				[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*											TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*													  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                                     uiKeyBits=128，导入SM4算法
-	*                                                     uiKeyBits=192，导入DES192算法
-	*                                                     uiKeyBits=256，导入AES256算法
-	*													  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -595,12 +674,6 @@ extern "C" {
 	* @param	pucResponsePublicKey	[OUT]	返回的响应方ECC公钥结构
 	* @param	pucResponseTmpPublicKey	[OUT]	返回的响应方临时ECC公钥结构
 	* @param	phKeyHandle				[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*											TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*													  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                                     uiKeyBits=128，导入SM4算法
-	*                                                     uiKeyBits=192，导入DES192算法
-	*                                                     uiKeyBits=256，导入AES256算法
-	*													  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -650,12 +723,6 @@ extern "C" {
 	* @param	pucKey			[OUT]	缓冲区指针，用于存放返回的密钥密文
 	* @param	puiKeyLength	[OUT]	返回的密钥密文长度
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部，可使用如下方式
-	*											  如保存到1号索引密钥（仅支持SM4算法），则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*                                             uiKeyBits=192，导入DES192算法
-	*                                             uiKeyBits=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -676,14 +743,8 @@ extern "C" {
 	* @param	uiAlgID			[IN]	算法标识，指定对称加密算法
 	* @param	uiKEKIndex		[IN]	密码设备内部存储的加密密钥的索引值
 	* @param	pucKey			[IN]	缓冲区指针，用于存放输入的密钥密文
-	* @param	puiKeyLength	[IN]	返回的密钥密文长度
+	* @param	uiKeyLength		[IN]	密钥密文长度
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*                                             uiKeyBits=192，导入DES192算法
-	*                                             uiKeyBits=256，导入AES256算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -701,12 +762,8 @@ extern "C" {
 	* @brief	导入明文会话密钥，同时返回密钥句柄
 	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
 	* @param	pucKey			[IN]	缓冲区指针，用于存放输入的密钥明文
-	* @param	puiKeyLength	[IN]	输入的密钥明文长度
+	* @param	uiKeyLength		[IN]	输入的密钥明文长度
 	* @param	phKeyHandle		[OUT]	返回的密钥句柄，传入前需先赋值为NULL
-	*									TASS补充：若需要保存到加密机内部（仅支持SM4算法），可使用如下方式
-	*											  如保存到1号索引密钥，则int idx = 1; void* pIdx = &idx; 传入 &pIdx 即可
-	*                                             uiKeyBits=128，导入SM4算法
-	*											  此时phKeyHandle不能调用SDF_DestroyKey释放
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -722,8 +779,6 @@ extern "C" {
 	* @brief	销毁会话密钥，并释放为密钥句柄分配的内存等资源
 	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
 	* @param	hKeyHandle		[IN]	输入的密钥句柄，若输入指向索引的指针则删除该内部对称密钥
-	*									TASS补充：若需要删除加密机内部密钥，可使用如下方式
-	*											  如删除1号索引密钥，则int idx = 1; 传入 &idx 即可
 	* @return
 	*   @retval	0		成功
 	*   @retval	非0		失败，返回错误代码
@@ -758,6 +813,19 @@ extern "C" {
 		unsigned char* pucDataOutput,
 		unsigned int* puiOutputLength);
 
+	/**
+	* @brief	指定使用外部私钥对数据进行运算
+	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
+	* @param	pucPrivateKey	[IN]	外部RSA私钥结构
+	* @param	pucDataInput	[IN]	缓冲区指针，用于存放输入的数据
+	* @param	uiInputLength	[IN]	输入的数据长度
+	* @param	pucDataOutput	[OUT]	缓冲区指针，用于存放输出的数据
+	* @param	puiOutputLength	[OUT]	输出的数据长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	* @note	数据格式由应用层封装
+	*/
 	int SDF_ExternalPrivateKeyOperation_RSA(
 		void* hSessionHandle,
 		RSArefPrivateKey* pucPrivateKey,
@@ -937,7 +1005,7 @@ extern "C" {
 	*									TASS补充：负数时使用签名密钥对
 	* @param	pucEncData		[IN]	缓冲区指针，用于存放输入的数据密文
 	* @param	pucData			[OUT]	缓冲区指针，用于存放输出的数据
-	* @param	uiDataLength	[OUT]	输出的数据长度
+	* @param	puiDataLength	[OUT]	输出的数据长度
 	*
 	* @return
 	*   @retval	0		成功
@@ -977,8 +1045,6 @@ extern "C" {
 	* @brief	使用指定的密钥句柄和IV对数据进行对称加密运算
 	* @param	hSessionHandle		[IN]		与设备建立的会话句柄
 	* @param	hKeyHandle			[IN]		指定的密钥句柄
-	*											TASS补充：若需要保存到加密机内部，可使用如下方式
-	*													  如使用1号索引密钥，则int idx = 1; 传入 &idx 即可
 	* @param	uiAlgID				[IN]		算法标识，指定的对称加密算法
 	* @param	pucIV				[IN/OUT]	缓冲区指针，用于存放输入和返回的IV数据
 	* @param	pucData				[IN]		缓冲区指针，用于存放输入的数据明文
@@ -1004,12 +1070,10 @@ extern "C" {
 	* @brief	使用指定的密钥句柄和IV对数据进行对称解密运算
 	* @param	hSessionHandle		[IN]		与设备建立的会话句柄
 	* @param	hKeyHandle			[IN]		指定的密钥句柄
-	*											TASS补充：若需要保存到加密机内部，可使用如下方式
-	*													  如使用1号索引密钥，则int idx = 1; 传入 &idx 即可
 	* @param	uiAlgID				[IN]		算法标识，指定的对称加密算法
 	* @param	pucIV				[IN/OUT]	缓冲区指针，用于存放输入和返回的IV数据
 	* @param	pucEncData			[IN]		缓冲区指针，用于存放输入的数据密文
-	* @param	puiEncDataLength	[IN]		输入的数据密文长度
+	* @param	uiEncDataLength		[IN]		输入的数据密文长度
 	* @param	pucData				[OUT]		缓冲区指针，用于存放输出的数据明文
 	* @param	puiDataLength		[OUT]		输出的数据明文长度
 	* @return
@@ -1031,8 +1095,6 @@ extern "C" {
 	* @brief	使用指定的密钥句柄和IV对数据进行对称加密运算
 	* @param	hSessionHandle	[IN]		与设备建立的会话句柄
 	* @param	hKeyHandle		[IN]		指定的密钥句柄
-	*										TASS补充：若需要保存到加密机内部，可使用如下方式
-	*												  如使用1号索引密钥，则int idx = 1; 传入 &idx 即可
 	* @param	uiAlgID			[IN]		算法标识，指定的对称加密算法
 	* @param	pucIV			[IN/OUT]	缓冲区指针，用于存放输入和返回的IV数据
 	* @param	pucData			[IN]		缓冲区指针，用于存放输入的数据明文
@@ -1179,6 +1241,43 @@ extern "C" {
 		unsigned char* pucFileName,
 		unsigned int uiNameLen);
 
+
+	/**
+	* @brief	获取指定索引对称密钥的会话密钥句柄
+	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
+	* @param	uiKeyIndex		[IN]	密码设备内部存储的密钥加密密钥的索引值
+	* @param	phKeyHandle		[OUT]	返回的密钥句柄
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int SDF_GetSymmKeyHandle(
+		void* hSessionHandle,
+		unsigned int uiKeyIndex,
+		void** phKeyHandle);
+
+	/**
+	* @brief	HMAC运算
+	* @param	hSessionHandle	[IN]	与设备建立的会话句柄
+	* @param	hKeyHandle		[IN]	会话密钥句柄
+	* @param	uiAlgID			[IN]	指定杂凑算法标识
+	* @param	pucData			[IN]	需要进行 HMAC 运算的明文数据
+	* @param	uiDataLength	[IN]	需要进行 HMAC 运算的明文数据长度
+	* @param	pucHmac			[OUT]	返回的 HMAC 数据
+	* @param	puiHmacLength	[OUT]	返回的 HMAC 数据长度
+	* @return
+	*   @retval	0		成功
+	*   @retval	非0		失败，返回错误代码
+	*/
+	int SDF_HMAC(
+		void* hSessionHandle,
+		void* hKeyHandle,
+		unsigned int uiAlgID,
+		unsigned char* pucData,
+		unsigned int uiDataLength,
+		unsigned char* pucHmac,
+		unsigned int* puiHmacLength);
+
 	/**
 	*函数返回代码定义
 	*/
@@ -1216,10 +1315,12 @@ extern "C" {
 #define SDR_INARGERR			SDR_BASE + 0X0000001D		//输入参数错误
 #define SDR_OUTARGERR			SDR_BASE + 0X0000001E		//输出参数错误
 
+
 #define TASSR_OK				0X0							//操作成功
 #define TASSR_BASE				0X02000000					//天安错误码基础值
 #define TASSR_UNKNOWERR			TASSR_BASE + 0X00000001		//未知错误
 #define TASSR_BUFFTOOSMALL		TASSR_BASE + 0X00000002		//缓冲区不足
+
 
 #ifdef __cplusplus
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/b2network/b2-indexer/internal/config"
 	b2types "github.com/b2network/b2-indexer/internal/types"
 	"github.com/b2network/b2-indexer/pkg/aa"
+	b2crypto "github.com/b2network/b2-indexer/pkg/crypto"
 	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/b2network/b2-indexer/pkg/particle"
 	"github.com/b2network/b2-indexer/pkg/vsm"
@@ -102,11 +103,24 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 		if err != nil {
 			return nil, err
 		}
-		decKey, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, bridgeCfg.VSMInternalKeyIndex)
+		decKey, _, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, []byte(bridgeCfg.VSMIv), bridgeCfg.VSMInternalKeyIndex)
 		if err != nil {
 			return nil, err
 		}
 		ethPrivKey = string(bytes.TrimRight(decKey, "\x00"))
+		decEthPrivKey, err := hex.DecodeString(ethPrivKey)
+		if err != nil {
+			return nil, err
+		}
+		localKey, err := hex.DecodeString(bridgeCfg.LocalAesKey)
+		if err != nil {
+			return nil, err
+		}
+		localDecEthPrivKey, err := b2crypto.AesDecrypt(decEthPrivKey, localKey)
+		if err != nil {
+			return nil, err
+		}
+		ethPrivKey = string(localDecEthPrivKey)
 	}
 	privateKey, err := crypto.HexToECDSA(ethPrivKey)
 	if err != nil {

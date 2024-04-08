@@ -19,6 +19,8 @@ var (
 	opENC     C.TA_SYMM_OP   = C.TA_ENC
 	opDEC     C.TA_SYMM_OP   = C.TA_DEC
 	modeECB   C.TA_SYMM_MODE = C.TA_ECB
+	modeCBC   C.TA_SYMM_MODE = C.TA_CBC
+	modeCFB   C.TA_SYMM_MODE = C.TA_CFB
 	algAES256 C.TA_SYMM_ALG  = C.TA_AES256
 )
 
@@ -37,51 +39,53 @@ func Open() (unsafe.Pointer, unsafe.Pointer, error) {
 	return *gHDev, *gHsess, nil
 }
 
-func TassSymmKeyOperation(op OP, _ SymmAlg, inputData []byte, internalKeyIndex uint) ([]byte, error) {
+// TassSymmKeyOperation
+func TassSymmKeyOperation(op OP, _ SymmAlg, inputData []byte, ivInputData []byte, internalKeyIndex uint) ([]byte, []byte, error) {
 	if internalKeyIndex == 0 {
-		return nil, fmt.Errorf("InternalKeyIndex must be greater than 0")
+		return nil, nil, fmt.Errorf("InternalKeyIndex must be greater than 0")
 	}
 	gHDev, gHsess, err := Open()
 	if err != nil {
 		closehDev(gHDev)
-		return nil, err
+		return nil, nil, err
 	}
 	_op := opENC
 	if op == TaDec {
 		_op = opDEC
 	}
 	_alg := algAES256
-	ginIv := make([]byte, 8)
-	gkey := make([]byte, 1)
-	goutData := make([]byte, 512)
+	key := make([]byte, 1)
+	goutData := make([]byte, 1024)
+	goutIvData := make([]byte, 512)
 	var (
-		inIv    = (*C.uchar)(unsafe.Pointer(&ginIv[0]))
-		key     = (*C.uchar)(unsafe.Pointer(&gkey[0]))
-		inData  = (*C.uchar)(unsafe.Pointer(&inputData[0]))
-		outData = (*C.uchar)(unsafe.Pointer(&goutData[0]))
+		inIv      = (*C.uchar)(unsafe.Pointer(&ivInputData[0]))
+		ikey      = (*C.uchar)(unsafe.Pointer(&key[0]))
+		inData    = (*C.uchar)(unsafe.Pointer(&inputData[0]))
+		outData   = (*C.uchar)(unsafe.Pointer(&goutData[0]))
+		outIvData = (*C.uchar)(unsafe.Pointer(&goutIvData[0]))
 	)
 	var index C.uint = C.uint(internalKeyIndex)
-	var keyLen C.uint
+	var keyLen C.uint = C.uint(len(key))
 	var dataLen C.uint = C.uint(len(goutData))
 	result := C.Tass_SymmKeyOperation(
 		gHsess,
 		_op,
-		modeECB,
+		modeCFB,
 		inIv,
 		index,
-		key,
+		ikey,
 		keyLen,
 		_alg,
 		inData,
 		dataLen,
 		outData,
-		nil)
+		outIvData)
 	if result != 0 {
 		closehDev(gHDev)
-		return nil, fmt.Errorf("fail TassSymmKeyOperation :%d |  0x%08x", result, result)
+		return nil, nil, fmt.Errorf("fail TassSymmKeyOperation :%d |  0x%08x", result, result)
 	}
 	closehDev(gHDev)
-	return goutData, nil
+	return goutData, goutIvData, nil
 }
 
 func closehDev(gHDev unsafe.Pointer) {

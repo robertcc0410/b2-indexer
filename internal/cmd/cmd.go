@@ -6,6 +6,7 @@ import (
 
 	"github.com/b2network/b2-indexer/internal/server"
 	"github.com/b2network/b2-indexer/internal/types"
+	cryptoCmd "github.com/b2network/b2-indexer/pkg/crypto/cmd"
 	"github.com/b2network/b2-indexer/pkg/log"
 	sinohopeCmd "github.com/b2network/b2-indexer/pkg/sinohope/cmd"
 	gvsmCmd "github.com/b2network/b2-indexer/pkg/vsm/cmd"
@@ -42,6 +43,7 @@ func rootCmd() *cobra.Command {
 	rootCmd.AddCommand(startHTTPServer())
 	rootCmd.AddCommand(sinohopeCmd.Sinohope())
 	rootCmd.AddCommand(gvsmCmd.Gvsm())
+	rootCmd.AddCommand(cryptoCmd.Crypto())
 	return rootCmd
 }
 
