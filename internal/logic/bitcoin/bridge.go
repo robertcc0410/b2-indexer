@@ -126,6 +126,7 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("load eth address: %s", crypto.PubkeyToAddress(privateKey.PublicKey))
 	return &Bridge{
 		EthRPCURL:            rpcURL.String(),
 		ContractAddress:      common.HexToAddress(bridgeCfg.ContractAddress),
