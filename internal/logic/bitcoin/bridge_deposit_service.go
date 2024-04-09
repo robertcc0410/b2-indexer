@@ -187,7 +187,11 @@ func (bis *BridgeDepositService) Deposit() {
 			for _, deposit := range aaNotFoundDeposits {
 				err = bis.HandleDeposit(deposit, nil, deposit.B2TxNonce, false)
 				if err != nil {
-					bis.log.Errorw("handle aa not found deposit failed", "error", err, "deposit", deposit)
+					if errors.Is(err, ErrAAAddressNotFound) {
+						bis.log.Warnf("aa address not found")
+					} else {
+						bis.log.Errorw("handle aa not found deposit failed", "error", err, "deposit", deposit)
+					}
 					if errors.Is(err, ErrServerStop) {
 						return
 					}
@@ -300,7 +304,7 @@ func (bis *BridgeDepositService) HandleDeposit(deposit model.Deposit, oldTx *eth
 				"data", deposit)
 		case errors.Is(err, ErrAAAddressNotFound):
 			deposit.B2TxStatus = model.DepositB2TxStatusAAAddressNotFound
-			bis.log.Errorw("invoke deposit send tx aa address not found",
+			bis.log.Warnw("invoke deposit send tx aa address not found",
 				"error", err.Error(),
 				"btcTxHash", deposit.BtcTxHash,
 				"data", deposit)
