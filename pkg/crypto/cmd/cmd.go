@@ -14,9 +14,9 @@ func Crypto() *cobra.Command {
 		Short: "local crypto, Encrypt/Decrypt",
 	}
 	cmd.AddCommand(
-		// generateRsaKey(),
-		// rsaEncrypt(),
-		// rsaDecrypt(),
+		generateRsaKey(),
+		rsaEncrypt(),
+		rsaDecrypt(),
 		aesEncrypt(),
 		aesDecrypt(),
 		genAesKey(),
@@ -44,8 +44,11 @@ func generateRsaKey() *cobra.Command {
 func rsaEncrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rsa-enc",
-		Short: "rsa encrypt hex",
+		Short: "rsa encrypt hex, example: rsa-enc {srcData} {Key}",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 {
+				return fmt.Errorf("invalid parameter")
+			}
 			data, err := crypto.RsaEncryptHex(args[0], args[1])
 			if err != nil {
 				return err
@@ -56,11 +59,15 @@ func rsaEncrypt() *cobra.Command {
 	}
 	return cmd
 }
+
 func rsaDecrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rsa-dec",
-		Short: "rsa decrypt hex",
+		Short: "rsa decrypt hex, example: src-dec {cryptedData} {Key}",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 {
+				return fmt.Errorf("invalid parameter")
+			}
 			data, err := crypto.RsaDecryptHex(args[0], args[1])
 			if err != nil {
 				return err

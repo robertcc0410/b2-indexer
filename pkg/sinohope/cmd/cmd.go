@@ -46,9 +46,6 @@ func Sinohope() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if len(key) == 0 {
-				return fmt.Errorf("invalid private key")
-			}
 			enableEncrypt, err := cmd.Flags().GetBool(FlagEncrypt)
 			if err != nil {
 				return err
@@ -112,9 +109,9 @@ func Sinohope() *cobra.Command {
 	)
 	cmd.PersistentFlags().String(FlagBaseURL, "https://api.sinohope.com", "sinohope base url")
 	cmd.PersistentFlags().String(FlagPrivateKey, "", "fakePrivateKey")
-	cmd.PersistentFlags().String(FlagVaultID, "", "Sinohope VaultId")
-	cmd.PersistentFlags().String(FlagWalletID, "", "Sinohope wallet id")
-	cmd.PersistentFlags().String(FlagChainSymbol, "BTC", "Sinohope ChainSymbol")
+	cmd.PersistentFlags().String(FlagVaultID, "", "sinohope vaultId")
+	cmd.PersistentFlags().String(FlagWalletID, "", "sinohope wallet id")
+	cmd.PersistentFlags().String(FlagChainSymbol, "BTC", "sinohope chainSymbol")
 	cmd.PersistentFlags().Bool(FlagEncrypt, false, "enable encrypt model")
 	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
 	cmd.PersistentFlags().String(FlagVsmIv, "", "vsm iv data")
@@ -240,7 +237,7 @@ func createWallet() *cobra.Command {
 func genAddress() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gen-address",
-		Short: "Generate address",
+		Short: "generate address",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			m, err := sdk.NewAccountAndAddressAPI(BaseURL, FakePrivateKey)
 			if err != nil {

@@ -40,6 +40,7 @@ func encData() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			cmd.Println("vsm enc data:")
 			cmd.Printf("%s\n", hex.EncodeToString(decData))
 			return nil
 		},

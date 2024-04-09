@@ -108,19 +108,28 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 			return nil, err
 		}
 		ethPrivKey = string(bytes.TrimRight(decKey, "\x00"))
-		decEthPrivKey, err := hex.DecodeString(ethPrivKey)
-		if err != nil {
-			return nil, err
+		if bridgeCfg.LocalDecryptAlg == b2crypto.Alg_AES {
+			decEthPrivKey, err := hex.DecodeString(ethPrivKey)
+			if err != nil {
+				return nil, err
+			}
+			localKey, err := hex.DecodeString(bridgeCfg.LocalDecryptKey)
+			if err != nil {
+				return nil, err
+			}
+			localDecEthPrivKey, err := b2crypto.AesDecrypt(decEthPrivKey, localKey)
+			if err != nil {
+				return nil, err
+			}
+			ethPrivKey = string(localDecEthPrivKey)
+		} else if bridgeCfg.LocalDecryptAlg == b2crypto.Alg_RSA {
+			localDecEthPrivKey, err := b2crypto.RsaDecryptHex(ethPrivKey, bridgeCfg.LocalDecryptKey)
+			if err != nil {
+				return nil, err
+			}
+			ethPrivKey = localDecEthPrivKey
 		}
-		localKey, err := hex.DecodeString(bridgeCfg.LocalAesKey)
-		if err != nil {
-			return nil, err
-		}
-		localDecEthPrivKey, err := b2crypto.AesDecrypt(decEthPrivKey, localKey)
-		if err != nil {
-			return nil, err
-		}
-		ethPrivKey = string(localDecEthPrivKey)
+
 	}
 	privateKey, err := crypto.HexToECDSA(ethPrivKey)
 	if err != nil {

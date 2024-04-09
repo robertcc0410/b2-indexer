@@ -98,8 +98,10 @@ type BridgeConfig struct {
 	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX"`
 	// VSMIv defines the vsm iv
 	VSMIv string `mapstructure:"vsm-iv" env:"BITCOIN_BRIDGE_VSM_IV"`
-	// LocalAesKey defines the bridge server local aes key
-	LocalAesKey string `mapstructure:"local-aes-key" env:"BITCOIN_BRIDGE_LOCAL_AES_KEY"`
+	// LocalDecryptKey defines the bridge server local enc key
+	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY"`
+	// LocalAesAlg defines the bridge server local dec alg, rsa aes
+	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG"`
 }
 
 // TODO: @robertcc0410 env prefix, mapstructure and env,  env prefix in the rule must be the same
