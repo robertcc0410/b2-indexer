@@ -62,8 +62,8 @@ linters-settings:
     allow-leading-space: true
     require-explanation: false
     require-specific: false
-  gofumpt:
-    lang-version: "1.21"
+#  gofumpt:
+#    lang-version: "1.21"
   gomodguard:
     blocked:
       versions: # List of blocked module version constraints

@@ -129,7 +129,6 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 			}
 			ethPrivKey = localDecEthPrivKey
 		}
-
 	}
 	privateKey, err := crypto.HexToECDSA(ethPrivKey)
 	if err != nil {
