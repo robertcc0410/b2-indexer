@@ -101,6 +101,7 @@ func aesEncrypt() *cobra.Command {
 	}
 	return cmd
 }
+
 func aesDecrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "aes-dec",
@@ -127,6 +128,7 @@ func aesDecrypt() *cobra.Command {
 	}
 	return cmd
 }
+
 func genAesKey() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gen-aes-key",
