@@ -55,13 +55,13 @@ func safeRsaEncrypt() *cobra.Command {
 				srcData string
 				key     string
 			)
-			if term.IsTerminal(int(syscall.Stdin)) {
+			if term.IsTerminal(syscall.Stdin) {
 				fmt.Print("Enter srcData: ")
-				srcDataStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				srcDataStdin, _ := term.ReadPassword(syscall.Stdin)
 				fmt.Println()
 				srcData = string(srcDataStdin)
 				fmt.Print("Enter rsa publicKey: ")
-				keyStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				keyStdin, _ := term.ReadPassword(syscall.Stdin)
 				fmt.Println()
 				key = string(keyStdin)
 			} else {
@@ -101,6 +101,7 @@ func rsaEncrypt() *cobra.Command {
 	}
 	return cmd
 }
+
 func rsaDecrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rsa-dec",
@@ -147,18 +148,18 @@ func safeAesEncrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "safe-aes-enc",
 		Short: "safe aes256 encrypt hex, example: aes-enc",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			var (
 				srcData string
 				srcKey  string
 			)
-			if term.IsTerminal(int(syscall.Stdin)) {
+			if term.IsTerminal(syscall.Stdin) {
 				fmt.Print("Enter srcData: ")
-				srcDataStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				srcDataStdin, _ := term.ReadPassword(syscall.Stdin)
 				fmt.Println()
 				srcData = string(srcDataStdin)
 				fmt.Print("Enter key: ")
-				keyStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				keyStdin, _ := term.ReadPassword(syscall.Stdin)
 				fmt.Println()
 				srcKey = string(keyStdin)
 			} else {
@@ -190,12 +191,10 @@ func aesDecrypt() *cobra.Command {
 			if len(args) < 1 {
 				return fmt.Errorf("invalid parameter")
 			}
-			var (
-				key string
-			)
-			if term.IsTerminal(int(syscall.Stdin)) {
+			var key string
+			if term.IsTerminal(syscall.Stdin) {
 				fmt.Print("Enter key: ")
-				keyStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				keyStdin, _ := term.ReadPassword(syscall.Stdin)
 				fmt.Println()
 				key = string(keyStdin)
 			} else {

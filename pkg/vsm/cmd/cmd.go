@@ -51,6 +51,7 @@ func encData() *cobra.Command {
 	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
 	return cmd
 }
+
 func safeEncData() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "safe-enc",
@@ -64,16 +65,16 @@ func safeEncData() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if term.IsTerminal(int(syscall.Stdin)) {
+			if term.IsTerminal(syscall.Stdin) {
 				fmt.Print("Enter srcData: ")
-				srcDataStdin, err := term.ReadPassword(int(syscall.Stdin))
+				srcDataStdin, err := term.ReadPassword(syscall.Stdin)
 				if err != nil {
 					return err
 				}
 				fmt.Println()
 				srcData = string(srcDataStdin)
 				fmt.Print("Enter iv: ")
-				ivStdin, err := term.ReadPassword(int(syscall.Stdin))
+				ivStdin, err := term.ReadPassword(syscall.Stdin)
 				if err != nil {
 					return err
 				}
@@ -98,6 +99,7 @@ func safeEncData() *cobra.Command {
 	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
 	return cmd
 }
+
 func genVsmIv() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gen-iv",
@@ -114,6 +116,10 @@ func genVsmIv() *cobra.Command {
 	}
 	return cmd
 }
+
+// decData
+//
+//lint:ignore U1000 Ignore unused function temporarily for debugging
 func decData() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "dec",
