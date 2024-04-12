@@ -14,7 +14,7 @@ b2-indexer
 ./build/b2-indexer start
 ```
 
-b2-indexer-http
+b2-indexer-api
 
 ```
 ./build/b2-indexer http

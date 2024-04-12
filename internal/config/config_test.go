@@ -48,6 +48,7 @@ func TestBitcoinConfig(t *testing.T) {
 	os.Unsetenv("BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX")
 	os.Unsetenv("BITCOIN_BRIDGE_VSM_IV")
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY")
+	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG")
 	config, err := config.LoadBitcoinConfig("./testdata")
 	require.NoError(t, err)
 	require.Equal(t, "signet", config.NetworkName)
@@ -84,6 +85,7 @@ func TestBitcoinConfig(t *testing.T) {
 	require.Equal(t, uint(10), config.Bridge.VSMInternalKeyIndex)
 	require.Equal(t, "abc", config.Bridge.VSMIv)
 	require.Equal(t, "aaa", config.Bridge.LocalDecryptKey)
+	require.Equal(t, "aes", config.Bridge.LocalDecryptAlg)
 }
 
 func TestBitcoinConfigEnv(t *testing.T) {
@@ -125,6 +127,7 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	os.Setenv("BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX", "11")
 	os.Setenv("BITCOIN_BRIDGE_VSM_IV", "1111abc")
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY", "abcd")
+	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG", "rsa")
 
 	config, err := config.LoadBitcoinConfig("./")
 	require.NoError(t, err)
@@ -162,6 +165,7 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	require.Equal(t, uint(11), config.Bridge.VSMInternalKeyIndex)
 	require.Equal(t, "1111abc", config.Bridge.VSMIv)
 	require.Equal(t, "abcd", config.Bridge.LocalDecryptKey)
+	require.Equal(t, "rsa", config.Bridge.LocalDecryptAlg)
 }
 
 func TestChainParams(t *testing.T) {
