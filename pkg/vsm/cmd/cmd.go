@@ -56,7 +56,7 @@ func safeEncData() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "safe-enc",
 		Short: "safe gvsm enc data, aes256 cbc mode, example: enc --vsmInternalKeyIndex 3",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			var (
 				srcData string
 				iv      string
