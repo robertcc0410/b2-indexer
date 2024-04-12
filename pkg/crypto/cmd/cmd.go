@@ -3,9 +3,11 @@ package cmd
 import (
 	"encoding/hex"
 	"fmt"
+	"syscall"
 
 	"github.com/b2network/b2-indexer/pkg/crypto"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func Crypto() *cobra.Command {
@@ -20,6 +22,8 @@ func Crypto() *cobra.Command {
 		aesEncrypt(),
 		aesDecrypt(),
 		genAesKey(),
+		safeRsaEncrypt(),
+		safeAesEncrypt(),
 	)
 	return cmd
 }
@@ -33,8 +37,45 @@ func generateRsaKey() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			cmd.Println()
 			cmd.Println("pubKey:\n", pub)
 			cmd.Println("privateKey:\n", priv)
+			return nil
+		},
+	}
+	return cmd
+}
+
+func safeRsaEncrypt() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "safe-rsa-enc",
+		Short: "safe rsa encrypt hex, example: rsa-enc",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			var (
+				srcData string
+				key     string
+			)
+			if term.IsTerminal(int(syscall.Stdin)) {
+				fmt.Print("Enter srcData: ")
+				srcDataStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				fmt.Println()
+				srcData = string(srcDataStdin)
+				fmt.Print("Enter rsa publicKey: ")
+				keyStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				fmt.Println()
+				key = string(keyStdin)
+			} else {
+				return fmt.Errorf("error: Cannot read srcData and key from non-terminal input")
+			}
+			if srcData == "" || key == "" {
+				return fmt.Errorf("invalid parameter")
+			}
+			data, err := crypto.RsaEncryptHex(srcData, key)
+			if err != nil {
+				return err
+			}
+			cmd.Println()
+			cmd.Println("rsa enc data:\n", data)
 			return nil
 		},
 	}
@@ -44,7 +85,7 @@ func generateRsaKey() *cobra.Command {
 func rsaEncrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rsa-enc",
-		Short: "rsa encrypt hex, example: rsa-enc {srcData} {Key}",
+		Short: "rsa encrypt hex, example: rsa-enc {srcData} {key}",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				return fmt.Errorf("invalid parameter")
@@ -53,17 +94,17 @@ func rsaEncrypt() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			cmd.Println()
 			cmd.Println("rsa enc data:\n", data)
 			return nil
 		},
 	}
 	return cmd
 }
-
 func rsaDecrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rsa-dec",
-		Short: "rsa decrypt hex, example: src-dec {cryptedData} {Key}",
+		Short: "rsa decrypt hex, example: src-dec {encryptedData} {rsaPrivateKey}",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				return fmt.Errorf("invalid parameter")
@@ -82,7 +123,7 @@ func rsaDecrypt() *cobra.Command {
 func aesEncrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "aes-enc",
-		Short: "aes256 encrypt hex, example: aes-enc {srcData} {Key}",
+		Short: "aes256 encrypt hex, example: aes-enc {srcData} {key}",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				return fmt.Errorf("invalid parameter")
@@ -102,23 +143,76 @@ func aesEncrypt() *cobra.Command {
 	return cmd
 }
 
+func safeAesEncrypt() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "safe-aes-enc",
+		Short: "safe aes256 encrypt hex, example: aes-enc",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var (
+				srcData string
+				srcKey  string
+			)
+			if term.IsTerminal(int(syscall.Stdin)) {
+				fmt.Print("Enter srcData: ")
+				srcDataStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				fmt.Println()
+				srcData = string(srcDataStdin)
+				fmt.Print("Enter key: ")
+				keyStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				fmt.Println()
+				srcKey = string(keyStdin)
+			} else {
+				return fmt.Errorf("error: Cannot read srcData and key from non-terminal input")
+			}
+			if srcData == "" || srcKey == "" {
+				return fmt.Errorf("invalid parameter")
+			}
+			key, err := hex.DecodeString(srcKey)
+			if err != nil {
+				return err
+			}
+			data, err := crypto.AesEncrypt([]byte(srcData), key)
+			if err != nil {
+				return err
+			}
+			cmd.Println("aes enc data:\n", hex.EncodeToString(data))
+			return nil
+		},
+	}
+	return cmd
+}
+
 func aesDecrypt() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "aes-dec",
-		Short: "aes256 decrypt hex, example: aes-dec {cryptedData} {Key}",
+		Short: "aes256 decrypt hex, example: aes-dec {cryptedData}",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 2 {
+			if len(args) < 1 {
 				return fmt.Errorf("invalid parameter")
+			}
+			var (
+				key string
+			)
+			if term.IsTerminal(int(syscall.Stdin)) {
+				fmt.Print("Enter key: ")
+				keyStdin, _ := term.ReadPassword(int(syscall.Stdin))
+				fmt.Println()
+				key = string(keyStdin)
+			} else {
+				return fmt.Errorf("error: Cannot read key from non-terminal input")
+			}
+			if key == "" {
+				return fmt.Errorf("invalid key")
 			}
 			srcData, err := hex.DecodeString(args[0])
 			if err != nil {
 				return err
 			}
-			key, err := hex.DecodeString(args[1])
+			keyByte, err := hex.DecodeString(key)
 			if err != nil {
 				return err
 			}
-			data, err := crypto.AesDecrypt(srcData, key)
+			data, err := crypto.AesDecrypt(srcData, keyByte)
 			if err != nil {
 				return err
 			}

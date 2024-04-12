@@ -28,7 +28,7 @@ var (
 	FlagEncrypt             = "encryptModel"
 	FlagVSMInternalKeyIndex = "vsmInternalKeyIndex"
 	FlagVsmIv               = "vsmIv"
-	FlagLocalEncryptKey     = "localCryptKey"
+	FlagLocalEncryptKey     = "localKey"
 )
 
 var (
