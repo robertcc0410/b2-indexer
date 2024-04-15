@@ -25,8 +25,6 @@ $(BUILD_TARGETS): go.sum $(BUILDDIR)/
 $(BUILDDIR)/:
 	mkdir -p $(BUILDDIR)/
 
-install:
-	go install ./...
 
 image-build:
 	docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
