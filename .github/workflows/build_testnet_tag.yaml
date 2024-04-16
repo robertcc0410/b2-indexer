@@ -3,7 +3,7 @@ name: Create and publish a docker image with test** tag
 on:
   push:
     tags:
-      - test*
+      - v*
 
 env:
   REGISTRY: ghcr.io
