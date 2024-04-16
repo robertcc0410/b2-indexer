@@ -130,6 +130,9 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 			ethPrivKey = localDecEthPrivKey
 		}
 	}
+	if has0xPrefix(ethPrivKey) {
+		ethPrivKey = ethPrivKey[2:]
+	}
 	privateKey, err := crypto.HexToECDSA(ethPrivKey)
 	if err != nil {
 		return nil, err
@@ -578,4 +581,8 @@ func (b *Bridge) gasPrices() (*big.Int, error) {
 func (b *Bridge) FromAddress() string {
 	fromAddress := crypto.PubkeyToAddress(b.EthPrivKey.PublicKey)
 	return fromAddress.String()
+}
+
+func has0xPrefix(input string) bool {
+	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
 }
