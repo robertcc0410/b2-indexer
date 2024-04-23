@@ -37,3 +37,27 @@ type RequestDetail struct {
 	GasLimit        string `json:"gasLimit"`
 	State           int    `json:"state"`
 }
+
+type MpcCheckRequestDetail struct {
+	T            int      `json:"t,omitempty"`
+	N            int      `json:"n,omitempty"`
+	Cryptography string   `json:"cryptography,omitempty"`
+	PartyIDs     []string `json:"party_ids,omitempty"`
+
+	PublicKey   string `json:"public_key,omitempty"`
+	Path        string `json:"path,omitempty"`
+	Message     string `json:"message,omitempty"`
+	Coin        string `json:"coin,omitempty"`
+	FromAddress string `json:"from_address,omitempty"`
+	ToAddress   string `json:"to_address,omitempty"`
+	Amount      string `json:"amount,omitempty"`
+	Fee         string `json:"fee,omitempty"`
+	GasPrice    string `json:"gas_price,omitempty"`
+	GasLimit    string `json:"gas_limit,omitempty"`
+	Signature   string `json:"signature,omitempty"`
+}
+
+type MpcCheckExtraInfo struct {
+	SinoID    string `json:"sino_id,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
+}

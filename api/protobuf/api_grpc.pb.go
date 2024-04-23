@@ -198,3 +198,93 @@ var NotifyService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/protobuf/api.proto",
 }
+
+const (
+	MpcCheckService_MpcCheck_FullMethodName = "/api.protobuf.MpcCheckService/MpcCheck"
+)
+
+// MpcCheckServiceClient is the client API for MpcCheckService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type MpcCheckServiceClient interface {
+	MpcCheck(ctx context.Context, in *vo.MpcCheckRequest, opts ...grpc.CallOption) (*vo.MpcCheckResponse, error)
+}
+
+type mpcCheckServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewMpcCheckServiceClient(cc grpc.ClientConnInterface) MpcCheckServiceClient {
+	return &mpcCheckServiceClient{cc}
+}
+
+func (c *mpcCheckServiceClient) MpcCheck(ctx context.Context, in *vo.MpcCheckRequest, opts ...grpc.CallOption) (*vo.MpcCheckResponse, error) {
+	out := new(vo.MpcCheckResponse)
+	err := c.cc.Invoke(ctx, MpcCheckService_MpcCheck_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MpcCheckServiceServer is the server API for MpcCheckService service.
+// All implementations must embed UnimplementedMpcCheckServiceServer
+// for forward compatibility
+type MpcCheckServiceServer interface {
+	MpcCheck(context.Context, *vo.MpcCheckRequest) (*vo.MpcCheckResponse, error)
+	mustEmbedUnimplementedMpcCheckServiceServer()
+}
+
+// UnimplementedMpcCheckServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedMpcCheckServiceServer struct {
+}
+
+func (UnimplementedMpcCheckServiceServer) MpcCheck(context.Context, *vo.MpcCheckRequest) (*vo.MpcCheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MpcCheck not implemented")
+}
+func (UnimplementedMpcCheckServiceServer) mustEmbedUnimplementedMpcCheckServiceServer() {}
+
+// UnsafeMpcCheckServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to MpcCheckServiceServer will
+// result in compilation errors.
+type UnsafeMpcCheckServiceServer interface {
+	mustEmbedUnimplementedMpcCheckServiceServer()
+}
+
+func RegisterMpcCheckServiceServer(s grpc.ServiceRegistrar, srv MpcCheckServiceServer) {
+	s.RegisterService(&MpcCheckService_ServiceDesc, srv)
+}
+
+func _MpcCheckService_MpcCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(vo.MpcCheckRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MpcCheckServiceServer).MpcCheck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MpcCheckService_MpcCheck_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MpcCheckServiceServer).MpcCheck(ctx, req.(*vo.MpcCheckRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// MpcCheckService_ServiceDesc is the grpc.ServiceDesc for MpcCheckService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var MpcCheckService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.protobuf.MpcCheckService",
+	HandlerType: (*MpcCheckServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "MpcCheck",
+			Handler:    _MpcCheckService_MpcCheck_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/protobuf/api.proto",
+}

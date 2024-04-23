@@ -252,21 +252,25 @@ func TestHTTPConfig(t *testing.T) {
 	os.Unsetenv("HTTP_PORT")
 	os.Unsetenv("HTTP_GRPC_PORT")
 	os.Unsetenv("HTTP_IP_WHITE_LIST")
+	os.Unsetenv("ENABLE_MPC_CALLBACK")
 
 	config, err := config.LoadHTTPConfig("./testdata")
 	require.NoError(t, err)
 	require.Equal(t, "8080", config.HTTPPort)
 	require.Equal(t, "8081", config.GrpcPort)
 	require.Equal(t, "127.0.0.1", config.IPWhiteList)
+	require.Equal(t, false, config.EnableMPCCallback)
 }
 
 func TestHTTPConfigEnv(t *testing.T) {
 	os.Setenv("HTTP_PORT", "8080")
 	os.Setenv("HTTP_GRPC_PORT", "8081")
 	os.Setenv("HTTP_IP_WHITE_LIST", "127.0.0.2")
+	os.Setenv("ENABLE_MPC_CALLBACK", "true")
 	config, err := config.LoadHTTPConfig("./")
 	require.NoError(t, err)
 	require.Equal(t, "8080", config.HTTPPort)
 	require.Equal(t, "8081", config.GrpcPort)
 	require.Equal(t, "127.0.0.2", config.IPWhiteList)
+	require.Equal(t, true, config.EnableMPCCallback)
 }
