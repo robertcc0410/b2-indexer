@@ -1,4 +1,5 @@
 //go:build !lint
+// +build !lint
 
 package types
 
