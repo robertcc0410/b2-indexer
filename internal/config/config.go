@@ -119,6 +119,8 @@ type HTTPConfig struct {
 	GrpcPort string `mapstructure:"grpc-port" env:"HTTP_GRPC_PORT" envDefault:"9091"`
 	// ipWhiteList defines the ip white list, Only those in the whitelist can be called
 	IPWhiteList string `mapstructure:"ip-white-list" env:"HTTP_IP_WHITE_LIST"`
+	// enableMpcCallback enable mpc callback api
+	EnableMPCCallback bool `mapstructure:"enable-mpc-callback" env:"ENABLE_MPC_CALLBACK"`
 }
 
 const (

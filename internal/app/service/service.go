@@ -59,6 +59,9 @@ func RegisterGateway(ctx context.Context, mux *runtime.ServeMux, endPoint string
 	if err := pb.RegisterNotifyServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
 		log.Fatalf("RegisterNotifyServiceHandlerFromEndpoint failed: %v", err)
 	}
+	if err := pb.RegisterMpcCheckServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
+		log.Fatalf("RegisterMpcCheckServiceHandlerFromEndpoint failed: %v", err)
+	}
 	return nil
 }
 
@@ -66,6 +69,7 @@ func RegisterGrpcFunc() func(server *grpc.Server) {
 	return func(svc *grpc.Server) {
 		pb.RegisterHelloServiceServer(svc, newHelloServer())
 		pb.RegisterNotifyServiceServer(svc, newNotifyServer())
+		pb.RegisterMpcCheckServiceServer(svc, newMpcCheckServer())
 	}
 }
 

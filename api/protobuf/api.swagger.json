@@ -43,6 +43,38 @@
         ]
       }
     },
+    "/v1/check": {
+      "post": {
+        "operationId": "MpcCheckService_MpcCheck",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufMpcCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufMpcCheckRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MpcCheckService"
+        ]
+      }
+    },
     "/v1/hello": {
       "get": {
         "operationId": "HelloService_GetHello",
@@ -99,6 +131,40 @@
         },
         "data": {
           "$ref": "#/definitions/HelloResponseData"
+        }
+      }
+    },
+    "protobufMpcCheckRequest": {
+      "type": "object",
+      "properties": {
+        "callbackId": {
+          "type": "string"
+        },
+        "requestType": {
+          "type": "string"
+        },
+        "requestDetail": {
+          "type": "object"
+        },
+        "extraInfo": {
+          "type": "object"
+        }
+      }
+    },
+    "protobufMpcCheckResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object"
+        },
+        "signature": {
+          "type": "string"
         }
       }
     },

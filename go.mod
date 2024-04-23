@@ -103,4 +103,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/sinohope/sinohope-golang-sdk => github.com/sinohope/golang-sdk v1.0.3
+replace github.com/sinohope/sinohope-golang-sdk => github.com/sinohope/golang-sdk v1.1.1

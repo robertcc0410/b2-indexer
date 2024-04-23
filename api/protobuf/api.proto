@@ -7,6 +7,7 @@ option go_package = "github.com/b2network/b2-indexer/api/protobuf";
 import "api/protobuf/google/api/annotations.proto";
 import "api/protobuf/vo/hello.proto";
 import "api/protobuf/vo/notify.proto";
+import "api/protobuf/vo/mpc.proto";
 
 service HelloService {
   rpc GetHello (HelloRequest) returns (HelloResponse) {
@@ -20,6 +21,15 @@ service NotifyService {
   rpc TransactionNotify(TransactionNotifyRequest) returns (TransactionNotifyResponse)  {
     option (google.api.http) = {
       post: "/v1/call_back/transaction/notify"
+      body: "*"
+    };
+  }
+}
+
+service MpcCheckService {
+  rpc MpcCheck(MpcCheckRequest) returns (MpcCheckResponse) {
+    option (google.api.http) = {
+      post: "/v1/check"
       body: "*"
     };
   }
