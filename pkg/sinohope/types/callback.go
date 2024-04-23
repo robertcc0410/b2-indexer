@@ -1,6 +1,3 @@
-//go:build !lint
-// +build !lint
-
 package types
 
 const (
@@ -45,7 +42,7 @@ type MpcCheckRequestDetail struct {
 	T            int      `json:"t,omitempty"`
 	N            int      `json:"n,omitempty"`
 	Cryptography string   `json:"cryptography,omitempty"`
-	PartyIds     []string `json:"party_ids,omitempty"`
+	PartyIDs     []string `json:"party_ids,omitempty"`
 
 	PublicKey   string `json:"public_key,omitempty"`
 	Path        string `json:"path,omitempty"`
@@ -61,6 +58,6 @@ type MpcCheckRequestDetail struct {
 }
 
 type MpcCheckExtraInfo struct {
-	SinoId    string `json:"sino_id,omitempty"`
-	RequestId string `json:"request_id,omitempty"`
+	SinoID    string `json:"sino_id,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 }

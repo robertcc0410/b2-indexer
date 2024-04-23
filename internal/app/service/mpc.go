@@ -56,7 +56,7 @@ func (s *mpcCheckServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) 
 		return ErrorMpcCheck(exceptions.RequestDetailUnmarshal, "request detail unmarshal err"), nil
 	}
 	logger.Infof("request detail: %v", requestDetail)
-	err = db.Transaction(func(tx *gorm.DB) error {
+	err = db.Transaction(func(_ *gorm.DB) error {
 		return nil
 	})
 	if err != nil {
