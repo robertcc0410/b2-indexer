@@ -20,7 +20,7 @@ func newMpcCheckServer() *mpcCheckServer {
 	return &mpcCheckServer{}
 }
 
-func ErrorMpcCheck(code int64, message string) *vo.MpcCheckResponse {
+func ErrorMpcCheck(_ int64, _ string) *vo.MpcCheckResponse {
 	return &vo.MpcCheckResponse{
 		// Code:    code,
 		// Message: message,
