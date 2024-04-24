@@ -92,8 +92,8 @@ func (bis *TransferService) OnStart() error {
 
 				withdrawSinohope := model.WithdrawSinohope{
 					B2TxHash:  v.B2TxHash,
-					SinoId:    res.SinoId,
-					RequestId: res.RequestId,
+					SinoID:    res.SinoId,
+					RequestID: res.RequestId,
 					State:     res.State,
 				}
 				if err := tx.Create(&withdrawSinohope).Error; err != nil {
