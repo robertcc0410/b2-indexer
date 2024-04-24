@@ -17,7 +17,7 @@ func Run(ctx context.Context, serverCtx *Context, db *gorm.DB) (err error) {
 	// 	log.Panic("listen address empty")
 	// }
 	grpcOpts := GrpcOpts(serverCtx.BitcoinConfig.IndexerListenAddress, serverCtx.HTTPConfig, db)
-	err = grpc.Run(ctx, serverCtx.HTTPConfig, grpcOpts, service.RegisterGrpcFunc(), service.RegisterGateway)
+	err = grpc.Run(ctx, serverCtx.HTTPConfig, grpcOpts, service.RegisterGrpcFunc(serverCtx.HTTPConfig), service.RegisterGateway)
 	if err != nil {
 		log.Panicf(err.Error())
 	}

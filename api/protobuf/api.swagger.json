@@ -13,7 +13,7 @@
   "paths": {
     "/v1/call_back/transaction/notify": {
       "post": {
-        "operationId": "NotifyService_TransactionNotify",
+        "operationId": "SinohopeService_TransactionNotify",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -39,13 +39,45 @@
           }
         ],
         "tags": [
-          "NotifyService"
+          "SinohopeService"
+        ]
+      }
+    },
+    "/v1/call_back/withdrawal/confirm": {
+      "post": {
+        "operationId": "SinohopeService_WithdrawalConfirm",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufWithdrawalConfirmResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufWithdrawalConfirmRequest"
+            }
+          }
+        ],
+        "tags": [
+          "SinohopeService"
         ]
       }
     },
     "/v1/check": {
       "post": {
-        "operationId": "MpcCheckService_MpcCheck",
+        "operationId": "MpcService_MpcCheck",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -71,7 +103,7 @@
           }
         ],
         "tags": [
-          "MpcCheckService"
+          "MpcService"
         ]
       }
     },
@@ -137,16 +169,16 @@
     "protobufMpcCheckRequest": {
       "type": "object",
       "properties": {
-        "callbackId": {
+        "callback_id": {
           "type": "string"
         },
-        "requestType": {
+        "request_type": {
           "type": "string"
         },
-        "requestDetail": {
+        "request_detail": {
           "type": "object"
         },
-        "extraInfo": {
+        "extra_info": {
           "type": "object"
         }
       }
@@ -205,6 +237,38 @@
           "type": "string"
         },
         "message": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufWithdrawalConfirmRequest": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "requestDetail": {
+          "type": "object"
+        },
+        "extraInfo": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufWithdrawalConfirmResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "format": "int64"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "action": {
           "type": "string"
         }
       }
