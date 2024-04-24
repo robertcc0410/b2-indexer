@@ -80,9 +80,8 @@ func (s *sinohopeServer) TransactionNotify(ctx context.Context, req *vo.Transact
 	} else if req.RequestType == sinohopeType.RequestTypeWithdrawal {
 		logger.Infof("handle withdraw request")
 		return s.transactionNotifyWithdraw(req, db, logger)
-	} else {
-		return ErrorTransactionNotify(exceptions.RequestTypeNonsupport, "request type nonsupport"), nil
 	}
+	return ErrorTransactionNotify(exceptions.RequestTypeNonsupport, "request type nonsupport"), nil
 }
 
 func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error) {
@@ -273,8 +272,10 @@ func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequ
 	}, nil
 }
 
-func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequest, db *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
+func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequest, _ *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
 	// TODO: handle withdraw notify
+
+	logger.Infof("withdraw notify success")
 	return &vo.TransactionNotifyResponse{
 		RequestId: req.RequestId,
 		Code:      200,
