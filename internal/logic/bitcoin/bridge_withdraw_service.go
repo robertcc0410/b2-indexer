@@ -54,6 +54,20 @@ func (bis *BridgeWithdrawService) OnStart() error {
 			return err
 		}
 	}
+	if !bis.db.Migrator().HasTable(&model.WithdrawSinohope{}) {
+		err := bis.db.AutoMigrate(&model.WithdrawSinohope{})
+		if err != nil {
+			bis.log.Errorw("BridgeWithdrawService create withdraw_sinohope table", "error", err.Error())
+			return err
+		}
+	}
+	if !bis.db.Migrator().HasTable(&model.WithdrawCheck{}) {
+		err := bis.db.AutoMigrate(&model.WithdrawCheck{})
+		if err != nil {
+			bis.log.Errorw("BridgeWithdrawService create withdraw_check table", "error", err.Error())
+			return err
+		}
+	}
 	for {
 		// confirm tx
 		var withdrawList []model.Withdraw
