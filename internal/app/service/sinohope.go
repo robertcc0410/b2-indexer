@@ -187,6 +187,7 @@ func (s *sinohopeServer) TransactionNotify(ctx context.Context, req *vo.Transact
 		Code:      200,
 	}, nil
 }
+
 func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error) {
 	logger := log.WithName("WithdrawalConfirm")
 	logger.Infow("request data:", "req", req)

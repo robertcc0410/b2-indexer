@@ -52,7 +52,7 @@ type RequestDetail struct {
 }
 
 type MpcCheckVerifyRequest struct {
-	CallbackId                  string `json:"callback_id,omitempty"`
+	CallbackID                  string `json:"callback_id,omitempty"`
 	RequestType                 string `json:"request_type,omitempty"`
 	MpcCheckVerifyRequestDetail `json:"request_detail,omitempty"`
 	MpcCheckExtraInfo           `json:"extra_info,omitempty"`
@@ -102,26 +102,25 @@ type MpcCheckExtraInfo struct {
 type MpcCheckResponseData struct {
 	CallbackID string `json:"callback_id,omitempty"`
 	SinoID     string `json:"sino_id,omitempty"`
-	RequestId  string `json:"request_id,omitempty"`
+	RequestID  string `json:"request_id,omitempty"`
 	Action     string `json:"action,omitempty"`
 	WaitTime   string `json:"wait_time,omitempty"`
 }
 
 type ConfirmRequestDetail struct {
-	Amount       string `json:"amount"`
-	APIRequestID string `json:"apiRequestId"`
-	AssetID      string `json:"assetId"`
-	Brc20Detail  struct {
-	} `json:"brc20Detail"`
-	ChainSymbol string `json:"chainSymbol"`
-	Decimal     int    `json:"decimal"`
-	Fee         string `json:"fee"`
-	From        string `json:"from"`
-	GasLimit    string `json:"gasLimit"`
-	GasPrice    string `json:"gasPrice"`
-	Note        string `json:"note"`
-	SinoID      string `json:"sinoId"`
-	To          string `json:"to"`
-	ToTag       string `json:"toTag"`
-	WalletID    string `json:"walletId"`
+	Amount       string   `json:"amount"`
+	APIRequestID string   `json:"apiRequestId"`
+	AssetID      string   `json:"assetId"`
+	Brc20Detail  struct{} `json:"brc20Detail"`
+	ChainSymbol  string   `json:"chainSymbol"`
+	Decimal      int      `json:"decimal"`
+	Fee          string   `json:"fee"`
+	From         string   `json:"from"`
+	GasLimit     string   `json:"gasLimit"`
+	GasPrice     string   `json:"gasPrice"`
+	Note         string   `json:"note"`
+	SinoID       string   `json:"sinoId"`
+	To           string   `json:"to"`
+	ToTag        string   `json:"toTag"`
+	WalletID     string   `json:"walletId"`
 }

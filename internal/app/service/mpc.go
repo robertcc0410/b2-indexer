@@ -106,7 +106,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 	}
 
 	mpcCheckVerifyRequest := sinohopeType.MpcCheckVerifyRequest{
-		CallbackId:  req.CallbackId,
+		CallbackID:  req.CallbackId,
 		RequestType: req.RequestType,
 		MpcCheckVerifyRequestDetail: sinohopeType.MpcCheckVerifyRequestDetail{
 			T:            requestDetail.T,
@@ -135,7 +135,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 		return ErrorMpcCheck(exceptions.SystemError, "verify signature failed"), nil
 	}
 
-	responseData.RequestId = mpcCheckExtraInfo.RequestID
+	responseData.RequestID = mpcCheckExtraInfo.RequestID
 	responseData.SinoID = mpcCheckExtraInfo.SinoID
 	// TODO: debug
 	responseData.Action = sinohopeType.MpcCheckActionApprove
@@ -158,7 +158,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 		return ErrorMpcCheck(exceptions.SystemError, "system error"), nil
 	}
 	rspData, err := structpb.NewStruct(map[string]interface{}{
-		"request_id":  responseData.RequestId,
+		"request_id":  responseData.RequestID,
 		"sino_id":     responseData.SinoID,
 		"callback_id": responseData.CallbackID,
 		"action":      responseData.Action,

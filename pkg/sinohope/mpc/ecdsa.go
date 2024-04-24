@@ -38,14 +38,13 @@ func Verify(public *ecdsa.PublicKey, message, signature string) bool {
 }
 
 func LoadTSSNodePublicKey(keyStr string) (*ecdsa.PublicKey, error) {
-	keyStr = strings.Replace(keyStr, "\\n", "\n", -1)
+	keyStr = strings.ReplaceAll(keyStr, "\\n", "\n")
 	pemData := []byte(keyStr)
 	block, _ := pem.Decode(pemData)
 	if block == nil || block.Type != "PUBLIC KEY" {
 		return nil, fmt.Errorf("failed to decode PEM block containing the public key")
 	}
 	pubInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse public key: %v", err)
 	}
@@ -57,7 +56,7 @@ func LoadTSSNodePublicKey(keyStr string) (*ecdsa.PublicKey, error) {
 }
 
 func LoadKeypair(keyStr string) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
-	keyStr = strings.Replace(keyStr, "\\n", "\n", -1)
+	keyStr = strings.ReplaceAll(keyStr, "\\n", "\n")
 	load := func(keyStr string) (interface{}, error) {
 		pemData := []byte(keyStr)
 		var block *pem.Block
