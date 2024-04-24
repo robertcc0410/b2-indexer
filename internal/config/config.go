@@ -121,13 +121,29 @@ type HTTPConfig struct {
 	IPWhiteList string `mapstructure:"ip-white-list" env:"HTTP_IP_WHITE_LIST"`
 }
 
+// TransferConfig defines the transfer server config
+type TransferConfig struct {
+	BaseUrl        string `mapstructure:"base-url" env:"TRANSFER_BASE_URL"`
+	FakePrivateKey string `mapstructure:"fake-private-key" env:"TRANSFER_FAKE_PRIVATE_KEY"`
+	VaultId        string `mapstructure:"vault-id" env:"TRANSFER_VAULT_ID"`
+	WalletId       string `mapstructure:"wallet-id" env:"TRANSFER_WALLET_ID"`
+	From           string `mapstructure:"from" env:"TRANSFER_FROM"`
+	AssetId        string `mapstructure:"asset-id" env:"TRANSFER_ASSET_ID"`
+	ChainSymbol    string `mapstructure:"chain-symbol" env:"TRANSFER_CHAIN_SYMBOL"`
+	OperationType  string `mapstructure:"operation-type" env:"TRANSFER_OPERATION_TYPE"`
+	FeeRate        string `mapstructure:"fee-rate" env:"TRANSFER_FEE_RATE"`
+	Note           string `mapstructure:"note" env:"TRANSFER_NOTE"`
+}
+
 const (
-	BitcoinConfigFileName  = "bitcoin.toml"
-	AppConfigFileName      = "indexer.toml"
-	HTTPConfigFileName     = "http.toml"
-	BitcoinConfigEnvPrefix = "BITCOIN"
-	AppConfigEnvPrefix     = "APP"
-	HTTPConfigEnvPrefix    = "HTTP"
+	BitcoinConfigFileName   = "bitcoin.toml"
+	AppConfigFileName       = "indexer.toml"
+	HTTPConfigFileName      = "http.toml"
+	TransferConfigFileName  = "transfer.toml"
+	BitcoinConfigEnvPrefix  = "BITCOIN"
+	AppConfigEnvPrefix      = "APP"
+	HTTPConfigEnvPrefix     = "HTTP"
+	TransferConfigEnvPrefix = "TRANSFER"
 )
 
 func LoadConfig(homePath string) (*Config, error) {
@@ -235,6 +251,37 @@ func LoadHTTPConfig(homePath string) (*HTTPConfig, error) {
 	v.SetConfigFile(configFile)
 
 	v.SetEnvPrefix(HTTPConfigEnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	// try load config from file
+	err := v.ReadInConfig()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		// if err load config from env
+		if err := env.Parse(&config); err != nil {
+			return nil, err
+		}
+		return &config, nil
+	}
+
+	err = v.Unmarshal(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func LoadTransferConfig(homePath string) (*TransferConfig, error) {
+	config := TransferConfig{}
+	configFile := path.Join(homePath, TransferConfigFileName)
+	v := viper.New()
+	v.SetConfigFile(configFile)
+
+	v.SetEnvPrefix(TransferConfigEnvPrefix)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 

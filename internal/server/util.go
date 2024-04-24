@@ -30,6 +30,7 @@ type Context struct {
 	Config        *config.Config
 	BitcoinConfig *config.BitcoinConfig
 	HTTPConfig    *config.HTTPConfig
+	TransferCfg   *config.TransferConfig
 	// Logger        logger.Logger
 	// Db *gorm.DB
 }
@@ -136,6 +137,13 @@ func NewHTTPContext(httpCfg *config.HTTPConfig, bitcoinCfg *config.BitcoinConfig
 	}
 }
 
+func NewTransferContext(cfg *config.Config, transferCfg *config.TransferConfig) *Context {
+	return &Context{
+		Config:      cfg,
+		TransferCfg: transferCfg,
+	}
+}
+
 func HTTPConfigsPreRunHandler(cmd *cobra.Command, home string) error {
 	cfg, err := config.LoadConfig(home)
 	if err != nil {
@@ -163,5 +171,29 @@ func HTTPConfigsPreRunHandler(cmd *cobra.Command, home string) error {
 	ctx := context.WithValue(cmd.Context(), types.DBContextKey, db)
 	cmd.SetContext(ctx)
 	serverCtx := NewHTTPContext(httpCfg, bitcoinCfg)
+	return SetCmdServerContext(cmd, serverCtx)
+}
+
+func TransferConfigsPreRunHandler(cmd *cobra.Command, home string) error {
+	cfg, err := config.LoadConfig(home)
+	if err != nil {
+		return err
+	}
+	if home != "" {
+		cfg.RootDir = home
+	}
+	db, err := NewDB(cfg)
+	if err != nil {
+		return err
+	}
+	// set db to context
+	ctx := context.WithValue(cmd.Context(), types.DBContextKey, db)
+	cmd.SetContext(ctx)
+
+	transferCfg, err := config.LoadTransferConfig(home)
+	if err != nil {
+		return err
+	}
+	serverCtx := NewTransferContext(cfg, transferCfg)
 	return SetCmdServerContext(cmd, serverCtx)
 }

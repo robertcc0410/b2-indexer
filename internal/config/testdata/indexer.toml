@@ -1,7 +1,7 @@
 root-dir = "/data/b2-indexer"
 log-level = "info"
 log-format = "json"
-database-source = "postgres://postgres:postgres@127.0.0.2:5432/b2-indexer"
+database-source = "postgres://postgres:123456@localhost:5432/postgres?sslmode=disable"
 database-max-idle-conns = 1
 database-max-open-conns = 2
 database-conn-max-lifetime = 3600
