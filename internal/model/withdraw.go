@@ -11,6 +11,12 @@ const (
 	BtcTxWithdrawFailed
 )
 
+// btc tx check status sequence
+const (
+	BtcTxWithdrawSinohopeCallback = iota + 1
+	BtcTxWithdrawMPCCallback
+)
+
 type Withdraw struct {
 	Base
 	UUID          string `json:"uuid" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network withdraw_uuid"`
@@ -24,6 +30,15 @@ type Withdraw struct {
 	B2TxIndex     uint   `json:"b2_tx_index" gorm:"type:bigint;comment:b2 tx index"`
 	B2LogIndex    uint   `json:"b2_log_index" gorm:"type:int;comment:b2 log index"`
 	Status        int    `json:"status" gorm:"type:smallint;default:1"`
+	CheckStatus   int    `json:"check_status" gorm:"type:smallint;default:0"`
+}
+
+type FeeRates struct {
+	FastestFee  int `json:"fastestFee"`
+	HalfHourFee int `json:"halfHourFee"`
+	HourFee     int `json:"hourFee"`
+	EconomyFee  int `json:"economyFee"`
+	MinimumFee  int `json:"minimumFee"`
 }
 
 type WithdrawColumns struct {
@@ -37,6 +52,7 @@ type WithdrawColumns struct {
 	B2BlockNumber string
 	B2LogIndex    string
 	Status        string
+	CheckStatus   string
 }
 
 func (Withdraw) TableName() string {
@@ -55,5 +71,6 @@ func (Withdraw) Column() WithdrawColumns {
 		B2BlockNumber: "b2_block_number",
 		B2LogIndex:    "b2_log_index",
 		Status:        "status",
+		CheckStatus:   "check_status",
 	}
 }

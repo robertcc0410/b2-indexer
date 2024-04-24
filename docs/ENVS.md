@@ -65,8 +65,8 @@
 | TRANSFER_CHAIN_SYMBOL     | `string` | chain-symbol     | -              |               | BTC_BTC                  |
 | TRANSFER_ASSET_ID         | `string` | asset-id         | -              |               | BTC                      |
 | TRANSFER_OPERATION_TYPE   | `string` | operation-type   | -              |               | TRANSFER                 |
-| TRANSFER_FEE_RATE         | `string` | fee-rate         | -              |               | 2                        |
-| TRANSFER_NOTE             | `string` | note             | -              |               | -                        |
+| TRANSFER_NETWORK_NAME     | `string` | network-name     | -              |               | -                        |
+| TRANSFER_ENABLE_ENCRYPT   | `bool`   | enable-encrypt   | -              |               | -                        |
 
 # Service requirement environment variable
 
@@ -140,13 +140,13 @@ HTTP_PORT
 
 ```
 TRANSFER_BASE_URL
-TRANSFER_FAKE_PRIVATE_KEY
+TRANSFER_PRIVATE_KEY
 TRANSFER_VAULT_ID
 TRANSFER_WALLET_ID
 TRANSFER_FROM
 TRANSFER_CHAIN_SYMBOL
 TRANSFER_ASSET_ID
 TRANSFER_OPERATION_TYPE
-TRANSFER_FEE_RATE
-TRANSFER_NOTE
+TRANSFER_NETWORK_NAME
+TRANSFER_ENABLE_ENCRYPT
 ```
