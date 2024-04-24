@@ -84,7 +84,7 @@ func (bis *TransferService) OnStart() error {
 					model.Withdraw{}.Column().Status:    model.BtcTxWithdrawPending,
 					model.Withdraw{}.Column().BtcTxHash: res.Transaction.TxHash,
 				}
-				err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Updates(updateFields).Error
+				err = tx.Model(&model.Withdraw{}).Where("id = ?", v.ID).Updates(updateFields).Error
 				if err != nil {
 					bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
 					return err
@@ -96,7 +96,7 @@ func (bis *TransferService) OnStart() error {
 					RequestId: res.RequestId,
 					State:     res.State,
 				}
-				if err := bis.db.Create(&withdrawSinohope).Error; err != nil {
+				if err := tx.Create(&withdrawSinohope).Error; err != nil {
 					bis.log.Errorw("TransferService Create withdrawSinohope error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
 					return err
 				}
