@@ -2,13 +2,14 @@ package bitcoin
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/b2network/b2-indexer/internal/config"
 	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/cometbft/cometbft/libs/service"
 	"gorm.io/gorm"
-	"time"
 
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/ethereum/go-ethereum/ethclient"

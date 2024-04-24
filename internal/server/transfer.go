@@ -1,11 +1,12 @@
 package server
 
 import (
+	"time"
+
 	"github.com/b2network/b2-indexer/internal/logic/bitcoin"
 	logger "github.com/b2network/b2-indexer/pkg/log"
 	"github.com/sinohope/sinohope-golang-sdk/core/sdk"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
@@ -22,7 +23,7 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 		return err
 	}
 
-	sinohopeAPI, err := sdk.NewTransactionAPI(transferCfg.BaseUrl, transferCfg.FakePrivateKey)
+	sinohopeAPI, err := sdk.NewTransactionAPI(transferCfg.BaseURL, transferCfg.FakePrivateKey)
 	if err != nil {
 		return err
 	}

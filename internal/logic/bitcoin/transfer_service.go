@@ -2,6 +2,9 @@ package bitcoin
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/b2network/b2-indexer/internal/config"
 	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/pkg/log"
@@ -9,8 +12,6 @@ import (
 	"github.com/sinohope/sinohope-golang-sdk/common"
 	"github.com/sinohope/sinohope-golang-sdk/features"
 	"gorm.io/gorm"
-	"strconv"
-	"time"
 )
 
 const (
@@ -56,9 +57,9 @@ func (bis *TransferService) OnStart() error {
 			continue
 		}
 		for _, v := range withdrawList {
-			isOK, err := bis.QueryTransactionsByRequestIds(v.B2TxHash)
+			isOK, err := bis.QueryTransactionsByRequestIDs(v.B2TxHash)
 			if err != nil {
-				bis.log.Errorw("TransferService QueryTransactionsByRequestIds error", "error", err, "B2TxHash", v.B2TxHash)
+				bis.log.Errorw("TransferService QueryTransactionsByRequestIDs error", "error", err, "B2TxHash", v.B2TxHash)
 				time.Sleep(time.Second)
 				continue
 			}
@@ -86,12 +87,12 @@ func (bis *TransferService) OnStart() error {
 	}
 }
 
-func (bis *TransferService) Transfer(requestId string, to string, amount string) (*common.CreateSettlementTxResData, error) {
+func (bis *TransferService) Transfer(requestID string, to string, amount string) (*common.CreateSettlementTxResData, error) {
 	fee, err := bis.sinohopeAPI.Fee(&common.WalletTransactionFeeWAASParam{
 		OperationType: bis.cfg.OperationType,
 		From:          bis.cfg.From,
 		To:            to,
-		AssetId:       bis.cfg.AssetId,
+		AssetId:       bis.cfg.AssetID,
 		ChainSymbol:   bis.cfg.ChainSymbol,
 		Amount:        amount,
 	})
@@ -100,13 +101,13 @@ func (bis *TransferService) Transfer(requestId string, to string, amount string)
 		return nil, err
 	}
 	res, err := bis.sinohopeAPI.CreateTransfer(&common.WalletTransactionSendWAASParam{
-		RequestId:   requestId,
-		VaultId:     bis.cfg.VaultId,
-		WalletId:    bis.cfg.WalletId,
+		RequestId:   requestID,
+		VaultId:     bis.cfg.VaultID,
+		WalletId:    bis.cfg.WalletID,
 		From:        bis.cfg.From,
 		To:          to,
 		ChainSymbol: bis.cfg.ChainSymbol,
-		AssetId:     bis.cfg.AssetId,
+		AssetId:     bis.cfg.AssetID,
 		Amount:      amount,
 		Fee:         fee.TransactionFee.AverageFee,
 		FeeRate:     bis.cfg.FeeRate,
@@ -120,12 +121,12 @@ func (bis *TransferService) Transfer(requestId string, to string, amount string)
 	return res, nil
 }
 
-func (bis *TransferService) QueryTransactionsByRequestIds(requestId string) (bool, error) {
+func (bis *TransferService) QueryTransactionsByRequestIDs(requestID string) (bool, error) {
 	res, err := bis.sinohopeAPI.TransactionsByRequestIds(&common.WalletTransactionQueryWAASRequestIdParam{
-		RequestIds: requestId,
+		RequestIds: requestID,
 	})
 	if err != nil {
-		bis.log.Errorw("TransferService QueryTransactionsByRequestIds failed", "error", err)
+		bis.log.Errorw("TransferService QueryTransactionsByRequestIDs failed", "error", err)
 		return false, err
 	}
 	if len(res.List) == 0 {

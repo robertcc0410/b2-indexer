@@ -123,12 +123,12 @@ type HTTPConfig struct {
 
 // TransferConfig defines the transfer server config
 type TransferConfig struct {
-	BaseUrl        string `mapstructure:"base-url" env:"TRANSFER_BASE_URL"`
+	BaseURL        string `mapstructure:"base-url" env:"TRANSFER_BASE_URL"`
 	FakePrivateKey string `mapstructure:"fake-private-key" env:"TRANSFER_FAKE_PRIVATE_KEY"`
-	VaultId        string `mapstructure:"vault-id" env:"TRANSFER_VAULT_ID"`
-	WalletId       string `mapstructure:"wallet-id" env:"TRANSFER_WALLET_ID"`
+	VaultID        string `mapstructure:"vault-id" env:"TRANSFER_VAULT_ID"`
+	WalletID       string `mapstructure:"wallet-id" env:"TRANSFER_WALLET_ID"`
 	From           string `mapstructure:"from" env:"TRANSFER_FROM"`
-	AssetId        string `mapstructure:"asset-id" env:"TRANSFER_ASSET_ID"`
+	AssetID        string `mapstructure:"asset-id" env:"TRANSFER_ASSET_ID"`
 	ChainSymbol    string `mapstructure:"chain-symbol" env:"TRANSFER_CHAIN_SYMBOL"`
 	OperationType  string `mapstructure:"operation-type" env:"TRANSFER_OPERATION_TYPE"`
 	FeeRate        string `mapstructure:"fee-rate" env:"TRANSFER_FEE_RATE"`
