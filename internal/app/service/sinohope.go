@@ -74,10 +74,95 @@ func (s *sinohopeServer) TransactionNotify(ctx context.Context, req *vo.Transact
 		logger.Errorf("ip:%v not in white list", clientIP)
 		return ErrorTransactionNotify(exceptions.IPWhiteList, "ip limit"), nil
 	}
-
-	if req.RequestType != sinohopeType.RequestTypeRecharge {
+	if req.RequestType == sinohopeType.RequestTypeRecharge {
+		logger.Infof("handle recharge request")
+		return s.transactionNotifyRecharge(req, listenAddress, db, logger)
+	} else if req.RequestType == sinohopeType.RequestTypeWithdrawal {
+		logger.Infof("handle withdraw request")
+		return s.transactionNotifyWithdraw(req, db, logger)
+	} else {
 		return ErrorTransactionNotify(exceptions.RequestTypeNonsupport, "request type nonsupport"), nil
 	}
+}
+
+func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error) {
+	logger := log.WithName("WithdrawalConfirm")
+	logger.Infow("request data:", "req", req)
+	// db, err := GetDBContext(ctx)
+	// if err != nil {
+	// 	logger.Errorf("GetDBContext err:%v", err.Error())
+	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	// }
+	// listenAddress, err := GetListenAddress(ctx)
+	// if err != nil {
+	// 	logger.Errorf("GetListenAddress err:%v", err.Error())
+	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	// }
+	// logger.Infof("listen address config:%v", listenAddress)
+	httpCfg, err := GetHTTPConfig(ctx)
+	if err != nil {
+		logger.Errorf("GetHttpConfig err:%v", err.Error())
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	}
+	// check white list
+	isWhiteList := false
+	whiteList := httpCfg.IPWhiteList
+	whiteListIP := strings.Split(whiteList, ",")
+	clientIP := utils.ClientIP(ctx, logger)
+	for _, ip := range whiteListIP {
+		if clientIP == strings.TrimSpace(ip) {
+			isWhiteList = true
+		}
+	}
+	logger.Infof("ip:%v  white list:%v", clientIP, whiteList)
+	if !isWhiteList {
+		logger.Errorf("ip:%v not in white list", clientIP)
+		return ErrorWithdrawalConfirm(exceptions.IPWhiteList, "ip limit"), nil
+	}
+	detail, err := req.RequestDetail.MarshalJSON()
+	if err != nil {
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	}
+	logger.Infof("request detail: %s", string(detail))
+	requestDetail := sinohopeType.ConfirmRequestDetail{}
+	err = json.Unmarshal(detail, &requestDetail)
+	if err != nil {
+		logger.Errorf("request detail unmarshal err:%v", err.Error())
+		return ErrorWithdrawalConfirm(exceptions.RequestDetailUnmarshal, "request detail unmarshal err"), nil
+	}
+	rollupTxHash := requestDetail.APIRequestID
+	logger.Infof("rollupTxHash: %v", rollupTxHash)
+	// TODO: logic
+	// if requestDetail.From == "" || requestDetail.To == "" || requestDetail.TxHash == "" {
+	// 	logger.Errorf("request detail empty")
+	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err"), nil
+	// }
+	// if requestDetail.To != listenAddress {
+	// 	logger.Errorf("request detail to address not eq listen address")
+	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailToMismatch, "request detail to mismatch"), nil
+	// }
+	// amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	// if err != nil {
+	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
+	// }
+	// var deposit model.Deposit
+	// var sinohope model.Sinohope
+	// err = db.Transaction(func(tx *gorm.DB) error {
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	logger.Errorw("save tx result err", "err", err.Error())
+	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	// }
+	logger.Infof("APPROVE")
+	return &vo.WithdrawalConfirmResponse{
+		RequestId: req.RequestId,
+		Code:      200,
+		Action:    sinohopeType.WithdrawalActionApprove,
+	}, nil
+}
+
+func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequest, listenAddress string, db *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
 	detail, err := req.RequestDetail.MarshalJSON()
 	if err != nil {
 		return ErrorTransactionNotify(exceptions.SystemError, "system error"), nil
@@ -181,86 +266,17 @@ func (s *sinohopeServer) TransactionNotify(ctx context.Context, req *vo.Transact
 		logger.Errorw("save tx result err", "err", err.Error())
 		return ErrorTransactionNotify(exceptions.SystemError, "system error"), nil
 	}
-	logger.Infof("succeed")
+	logger.Infof("recharge notify success")
 	return &vo.TransactionNotifyResponse{
 		RequestId: req.RequestId,
 		Code:      200,
 	}, nil
 }
 
-func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error) {
-	logger := log.WithName("WithdrawalConfirm")
-	logger.Infow("request data:", "req", req)
-	// db, err := GetDBContext(ctx)
-	// if err != nil {
-	// 	logger.Errorf("GetDBContext err:%v", err.Error())
-	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	// }
-	// listenAddress, err := GetListenAddress(ctx)
-	// if err != nil {
-	// 	logger.Errorf("GetListenAddress err:%v", err.Error())
-	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	// }
-	// logger.Infof("listen address config:%v", listenAddress)
-	httpCfg, err := GetHTTPConfig(ctx)
-	if err != nil {
-		logger.Errorf("GetHttpConfig err:%v", err.Error())
-		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	}
-	// check white list
-	isWhiteList := false
-	whiteList := httpCfg.IPWhiteList
-	whiteListIP := strings.Split(whiteList, ",")
-	clientIP := utils.ClientIP(ctx, logger)
-	for _, ip := range whiteListIP {
-		if clientIP == strings.TrimSpace(ip) {
-			isWhiteList = true
-		}
-	}
-	logger.Infof("ip:%v  white list:%v", clientIP, whiteList)
-	if !isWhiteList {
-		logger.Errorf("ip:%v not in white list", clientIP)
-		return ErrorWithdrawalConfirm(exceptions.IPWhiteList, "ip limit"), nil
-	}
-	detail, err := req.RequestDetail.MarshalJSON()
-	if err != nil {
-		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	}
-	logger.Infof("request detail: %s", string(detail))
-	requestDetail := sinohopeType.ConfirmRequestDetail{}
-	err = json.Unmarshal(detail, &requestDetail)
-	if err != nil {
-		logger.Errorf("request detail unmarshal err:%v", err.Error())
-		return ErrorWithdrawalConfirm(exceptions.RequestDetailUnmarshal, "request detail unmarshal err"), nil
-	}
-	rollupTxHash := requestDetail.APIRequestID
-	logger.Infof("rollupTxHash: %v", rollupTxHash)
-	// TODO: logic
-	// if requestDetail.From == "" || requestDetail.To == "" || requestDetail.TxHash == "" {
-	// 	logger.Errorf("request detail empty")
-	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err"), nil
-	// }
-	// if requestDetail.To != listenAddress {
-	// 	logger.Errorf("request detail to address not eq listen address")
-	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailToMismatch, "request detail to mismatch"), nil
-	// }
-	// amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
-	// if err != nil {
-	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
-	// }
-	// var deposit model.Deposit
-	// var sinohope model.Sinohope
-	// err = db.Transaction(func(tx *gorm.DB) error {
-	// 	return nil
-	// })
-	// if err != nil {
-	// 	logger.Errorw("save tx result err", "err", err.Error())
-	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	// }
-	logger.Infof("APPROVE")
-	return &vo.WithdrawalConfirmResponse{
+func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequest, db *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
+	// TODO: handle withdraw notify
+	return &vo.TransactionNotifyResponse{
 		RequestId: req.RequestId,
 		Code:      200,
-		Action:    sinohopeType.WithdrawalActionApprove,
 	}, nil
 }
