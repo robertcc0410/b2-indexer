@@ -53,7 +53,6 @@
 | HTTP_GRPC_PORT     | `string` | grpc port     | -              | 8081          | -             |
 | HTTP_IP_WHITE_LIST | `string` | ip white list | Required       |               | -             |
 
-
 ## transfer configuration
 
 | Variable                  | Type     | Description      | Compulsoriness | Default value | Example value            |
