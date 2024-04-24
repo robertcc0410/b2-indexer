@@ -207,7 +207,7 @@ func createWallet() *cobra.Command {
 
 			cmd.Println("VaultId:", vaultID)
 			cmd.Println("WalletName:", walletName)
-			cmd.Println("RequestId:", requestID)
+			cmd.Println("RequestID:", requestID)
 			cmd.Println()
 
 			var walletInfo []*common.WaaSWalletInfoData
@@ -262,7 +262,7 @@ func genAddress() *cobra.Command {
 
 			cmd.Println("VaultId:", vaultID)
 			cmd.Println("WalletId:", walletID)
-			cmd.Println("RequestId:", requestID)
+			cmd.Println("RequestID:", requestID)
 			cmd.Println()
 
 			var walletInfo []*common.WaaSAddressInfoData

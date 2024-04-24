@@ -6,10 +6,10 @@ option go_package = "github.com/b2network/b2-indexer/api/protobuf/vo";
 import "google/protobuf/struct.proto";
 
 message MpcCheckRequest {
-  string callbackId = 1;
-  string requestType = 2;
-  google.protobuf.Struct requestDetail = 3;
-  google.protobuf.Struct extraInfo = 4;
+  string callback_id = 1;
+  string request_type = 2;
+  google.protobuf.Struct request_detail = 3;
+  google.protobuf.Struct extra_info = 4;
 }
 
 message MpcCheckResponse  {

@@ -21,13 +21,14 @@ import (
 const (
 	AuthHeaderKey          = "X-Auth-Payload"
 	AuthorizationHeaderKey = "Authorization"
+	MpcSigKey              = "Signature"
 
 	TimeoutSecond = 60
 )
 
 type (
 	RegisterFn        func(*grpc.Server)
-	GatewayRegisterFn func(ctx context.Context, mux *runtime.ServeMux, endPoint string, option []grpc.DialOption) error
+	GatewayRegisterFn func(ctx context.Context, cfg *config.HTTPConfig, mux *runtime.ServeMux, endPoint string, option []grpc.DialOption) error
 )
 
 func Run(ctx context.Context, cfg *config.HTTPConfig, grpcOpts grpc.ServerOption, grpcFn RegisterFn, gatewayFn GatewayRegisterFn) error {
@@ -42,14 +43,14 @@ func Run(ctx context.Context, cfg *config.HTTPConfig, grpcOpts grpc.ServerOption
 		}),
 		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
 			switch key {
-			case AuthHeaderKey, AuthorizationHeaderKey:
+			case AuthHeaderKey, AuthorizationHeaderKey, MpcSigKey:
 				return key, true
 			}
 			return "", false
 		}),
 	)
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := gatewayFn(ctx, mux, fmt.Sprintf(":%v", cfg.GrpcPort), opts); err != nil {
+	if err := gatewayFn(ctx, cfg, mux, fmt.Sprintf(":%v", cfg.GrpcPort), opts); err != nil {
 		log.Println("register grpc gateway server failed")
 		return err
 	}

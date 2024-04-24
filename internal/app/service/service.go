@@ -50,26 +50,30 @@ func registerDoc(mux *runtime.ServeMux, path string) {
 	})
 }
 
-func RegisterGateway(ctx context.Context, mux *runtime.ServeMux, endPoint string, option []grpc.DialOption) error {
+func RegisterGateway(ctx context.Context, cfg *config.HTTPConfig, mux *runtime.ServeMux, endPoint string, option []grpc.DialOption) error {
 	version(mux, 1)
 	registerDoc(mux, "./api/protobuf/api.swagger.json")
 	if err := pb.RegisterHelloServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
 		log.Fatalf("RegisterHelloServiceHandlerFromEndpoint failed: %v", err)
 	}
-	if err := pb.RegisterNotifyServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
-		log.Fatalf("RegisterNotifyServiceHandlerFromEndpoint failed: %v", err)
+	if err := pb.RegisterSinohopeServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
+		log.Fatalf("RegisterSinohopeServiceHandlerFromEndpoint failed: %v", err)
 	}
-	if err := pb.RegisterMpcCheckServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
-		log.Fatalf("RegisterMpcCheckServiceHandlerFromEndpoint failed: %v", err)
+	if cfg.EnableMPCCallback {
+		if err := pb.RegisterMpcServiceHandlerFromEndpoint(ctx, mux, endPoint, option); err != nil {
+			log.Fatalf("RegisterMpcCheckServiceHandlerFromEndpoint failed: %v", err)
+		}
 	}
 	return nil
 }
 
-func RegisterGrpcFunc() func(server *grpc.Server) {
+func RegisterGrpcFunc(httpCfg *config.HTTPConfig) func(server *grpc.Server) {
 	return func(svc *grpc.Server) {
 		pb.RegisterHelloServiceServer(svc, newHelloServer())
-		pb.RegisterNotifyServiceServer(svc, newNotifyServer())
-		pb.RegisterMpcCheckServiceServer(svc, newMpcCheckServer())
+		pb.RegisterSinohopeServiceServer(svc, newSinohopeServer())
+		if httpCfg.EnableMPCCallback {
+			pb.RegisterMpcServiceServer(svc, newMpcServer(httpCfg))
+		}
 	}
 }
 
