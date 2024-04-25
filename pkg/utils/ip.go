@@ -54,3 +54,17 @@ func HasLocalIP(ip net.IP) bool {
 		(ip4[0] == 169 && ip4[1] == 254) || // 169.254.0.0/16
 		(ip4[0] == 192 && ip4[1] == 168) // 192.168.0.0/16
 }
+
+func SinohopeSig(ctx context.Context, logger log.Logger) string {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ""
+	}
+	logger.Infow("", "md", md)
+	sig := md.Get("Signature")
+	logger.Infof("sinohope sig:%v", sig)
+	if len(sig) == 0 {
+		return ""
+	}
+	return sig[0]
+}

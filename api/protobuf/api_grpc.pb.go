@@ -110,89 +110,216 @@ var HelloService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	NotifyService_TransactionNotify_FullMethodName = "/api.protobuf.NotifyService/TransactionNotify"
+	SinohopeService_TransactionNotify_FullMethodName = "/api.protobuf.SinohopeService/TransactionNotify"
+	SinohopeService_WithdrawalConfirm_FullMethodName = "/api.protobuf.SinohopeService/WithdrawalConfirm"
 )
 
-// NotifyServiceClient is the client API for NotifyService service.
+// SinohopeServiceClient is the client API for SinohopeService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type NotifyServiceClient interface {
+type SinohopeServiceClient interface {
 	TransactionNotify(ctx context.Context, in *vo.TransactionNotifyRequest, opts ...grpc.CallOption) (*vo.TransactionNotifyResponse, error)
+	WithdrawalConfirm(ctx context.Context, in *vo.WithdrawalConfirmRequest, opts ...grpc.CallOption) (*vo.WithdrawalConfirmResponse, error)
 }
 
-type notifyServiceClient struct {
+type sinohopeServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewNotifyServiceClient(cc grpc.ClientConnInterface) NotifyServiceClient {
-	return &notifyServiceClient{cc}
+func NewSinohopeServiceClient(cc grpc.ClientConnInterface) SinohopeServiceClient {
+	return &sinohopeServiceClient{cc}
 }
 
-func (c *notifyServiceClient) TransactionNotify(ctx context.Context, in *vo.TransactionNotifyRequest, opts ...grpc.CallOption) (*vo.TransactionNotifyResponse, error) {
+func (c *sinohopeServiceClient) TransactionNotify(ctx context.Context, in *vo.TransactionNotifyRequest, opts ...grpc.CallOption) (*vo.TransactionNotifyResponse, error) {
 	out := new(vo.TransactionNotifyResponse)
-	err := c.cc.Invoke(ctx, NotifyService_TransactionNotify_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, SinohopeService_TransactionNotify_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// NotifyServiceServer is the server API for NotifyService service.
-// All implementations must embed UnimplementedNotifyServiceServer
+func (c *sinohopeServiceClient) WithdrawalConfirm(ctx context.Context, in *vo.WithdrawalConfirmRequest, opts ...grpc.CallOption) (*vo.WithdrawalConfirmResponse, error) {
+	out := new(vo.WithdrawalConfirmResponse)
+	err := c.cc.Invoke(ctx, SinohopeService_WithdrawalConfirm_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SinohopeServiceServer is the server API for SinohopeService service.
+// All implementations must embed UnimplementedSinohopeServiceServer
 // for forward compatibility
-type NotifyServiceServer interface {
+type SinohopeServiceServer interface {
 	TransactionNotify(context.Context, *vo.TransactionNotifyRequest) (*vo.TransactionNotifyResponse, error)
-	mustEmbedUnimplementedNotifyServiceServer()
+	WithdrawalConfirm(context.Context, *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error)
+	mustEmbedUnimplementedSinohopeServiceServer()
 }
 
-// UnimplementedNotifyServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedNotifyServiceServer struct {
+// UnimplementedSinohopeServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedSinohopeServiceServer struct {
 }
 
-func (UnimplementedNotifyServiceServer) TransactionNotify(context.Context, *vo.TransactionNotifyRequest) (*vo.TransactionNotifyResponse, error) {
+func (UnimplementedSinohopeServiceServer) TransactionNotify(context.Context, *vo.TransactionNotifyRequest) (*vo.TransactionNotifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TransactionNotify not implemented")
 }
-func (UnimplementedNotifyServiceServer) mustEmbedUnimplementedNotifyServiceServer() {}
+func (UnimplementedSinohopeServiceServer) WithdrawalConfirm(context.Context, *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WithdrawalConfirm not implemented")
+}
+func (UnimplementedSinohopeServiceServer) mustEmbedUnimplementedSinohopeServiceServer() {}
 
-// UnsafeNotifyServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to NotifyServiceServer will
+// UnsafeSinohopeServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SinohopeServiceServer will
 // result in compilation errors.
-type UnsafeNotifyServiceServer interface {
-	mustEmbedUnimplementedNotifyServiceServer()
+type UnsafeSinohopeServiceServer interface {
+	mustEmbedUnimplementedSinohopeServiceServer()
 }
 
-func RegisterNotifyServiceServer(s grpc.ServiceRegistrar, srv NotifyServiceServer) {
-	s.RegisterService(&NotifyService_ServiceDesc, srv)
+func RegisterSinohopeServiceServer(s grpc.ServiceRegistrar, srv SinohopeServiceServer) {
+	s.RegisterService(&SinohopeService_ServiceDesc, srv)
 }
 
-func _NotifyService_TransactionNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SinohopeService_TransactionNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(vo.TransactionNotifyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NotifyServiceServer).TransactionNotify(ctx, in)
+		return srv.(SinohopeServiceServer).TransactionNotify(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: NotifyService_TransactionNotify_FullMethodName,
+		FullMethod: SinohopeService_TransactionNotify_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NotifyServiceServer).TransactionNotify(ctx, req.(*vo.TransactionNotifyRequest))
+		return srv.(SinohopeServiceServer).TransactionNotify(ctx, req.(*vo.TransactionNotifyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// NotifyService_ServiceDesc is the grpc.ServiceDesc for NotifyService service.
+func _SinohopeService_WithdrawalConfirm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(vo.WithdrawalConfirmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SinohopeServiceServer).WithdrawalConfirm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SinohopeService_WithdrawalConfirm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SinohopeServiceServer).WithdrawalConfirm(ctx, req.(*vo.WithdrawalConfirmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SinohopeService_ServiceDesc is the grpc.ServiceDesc for SinohopeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var NotifyService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "api.protobuf.NotifyService",
-	HandlerType: (*NotifyServiceServer)(nil),
+var SinohopeService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.protobuf.SinohopeService",
+	HandlerType: (*SinohopeServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "TransactionNotify",
-			Handler:    _NotifyService_TransactionNotify_Handler,
+			Handler:    _SinohopeService_TransactionNotify_Handler,
+		},
+		{
+			MethodName: "WithdrawalConfirm",
+			Handler:    _SinohopeService_WithdrawalConfirm_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/protobuf/api.proto",
+}
+
+const (
+	MpcService_MpcCheck_FullMethodName = "/api.protobuf.MpcService/MpcCheck"
+)
+
+// MpcServiceClient is the client API for MpcService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type MpcServiceClient interface {
+	MpcCheck(ctx context.Context, in *vo.MpcCheckRequest, opts ...grpc.CallOption) (*vo.MpcCheckResponse, error)
+}
+
+type mpcServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewMpcServiceClient(cc grpc.ClientConnInterface) MpcServiceClient {
+	return &mpcServiceClient{cc}
+}
+
+func (c *mpcServiceClient) MpcCheck(ctx context.Context, in *vo.MpcCheckRequest, opts ...grpc.CallOption) (*vo.MpcCheckResponse, error) {
+	out := new(vo.MpcCheckResponse)
+	err := c.cc.Invoke(ctx, MpcService_MpcCheck_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MpcServiceServer is the server API for MpcService service.
+// All implementations must embed UnimplementedMpcServiceServer
+// for forward compatibility
+type MpcServiceServer interface {
+	MpcCheck(context.Context, *vo.MpcCheckRequest) (*vo.MpcCheckResponse, error)
+	mustEmbedUnimplementedMpcServiceServer()
+}
+
+// UnimplementedMpcServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedMpcServiceServer struct {
+}
+
+func (UnimplementedMpcServiceServer) MpcCheck(context.Context, *vo.MpcCheckRequest) (*vo.MpcCheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MpcCheck not implemented")
+}
+func (UnimplementedMpcServiceServer) mustEmbedUnimplementedMpcServiceServer() {}
+
+// UnsafeMpcServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to MpcServiceServer will
+// result in compilation errors.
+type UnsafeMpcServiceServer interface {
+	mustEmbedUnimplementedMpcServiceServer()
+}
+
+func RegisterMpcServiceServer(s grpc.ServiceRegistrar, srv MpcServiceServer) {
+	s.RegisterService(&MpcService_ServiceDesc, srv)
+}
+
+func _MpcService_MpcCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(vo.MpcCheckRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MpcServiceServer).MpcCheck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MpcService_MpcCheck_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MpcServiceServer).MpcCheck(ctx, req.(*vo.MpcCheckRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// MpcService_ServiceDesc is the grpc.ServiceDesc for MpcService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var MpcService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.protobuf.MpcService",
+	HandlerType: (*MpcServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "MpcCheck",
+			Handler:    _MpcService_MpcCheck_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

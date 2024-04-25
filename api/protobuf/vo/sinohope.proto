@@ -12,9 +12,22 @@ message TransactionNotifyRequest {
   string extraInfo = 4;
 }
 
-
 message TransactionNotifyResponse  {
   int64 code = 1; 
   string requestId = 2;
   string message = 3; 
 };
+
+
+message WithdrawalConfirmRequest {
+  string requestId = 2;
+  google.protobuf.Struct requestDetail = 3;
+  string extraInfo = 4;
+}
+
+message WithdrawalConfirmResponse {
+  int64 code = 1;
+  string requestId = 2;
+  string message = 3;
+  string action = 4;
+}
