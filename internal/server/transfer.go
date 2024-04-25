@@ -3,18 +3,15 @@ package server
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"time"
 
-	"github.com/b2network/b2-indexer/pkg/crypto"
 	"github.com/b2network/b2-indexer/pkg/vsm"
 
 	"github.com/b2network/b2-indexer/internal/logic/bitcoin"
+	b2crypto "github.com/b2network/b2-indexer/pkg/crypto"
 	logger "github.com/b2network/b2-indexer/pkg/log"
 	"github.com/sinohope/sinohope-golang-sdk/core/sdk"
 	"github.com/spf13/cobra"
-
-	sincmd "github.com/b2network/b2-indexer/pkg/sinohope/cmd"
 )
 
 func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
@@ -33,45 +30,36 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 
 	privateKey := transferCfg.PrivateKey
 	if transferCfg.EnableEncrypt {
-		internalKeyIndex, err := cmd.Flags().GetUint(sincmd.FlagVSMInternalKeyIndex)
-		if err != nil {
-			return err
-		}
-		localKey, err := cmd.Flags().GetString(sincmd.FlagLocalEncryptKey)
-		if err != nil {
-			return err
-		}
-		if len(localKey) == 0 {
-			return fmt.Errorf("invalid local encrypt key")
-		}
-
-		localKeyByte, err := hex.DecodeString(localKey)
-		if err != nil {
-			return err
-		}
-
 		tassInputData, err := hex.DecodeString(privateKey)
 		if err != nil {
 			return err
 		}
-		vsmIv, err := cmd.Flags().GetString(sincmd.FlagVsmIv)
-		if err != nil {
-			return err
-		}
-		decKey, _, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, []byte(vsmIv), internalKeyIndex)
+		decKey, _, err := vsm.TassSymmKeyOperation(vsm.TaDec, vsm.AlgAes256, tassInputData, []byte(transferCfg.VSMIv), transferCfg.VSMInternalKeyIndex)
 		if err != nil {
 			return err
 		}
 		privateKey = string(bytes.TrimRight(decKey, "\x00"))
-		decodeLocalData, err := hex.DecodeString(privateKey)
-		if err != nil {
-			return err
+		if transferCfg.LocalDecryptAlg == b2crypto.AlgAes {
+			decEthPrivKey, err := hex.DecodeString(privateKey)
+			if err != nil {
+				return err
+			}
+			localKey, err := hex.DecodeString(transferCfg.LocalDecryptKey)
+			if err != nil {
+				return err
+			}
+			localDecEthPrivKey, err := b2crypto.AesDecrypt(decEthPrivKey, localKey)
+			if err != nil {
+				return err
+			}
+			privateKey = string(localDecEthPrivKey)
+		} else if transferCfg.LocalDecryptAlg == b2crypto.AlgRsa {
+			localDecEthPrivKey, err := b2crypto.RsaDecryptHex(privateKey, transferCfg.LocalDecryptKey)
+			if err != nil {
+				return err
+			}
+			privateKey = localDecEthPrivKey
 		}
-		localEncData, err := crypto.AesDecrypt(decodeLocalData, localKeyByte)
-		if err != nil {
-			return err
-		}
-		privateKey = string(localEncData)
 	}
 
 	sinohopeAPI, err := sdk.NewTransactionAPI(transferCfg.BaseURL, privateKey)
