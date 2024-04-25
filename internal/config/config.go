@@ -141,13 +141,37 @@ type MpcConfig struct {
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"HTTP_MPC_LOCAL_DECRYPT_ALG"`
 }
 
+// TransferConfig defines the transfer server config
+type TransferConfig struct {
+	BaseURL       string `mapstructure:"base-url" env:"TRANSFER_BASE_URL"`
+	PrivateKey    string `mapstructure:"private-key" env:"TRANSFER_PRIVATE_KEY"`
+	VaultID       string `mapstructure:"vault-id" env:"TRANSFER_VAULT_ID"`
+	WalletID      string `mapstructure:"wallet-id" env:"TRANSFER_WALLET_ID"`
+	From          string `mapstructure:"from" env:"TRANSFER_FROM"`
+	AssetID       string `mapstructure:"asset-id" env:"TRANSFER_ASSET_ID"`
+	ChainSymbol   string `mapstructure:"chain-symbol" env:"TRANSFER_CHAIN_SYMBOL"`
+	OperationType string `mapstructure:"operation-type" env:"TRANSFER_OPERATION_TYPE"`
+	NetworkName   string `mapstructure:"network-name" env:"TRANSFER_NETWORK_NAME"`
+	EnableEncrypt bool   `mapstructure:"enable-encrypt" env:"TRANSFER_ENABLE_ENCRYPT"`
+	// VSMInternalKeyIndex defines the vsm internal key index
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"TRANSFER_MPC_VSM_INTERNAL_KEY_INDEX"`
+	// VSMIv defines the vsm iv
+	VSMIv string `mapstructure:"vsm-iv" env:"TRANSFER_MPC_VSM_IV"`
+	// LocalDecryptKey defines the local enc key
+	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"TRANSFER_MPC_LOCAL_DECRYPT_KEY"`
+	// LocalAesAlg defines the local dec alg, rsa aes
+	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_MPC_LOCAL_DECRYPT_ALG"`
+}
+
 const (
-	BitcoinConfigFileName  = "bitcoin.toml"
-	AppConfigFileName      = "indexer.toml"
-	HTTPConfigFileName     = "http.toml"
-	BitcoinConfigEnvPrefix = "BITCOIN"
-	AppConfigEnvPrefix     = "APP"
-	HTTPConfigEnvPrefix    = "HTTP"
+	BitcoinConfigFileName   = "bitcoin.toml"
+	AppConfigFileName       = "indexer.toml"
+	HTTPConfigFileName      = "http.toml"
+	TransferConfigFileName  = "transfer.toml"
+	BitcoinConfigEnvPrefix  = "BITCOIN"
+	AppConfigEnvPrefix      = "APP"
+	HTTPConfigEnvPrefix     = "HTTP"
+	TransferConfigEnvPrefix = "TRANSFER"
 )
 
 func LoadConfig(homePath string) (*Config, error) {
@@ -255,6 +279,37 @@ func LoadHTTPConfig(homePath string) (*HTTPConfig, error) {
 	v.SetConfigFile(configFile)
 
 	v.SetEnvPrefix(HTTPConfigEnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	// try load config from file
+	err := v.ReadInConfig()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		// if err load config from env
+		if err := env.Parse(&config); err != nil {
+			return nil, err
+		}
+		return &config, nil
+	}
+
+	err = v.Unmarshal(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func LoadTransferConfig(homePath string) (*TransferConfig, error) {
+	config := TransferConfig{}
+	configFile := path.Join(homePath, TransferConfigFileName)
+	v := viper.New()
+	v.SetConfigFile(configFile)
+
+	v.SetEnvPrefix(TransferConfigEnvPrefix)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 
