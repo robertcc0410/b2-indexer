@@ -120,25 +120,25 @@ type HTTPConfig struct {
 	// ipWhiteList defines the ip white list, Only those in the whitelist can be called
 	IPWhiteList string `mapstructure:"ip-white-list" env:"HTTP_IP_WHITE_LIST"`
 	// enableMpcCallback enable mpc callback api
-	EnableMPCCallback bool      `mapstructure:"enable-mpc-callback" env:"ENABLE_MPC_CALLBACK"`
+	EnableMPCCallback bool      `mapstructure:"enable-mpc-callback" env:"ENABLE_MPC_CALLBACK"  envDefault:"false"`
 	Mpc               MpcConfig `mapstructure:"mpc"`
 }
 
 type MpcConfig struct {
-	// PrivateKey mpc callback private key
-	PrivateKey string `mapstructure:"private-key" env:"HTTP_MPC_PRIVATE_KEY"`
+	// CallbackPrivateKey mpc callback private key
+	CallbackPrivateKey string `mapstructure:"callback-private-key" env:"HTTP_MPC_CALLBACK_PRIVATE_KEY"`
 	// MpcNodePublicKey mpc node pub key
 	MpcNodePublicKey string `mapstructure:"mpc-node-public-key" env:"HTTP_MPC_NODE_PUBLIC_KEY"`
 	// EnableVSM defines whether to enable the vsm encryption/decryption
-	EnableVSM bool `mapstructure:"enable-vsm" env:"HTTP_MPC__ENABLE_VSM"`
+	EnableVSM bool `mapstructure:"enable-vsm" env:"HTTP_MPC_ENABLE_VSM"`
 	// VSMInternalKeyIndex defines the vsm internal key index
-	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"HTTP_MPC__VSM_INTERNAL_KEY_INDEX"`
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"HTTP_MPC_VSM_INTERNAL_KEY_INDEX"`
 	// VSMIv defines the vsm iv
-	VSMIv string `mapstructure:"vsm-iv" env:"HTTP_MPC__VSM_IV"`
+	VSMIv string `mapstructure:"vsm-iv" env:"HTTP_MPC_VSM_IV"`
 	// LocalDecryptKey defines the local enc key
-	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"HTTP_MPC__LOCAL_DECRYPT_KEY"`
+	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"HTTP_MPC_LOCAL_DECRYPT_KEY"`
 	// LocalAesAlg defines the local dec alg, rsa aes
-	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"HTTP_MPC__LOCAL_DECRYPT_ALG"`
+	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"HTTP_MPC_LOCAL_DECRYPT_ALG"`
 }
 
 const (

@@ -34,7 +34,7 @@ func newMpcServer(cfg *config.HTTPConfig) *mpcServer {
 	if err != nil {
 		panic(fmt.Sprintf("load mpc-node public key failed, %v", err))
 	}
-	private, _, err := mpc.LoadKeypair(cfg.Mpc.PrivateKey)
+	private, _, err := mpc.LoadKeypair(cfg.Mpc.CallbackPrivateKey)
 	if err != nil {
 		panic(fmt.Sprintf("load private key failed, %v", err))
 	}
