@@ -168,11 +168,9 @@ func (bis *IndexerService) OnStart() error {
 }
 
 func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) error {
-	uuid := DataToString(vlog, 2)
 	amount := DataToBigInt(vlog, 1)
 	destAddrStr := DataToString(vlog, 0)
 	withdrawData := model.Withdraw{
-		UUID:          uuid,
 		BtcFrom:       listenAddress,
 		BtcTo:         destAddrStr,
 		BtcValue:      amount.Int64(),
