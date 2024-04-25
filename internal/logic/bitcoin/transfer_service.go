@@ -65,12 +65,14 @@ func (bis *TransferService) OnStart() error {
 		for _, v := range withdrawList {
 			isOK, err := bis.QueryTransactionsByRequestIDs(v.B2TxHash)
 			if err != nil {
-				bis.log.Errorw("TransferService QueryTransactionsByRequestIDs error", "error", err, "B2TxHash", v.B2TxHash)
-				time.Sleep(time.Second)
-				continue
+				if err.Error() != "error response, code: 2004 msg: 交易记录不存在" {
+					bis.log.Errorw("TransferService QueryTransactionsByRequestIDs error", "error", err, "B2TxHash", v.B2TxHash)
+					time.Sleep(time.Second)
+					continue
+				}
 			}
 			if isOK {
-				return nil
+				continue
 			}
 			res, err := bis.Transfer(v.B2TxHash, v.BtcTo, strconv.FormatInt(v.BtcValue, 10))
 			if err != nil {
