@@ -84,13 +84,13 @@ func (bis *BridgeWithdrawService) OnStart() error {
 		for _, v := range withdrawList {
 			txHash, err := chainhash.NewHashFromStr(v.BtcTxHash)
 			if err != nil {
-				bis.log.Errorw("BridgeWithdrawService NewHashFromStr err", "error", err, "txhash", v.BtcTxHash)
+				bis.log.Errorw("BridgeWithdrawService NewHashFromStr err", "error", err, "BtcTxHash", v.BtcTxHash)
 				time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 				continue
 			}
 			txRawResult, err := bis.btcCli.GetRawTransactionVerbose(txHash)
 			if err != nil {
-				bis.log.Errorw("BridgeWithdrawService GetRawTransactionVerbose err", "error", err, "b2TxHash", v.B2TxHash)
+				bis.log.Errorw("BridgeWithdrawService GetRawTransactionVerbose err", "error", err, "BtcTxHash", v.BtcTxHash)
 				time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 				continue
 			}

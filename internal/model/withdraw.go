@@ -23,7 +23,7 @@ type Withdraw struct {
 	BtcFrom       string `json:"btc_from" gorm:"type:varchar(256);default:'';index"`
 	BtcTo         string `json:"btc_to" gorm:"type:varchar(256);default:'';index"`
 	BtcValue      int64  `json:"btc_value" gorm:"type:bigint;default:0;comment:bitcoin transfer value"`
-	BtcTxHash     string `json:"btc_txHash" gorm:"type:varchar(256);default:'';comment:bitcoin tx hash"`
+	BtcTxHash     string `json:"btc_tx_hash" gorm:"type:varchar(256);default:'';comment:bitcoin tx hash"`
 	B2BlockNumber uint64 `json:"b2_block_number" gorm:"type:bigint;comment:b2 block number"`
 	B2BlockHash   string `json:"b2_block_hash" gorm:"type:varchar(256);comment:b2 block hash"`
 	B2TxHash      string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network tx hash"`

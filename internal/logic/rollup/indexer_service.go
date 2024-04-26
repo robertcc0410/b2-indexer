@@ -19,6 +19,7 @@ import (
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -128,7 +129,7 @@ func (bis *IndexerService) OnStart() error {
 			logs, err := bis.ethCli.FilterLogs(context.Background(), query)
 			if err != nil {
 				bis.log.Errorw("IndexerService failed to fetch block", "height", i, "error", err)
-				continue
+				break
 			}
 
 			for _, vlog := range logs {
@@ -140,7 +141,7 @@ func (bis *IndexerService) OnStart() error {
 					err = handelWithdrawEvent(vlog, bis.db, bis.config.IndexerListenAddress)
 					if err != nil {
 						bis.log.Errorw("IndexerService handelWithdrawEvent err: ", "error", err)
-						continue
+						break
 					}
 				}
 				if eventHash == common.HexToHash(bis.config.Bridge.Deposit) {
@@ -161,7 +162,7 @@ func (bis *IndexerService) OnStart() error {
 			if err := bis.db.Save(&rollupIndex).Error; err != nil {
 				bis.log.Errorw("failed to save b2 index block", "error", err, "currentBlock", i,
 					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
-				continue
+				break
 			}
 		}
 	}
@@ -171,6 +172,7 @@ func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) e
 	amount := DataToBigInt(vlog, 1)
 	destAddrStr := DataToString(vlog, 0)
 	withdrawData := model.Withdraw{
+		UUID:          uuid.NewV4().String(),
 		BtcFrom:       listenAddress,
 		BtcTo:         destAddrStr,
 		BtcValue:      amount.Int64(),
