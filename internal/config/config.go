@@ -154,13 +154,13 @@ type TransferConfig struct {
 	NetworkName   string `mapstructure:"network-name" env:"TRANSFER_NETWORK_NAME"`
 	EnableEncrypt bool   `mapstructure:"enable-encrypt" env:"TRANSFER_ENABLE_ENCRYPT"`
 	// VSMInternalKeyIndex defines the vsm internal key index
-	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"TRANSFER_MPC_VSM_INTERNAL_KEY_INDEX"`
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"TRANSFER_VSM_INTERNAL_KEY_INDEX"`
 	// VSMIv defines the vsm iv
-	VSMIv string `mapstructure:"vsm-iv" env:"TRANSFER_MPC_VSM_IV"`
+	VSMIv string `mapstructure:"vsm-iv" env:"TRANSFER_VSM_IV"`
 	// LocalDecryptKey defines the local enc key
-	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"TRANSFER_MPC_LOCAL_DECRYPT_KEY"`
+	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"TRANSFER_LOCAL_DECRYPT_KEY"`
 	// LocalAesAlg defines the local dec alg, rsa aes
-	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_MPC_LOCAL_DECRYPT_ALG"`
+	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_LOCAL_DECRYPT_ALG"`
 }
 
 const (
