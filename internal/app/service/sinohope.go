@@ -285,9 +285,9 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 		logger.Errorf("request detail unmarshal err:%v", err.Error())
 		return ErrorTransactionNotify(exceptions.RequestDetailUnmarshal, "request detail unmarshal err"), nil
 	}
-	apiRequestId := requestDetail.APIRequestID
+	apiRequestID := requestDetail.APIRequestID
 	if has0xPrefix(requestDetail.APIRequestID) {
-		apiRequestId = apiRequestId[2:]
+		apiRequestID = apiRequestID[2:]
 	}
 	if requestDetail.From == "" || requestDetail.To == "" {
 		logger.Errorf("request detail empty")
@@ -303,13 +303,13 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 		err = tx.
 			Where(
 				fmt.Sprintf("%s.%s = ?", model.Sinohope{}.TableName(), model.Sinohope{}.Column().RequestID),
-				apiRequestId,
+				apiRequestID,
 			).
 			First(&sinohope).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				sinohope = model.Sinohope{
-					RequestID:     apiRequestId,
+					RequestID:     apiRequestID,
 					RequestType:   int(req.RequestType),
 					RequestDetail: string(detail),
 				}

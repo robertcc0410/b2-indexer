@@ -141,6 +141,7 @@ func NewDB(cfg *config.Config) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Duration(cfg.DatabaseConnMaxLifetime) * time.Second)
 	return DB, nil
 }
+
 func NewAuditDB(cfg *config.AuditConfig) (*gorm.DB, error) {
 	DB, err := gorm.Open(postgres.Open(cfg.DatabaseSource), &gorm.Config{
 		Logger: gormlog.Default.LogMode(gormlog.Info),

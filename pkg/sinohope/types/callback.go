@@ -125,8 +125,7 @@ type ConfirmRequestDetail struct {
 	WalletID     string   `json:"walletId"`
 }
 
-type Brc20Detail struct {
-}
+type Brc20Detail struct{}
 type WithdrawNotifyRequestDetail struct {
 	SinoID          string      `json:"sinoId"`
 	TxHash          string      `json:"txHash"`

@@ -352,6 +352,7 @@ func LoadTransferConfig(homePath string) (*TransferConfig, error) {
 
 	return &config, nil
 }
+
 func LoadAuditConfig(homePath string) (*AuditConfig, error) {
 	config := AuditConfig{}
 	configFile := path.Join(homePath, AuditConfigFileName)
