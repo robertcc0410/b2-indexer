@@ -62,7 +62,7 @@ func startCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			err := server.Start(GetServerContextFromCmd(cmd), cmd)
 			if err != nil {
-				log.Error("start index tx service failed")
+				log.Errorf("start index tx service failed:%v", err)
 			}
 		},
 	}
