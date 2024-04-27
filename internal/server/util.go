@@ -66,7 +66,13 @@ func InterceptConfigsPreRunHandler(cmd *cobra.Command, home string) error {
 	if home != "" {
 		cfg.RootDir = home
 	}
-
+	auditCfg, err := config.LoadAuditConfig(home)
+	if err != nil {
+		return err
+	}
+	if home != "" {
+		auditCfg.RootDir = home
+	}
 	bitcoinCfg, err := config.LoadBitcoinConfig(home)
 	if err != nil {
 		return err
@@ -79,7 +85,13 @@ func InterceptConfigsPreRunHandler(cmd *cobra.Command, home string) error {
 	// set db to context
 	ctx := context.WithValue(cmd.Context(), types.DBContextKey, db)
 	cmd.SetContext(ctx)
-
+	auditDB, err := NewAuditDB(auditCfg)
+	if err != nil {
+		return err
+	}
+	// set db to context
+	auditCtx := context.WithValue(cmd.Context(), types.AuditDBContextKey, auditDB)
+	cmd.SetContext(auditCtx)
 	logger.Init(cfg.LogLevel, cfg.LogFormat)
 	serverCtx := NewContext(cfg, bitcoinCfg)
 	return SetCmdServerContext(cmd, serverCtx)
@@ -112,6 +124,24 @@ func SetCmdServerContext(cmd *cobra.Command, serverCtx *Context) error {
 // NewDB creates a new database connection.
 // default use postgres driver
 func NewDB(cfg *config.Config) (*gorm.DB, error) {
+	DB, err := gorm.Open(postgres.Open(cfg.DatabaseSource), &gorm.Config{
+		Logger: gormlog.Default.LogMode(gormlog.Info),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return nil, err
+	}
+	// set db conn limit
+	sqlDB.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
+	sqlDB.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.DatabaseConnMaxLifetime) * time.Second)
+	return DB, nil
+}
+func NewAuditDB(cfg *config.AuditConfig) (*gorm.DB, error) {
 	DB, err := gorm.Open(postgres.Open(cfg.DatabaseSource), &gorm.Config{
 		Logger: gormlog.Default.LogMode(gormlog.Info),
 	})
@@ -182,6 +212,15 @@ func TransferConfigsPreRunHandler(cmd *cobra.Command, home string) error {
 	if home != "" {
 		cfg.RootDir = home
 	}
+
+	auditCfg, err := config.LoadAuditConfig(home)
+	if err != nil {
+		return err
+	}
+	if home != "" {
+		auditCfg.RootDir = home
+	}
+
 	db, err := NewDB(cfg)
 	if err != nil {
 		return err
@@ -190,6 +229,13 @@ func TransferConfigsPreRunHandler(cmd *cobra.Command, home string) error {
 	ctx := context.WithValue(cmd.Context(), types.DBContextKey, db)
 	cmd.SetContext(ctx)
 
+	auditDB, err := NewAuditDB(auditCfg)
+	if err != nil {
+		return err
+	}
+	// set db to context
+	auditCtx := context.WithValue(cmd.Context(), types.AuditDBContextKey, auditDB)
+	cmd.SetContext(auditCtx)
 	transferCfg, err := config.LoadTransferConfig(home)
 	if err != nil {
 		return err
