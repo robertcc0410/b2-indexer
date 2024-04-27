@@ -125,31 +125,33 @@ type ConfirmRequestDetail struct {
 	WalletID     string   `json:"walletId"`
 }
 
-type Brc20Detail struct{}
-type WithdrawNotifyRequestDetail struct {
-	SinoID          string      `json:"sinoId"`
-	TxHash          string      `json:"txHash"`
-	BlockHash       string      `json:"blockHash"`
-	ConfirmNumber   int         `json:"confirmNumber"`
-	WalletID        string      `json:"walletId"`
-	ChainSymbol     string      `json:"chainSymbol"`
-	AssetID         string      `json:"assetId"`
-	TxDirection     int         `json:"txDirection"`
-	Note            string      `json:"note"`
-	Nonce           int         `json:"nonce"`
-	From            string      `json:"from"`
-	To              string      `json:"to"`
-	ToTag           string      `json:"toTag"`
-	Amount          string      `json:"amount"`
-	Decimal         int         `json:"decimal"`
-	Fee             string      `json:"fee"`
-	FeeAsset        string      `json:"feeAsset"`
-	FeeDecimal      int         `json:"feeDecimal"`
-	FeeAssetDecimal int         `json:"feeAssetDecimal"`
-	UsedFee         string      `json:"usedFee"`
-	GasPrice        string      `json:"gasPrice"`
-	GasLimit        string      `json:"gasLimit"`
-	State           int         `json:"state"`
-	APIRequestID    string      `json:"apiRequestId"`
-	Brc20Detail     Brc20Detail `json:"brc20Detail"`
-}
+type (
+	Brc20Detail                 struct{}
+	WithdrawNotifyRequestDetail struct {
+		SinoID          string      `json:"sinoId"`
+		TxHash          string      `json:"txHash"`
+		BlockHash       string      `json:"blockHash"`
+		ConfirmNumber   int         `json:"confirmNumber"`
+		WalletID        string      `json:"walletId"`
+		ChainSymbol     string      `json:"chainSymbol"`
+		AssetID         string      `json:"assetId"`
+		TxDirection     int         `json:"txDirection"`
+		Note            string      `json:"note"`
+		Nonce           int         `json:"nonce"`
+		From            string      `json:"from"`
+		To              string      `json:"to"`
+		ToTag           string      `json:"toTag"`
+		Amount          string      `json:"amount"`
+		Decimal         int         `json:"decimal"`
+		Fee             string      `json:"fee"`
+		FeeAsset        string      `json:"feeAsset"`
+		FeeDecimal      int         `json:"feeDecimal"`
+		FeeAssetDecimal int         `json:"feeAssetDecimal"`
+		UsedFee         string      `json:"usedFee"`
+		GasPrice        string      `json:"gasPrice"`
+		GasLimit        string      `json:"gasLimit"`
+		State           int         `json:"state"`
+		APIRequestID    string      `json:"apiRequestId"`
+		Brc20Detail     Brc20Detail `json:"brc20Detail"`
+	}
+)
