@@ -272,12 +272,91 @@ func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequ
 	}, nil
 }
 
-func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequest, _ *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
+func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequest, db *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
 	// TODO: handle withdraw notify
+	detail, err := req.RequestDetail.MarshalJSON()
+	if err != nil {
+		return ErrorTransactionNotify(exceptions.SystemError, "system error"), nil
+	}
+	logger.Infof("request detail: %s", string(detail))
+	requestDetail := sinohopeType.WithdrawNotifyRequestDetail{}
+	err = json.Unmarshal(detail, &requestDetail)
+	if err != nil {
+		logger.Errorf("request detail unmarshal err:%v", err.Error())
+		return ErrorTransactionNotify(exceptions.RequestDetailUnmarshal, "request detail unmarshal err"), nil
+	}
+	apiRequestId := requestDetail.APIRequestID
+	if has0xPrefix(requestDetail.APIRequestID) {
+		apiRequestId = apiRequestId[2:]
+	}
+	if requestDetail.From == "" || requestDetail.To == "" {
+		logger.Errorf("request detail empty")
+		return ErrorTransactionNotify(exceptions.RequestDetailParameter, "request detail check err"), nil
+	}
+	// amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	// if err != nil {
+	// 	return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount "), nil
+	// }
+	// var withdraw model.Withdraw
+	var sinohope model.Sinohope
+	err = db.Transaction(func(tx *gorm.DB) error {
+		err = tx.
+			Where(
+				fmt.Sprintf("%s.%s = ?", model.Sinohope{}.TableName(), model.Sinohope{}.Column().RequestID),
+				apiRequestId,
+			).
+			First(&sinohope).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				sinohope = model.Sinohope{
+					RequestID:     apiRequestId,
+					RequestType:   int(req.RequestType),
+					RequestDetail: string(detail),
+				}
+				err = tx.Save(&sinohope).Error
+				if err != nil {
+					logger.Errorw("failed to save tx result", "error", err)
+					return err
+				}
+			} else {
+				logger.Errorw("failed find tx from db", "error", err)
+				return err
+			}
+		}
 
+		// err = tx.
+		// 	Where(
+		// 		fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().BtcTxHash),
+		// 		requestDetail.APIRequestID,
+		// 	).
+		// 	First(&withdraw).Error
+		// if err != nil {
+		// 	logger.Errorw("failed find tx from db", "error", err)
+		// 	return err
+		// }
+		// // update check fields
+		// if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
+		// 	return errors.New("from address not match")
+		// }
+		// if !strings.EqualFold(withdraw.BtcTo, requestDetail.To) {
+		// 	return errors.New("to address not match")
+		// }
+		// if withdraw.BtcValue != amount {
+		// 	return errors.New("amount not match")
+		// }
+		return nil
+	})
+	if err != nil {
+		logger.Errorw("save tx result err", "err", err.Error())
+		return ErrorTransactionNotify(exceptions.SystemError, "system error"), nil
+	}
 	logger.Infof("withdraw notify success")
 	return &vo.TransactionNotifyResponse{
 		RequestId: req.RequestId,
 		Code:      200,
 	}, nil
+}
+
+func has0xPrefix(input string) bool {
+	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
 }
