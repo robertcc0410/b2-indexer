@@ -178,6 +178,8 @@ type TransferConfig struct {
 	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"TRANSFER_LOCAL_DECRYPT_KEY"`
 	// LocalAesAlg defines the local dec alg, rsa aes
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_LOCAL_DECRYPT_ALG"`
+	// Fee defines the withdraw fee
+	Fee string `mapstructure:"fee" env:"TRANSFER_FEE"`
 }
 
 const (

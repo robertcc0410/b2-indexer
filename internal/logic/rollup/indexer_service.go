@@ -184,6 +184,7 @@ func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) e
 		B2TxHash:      vlog.TxHash.String(),
 		B2TxIndex:     vlog.TxIndex,
 		B2LogIndex:    vlog.Index,
+		Status:        model.BtcTxWithdrawSubmit,
 	}
 	if err := db.Create(&withdrawData).Error; err != nil {
 		return err
