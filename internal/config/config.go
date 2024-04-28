@@ -24,6 +24,23 @@ type Config struct {
 	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"INDEXER_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
 }
 
+// type AuditConfig struct {
+// 	RootDir                 string `mapstructure:"root-dir" env:"AUDIT_ROOT_DIR"`
+// 	DatabaseSource          string `mapstructure:"database-source" env:"AUDIT_DATABASE_SOURCE" envDefault:"postgres://postgres:postgres@127.0.0.1:5432/b2-indexer"`
+// 	DatabaseMaxIdleConns    int    `mapstructure:"database-max-idle-conns"  env:"AUDIT_DATABASE_MAX_IDLE_CONNS" envDefault:"10"`
+// 	DatabaseMaxOpenConns    int    `mapstructure:"database-max-open-conns" env:"AUDIT_DATABASE_MAX_OPEN_CONNS" envDefault:"20"`
+// 	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"AUDIT_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
+// }
+
+// TODO: temp use, debug, use config env, after usef audit prefix
+type AuditConfig struct {
+	RootDir                 string `mapstructure:"root-dir" env:"INDEXER_ROOT_DIR"`
+	DatabaseSource          string `mapstructure:"database-source" env:"INDEXER_DATABASE_SOURCE" envDefault:"postgres://postgres:postgres@127.0.0.1:5432/b2-indexer"`
+	DatabaseMaxIdleConns    int    `mapstructure:"database-max-idle-conns"  env:"INDEXER_DATABASE_MAX_IDLE_CONNS" envDefault:"10"`
+	DatabaseMaxOpenConns    int    `mapstructure:"database-max-open-conns" env:"INDEXER_DATABASE_MAX_OPEN_CONNS" envDefault:"20"`
+	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"INDEXER_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
+}
+
 // BitcoinConfig defines the bitcoin config
 type BitcoinConfig struct {
 	// NetworkName defines the bitcoin network name
@@ -168,10 +185,12 @@ const (
 	AppConfigFileName       = "indexer.toml"
 	HTTPConfigFileName      = "http.toml"
 	TransferConfigFileName  = "transfer.toml"
+	AuditConfigFileName     = "audit.toml"
 	BitcoinConfigEnvPrefix  = "BITCOIN"
-	AppConfigEnvPrefix      = "APP"
+	AppConfigEnvPrefix      = "INDEXER"
 	HTTPConfigEnvPrefix     = "HTTP"
 	TransferConfigEnvPrefix = "TRANSFER"
+	AuditConfigEnvPrefix    = "AUDIT"
 )
 
 func LoadConfig(homePath string) (*Config, error) {
@@ -310,6 +329,37 @@ func LoadTransferConfig(homePath string) (*TransferConfig, error) {
 	v.SetConfigFile(configFile)
 
 	v.SetEnvPrefix(TransferConfigEnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	// try load config from file
+	err := v.ReadInConfig()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		// if err load config from env
+		if err := env.Parse(&config); err != nil {
+			return nil, err
+		}
+		return &config, nil
+	}
+
+	err = v.Unmarshal(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func LoadAuditConfig(homePath string) (*AuditConfig, error) {
+	config := AuditConfig{}
+	configFile := path.Join(homePath, AuditConfigFileName)
+	v := viper.New()
+	v.SetConfigFile(configFile)
+
+	v.SetEnvPrefix(AuditConfigEnvPrefix)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 

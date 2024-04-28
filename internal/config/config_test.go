@@ -326,3 +326,30 @@ func TestTransferConfigEnv(t *testing.T) {
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
 }
+
+func TestAuditConfig(t *testing.T) {
+	os.Unsetenv("AUDIT_DATABASE_SOURCE")
+	os.Unsetenv("AUDIT_DATABASE_MAX_IDLE_CONNS")
+	os.Unsetenv("AUDIT_DATABASE_MAX_OPEN_CONNS")
+	os.Unsetenv("AUDIT_DATABASE_CONN_MAX_LIFETIME")
+
+	config, err := config.LoadAuditConfig("./testdata")
+	require.NoError(t, err)
+	require.Equal(t, "postgres://postgres:postgres@127.0.0.2:5432/b2-indexer", config.DatabaseSource)
+	require.Equal(t, 1, config.DatabaseMaxIdleConns)
+	require.Equal(t, 2, config.DatabaseMaxOpenConns)
+	require.Equal(t, 3600, config.DatabaseConnMaxLifetime)
+}
+
+func TestAuditConfigEnv(t *testing.T) {
+	os.Setenv("AUDIT_DATABASE_SOURCE", "testtest")
+	os.Setenv("AUDIT_DATABASE_MAX_IDLE_CONNS", "12")
+	os.Setenv("AUDIT_DATABASE_MAX_OPEN_CONNS", "22")
+	os.Setenv("AUDIT_DATABASE_CONN_MAX_LIFETIME", "2100")
+	config, err := config.LoadAuditConfig("./")
+	require.NoError(t, err)
+	require.Equal(t, "testtest", config.DatabaseSource)
+	require.Equal(t, 12, config.DatabaseMaxIdleConns)
+	require.Equal(t, 22, config.DatabaseMaxOpenConns)
+	require.Equal(t, 2100, config.DatabaseConnMaxLifetime)
+}

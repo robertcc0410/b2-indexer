@@ -9,4 +9,5 @@ const (
 	DBContextKey            = serverContext("db.context")
 	ListenAddressContextKey = serverContext("listenaddress.context")
 	HTTPConfigContextKey    = serverContext("http.context")
+	AuditDBContextKey       = serverContext("audit.db.context")
 )
