@@ -5,10 +5,11 @@ package model
 // 1.2 BtcTxWithdrawPending
 // 1.3 BtcTxWithdrawSuccess/BtcTxWithdrawFailed
 const (
-	BtcTxWithdrawSubmit = iota + 1
-	BtcTxWithdrawPending
-	BtcTxWithdrawSuccess
-	BtcTxWithdrawFailed
+	BtcTxWithdrawSubmit          = "submit"
+	BtcTxWithdrawPending         = "pending"
+	BtcTxWithdrawSinohopeSuccess = "sinohope_success"
+	BtcTxWithdrawSuccess         = "success"
+	BtcTxWithdrawFailed          = "failed"
 )
 
 // btc tx check status sequence
@@ -23,14 +24,17 @@ type Withdraw struct {
 	BtcFrom       string `json:"btc_from" gorm:"type:varchar(256);default:'';index"`
 	BtcTo         string `json:"btc_to" gorm:"type:varchar(256);default:'';index"`
 	BtcValue      int64  `json:"btc_value" gorm:"type:bigint;default:0;comment:bitcoin transfer value"`
+	BtcRealValue  int64  `json:"btc_real_value" gorm:"type:bigint;default:0;comment:bitcoin transfer real value"`
 	BtcTxHash     string `json:"btc_tx_hash" gorm:"type:varchar(256);default:'';comment:bitcoin tx hash"`
 	B2BlockNumber uint64 `json:"b2_block_number" gorm:"type:bigint;comment:b2 block number"`
 	B2BlockHash   string `json:"b2_block_hash" gorm:"type:varchar(256);comment:b2 block hash"`
+	B2TxFrom      string `json:"b2_tx_from" gorm:"type:varchar(256);comment:b2 tx from"`
 	B2TxHash      string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network tx hash"`
 	B2TxIndex     uint   `json:"b2_tx_index" gorm:"type:bigint;comment:b2 tx index"`
 	B2LogIndex    uint   `json:"b2_log_index" gorm:"type:int;comment:b2 log index"`
-	Status        int    `json:"status" gorm:"type:smallint;default:1"`
-	CheckStatus   int    `json:"check_status" gorm:"type:smallint;default:0"`
+	RefundTxHash  string `json:"refund_tx_hash" gorm:"type:varchar(256);default:'';comment:bitcoin refund tx hash"`
+	Status        string `json:"status" gorm:"type:smallint;default:1"`
+	AuditStatus   string `json:"audit_status" gorm:"type:smallint;default:0"`
 }
 
 type FeeRates struct {
@@ -43,8 +47,6 @@ type FeeRates struct {
 
 type WithdrawColumns struct {
 	BtcTxHash     string
-	BtcTx         string
-	BtcSignature  string
 	BtcFrom       string
 	BtcTo         string
 	BtcValue      string
@@ -52,7 +54,13 @@ type WithdrawColumns struct {
 	B2BlockNumber string
 	B2LogIndex    string
 	Status        string
-	CheckStatus   string
+	RefundTxHash  string
+	AuditStatus   string
+	B2TxFrom      string
+	BtcRealValue  string
+	UUID          string
+	B2TxIndex     string
+	B2BlockHash   string
 }
 
 func (Withdraw) TableName() string {
@@ -62,8 +70,6 @@ func (Withdraw) TableName() string {
 func (Withdraw) Column() WithdrawColumns {
 	return WithdrawColumns{
 		BtcTxHash:     "btc_tx_hash",
-		BtcTx:         "btc_tx",
-		BtcSignature:  "btc_signature",
 		BtcFrom:       "btc_from",
 		BtcTo:         "btc_to",
 		BtcValue:      "btc_value",
@@ -71,6 +77,12 @@ func (Withdraw) Column() WithdrawColumns {
 		B2BlockNumber: "b2_block_number",
 		B2LogIndex:    "b2_log_index",
 		Status:        "status",
-		CheckStatus:   "check_status",
+		AuditStatus:   "audit_status",
+		RefundTxHash:  "refund_tx_hash",
+		B2TxFrom:      "b2_tx_from",
+		BtcRealValue:  "btc_real_value",
+		UUID:          "uuid",
+		B2TxIndex:     "b2_tx_index",
+		B2BlockHash:   "b2_block_hash",
 	}
 }
