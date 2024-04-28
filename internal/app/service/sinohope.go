@@ -18,6 +18,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var errParamsMismatch = errors.New("req params mismatch")
+
 type sinohopeServer struct {
 	pb.UnimplementedSinohopeServiceServer
 }
@@ -34,9 +36,14 @@ func ErrorTransactionNotify(code int64, message string) *vo.TransactionNotifyRes
 }
 
 func ErrorWithdrawalConfirm(code int64, message string) *vo.WithdrawalConfirmResponse {
+	action := ""
+	if code == exceptions.WithdrawConfirmReject {
+		action = sinohopeType.WithdrawalActionReject
+	}
 	return &vo.WithdrawalConfirmResponse{
 		Code:    code,
 		Message: message,
+		Action:  action,
 	}
 }
 
@@ -87,17 +94,11 @@ func (s *sinohopeServer) TransactionNotify(ctx context.Context, req *vo.Transact
 func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.WithdrawalConfirmRequest) (*vo.WithdrawalConfirmResponse, error) {
 	logger := log.WithName("WithdrawalConfirm")
 	logger.Infow("request data:", "req", req)
-	// db, err := GetDBContext(ctx)
-	// if err != nil {
-	// 	logger.Errorf("GetDBContext err:%v", err.Error())
-	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	// }
-	// listenAddress, err := GetListenAddress(ctx)
-	// if err != nil {
-	// 	logger.Errorf("GetListenAddress err:%v", err.Error())
-	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	// }
-	// logger.Infof("listen address config:%v", listenAddress)
+	db, err := GetDBContext(ctx)
+	if err != nil {
+		logger.Errorf("GetDBContext err:%v", err.Error())
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	}
 	httpCfg, err := GetHTTPConfig(ctx)
 	if err != nil {
 		logger.Errorf("GetHttpConfig err:%v", err.Error())
@@ -131,28 +132,49 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 	}
 	rollupTxHash := requestDetail.APIRequestID
 	logger.Infof("rollupTxHash: %v", rollupTxHash)
-	// TODO: logic
-	// if requestDetail.From == "" || requestDetail.To == "" || requestDetail.TxHash == "" {
-	// 	logger.Errorf("request detail empty")
-	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err"), nil
-	// }
-	// if requestDetail.To != listenAddress {
-	// 	logger.Errorf("request detail to address not eq listen address")
-	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailToMismatch, "request detail to mismatch"), nil
-	// }
-	// amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
-	// if err != nil {
-	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
-	// }
-	// var deposit model.Deposit
-	// var sinohope model.Sinohope
-	// err = db.Transaction(func(tx *gorm.DB) error {
-	// 	return nil
-	// })
-	// if err != nil {
-	// 	logger.Errorw("save tx result err", "err", err.Error())
-	// 	return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
-	// }
+	if requestDetail.From == "" || requestDetail.To == "" {
+		logger.Errorf("request detail empty")
+		return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err"), nil
+	}
+	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	if err != nil {
+		return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
+	}
+	var withdraw model.Withdraw
+	err = db.Transaction(func(tx *gorm.DB) error {
+		err = tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where(
+				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
+				requestDetail.APIRequestID,
+			).
+			First(&withdraw).Error
+		if err != nil {
+			logger.Errorw("failed find tx from db", "error", err)
+			return err
+		}
+		// update check fields
+		if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
+			logger.Errorf("from address not match")
+			return errParamsMismatch
+		}
+		if !strings.EqualFold(withdraw.BtcTo, requestDetail.To) {
+			logger.Errorf("to address not match")
+			return errParamsMismatch
+		}
+		if withdraw.BtcRealValue != amount {
+			logger.Errorf("amount not match")
+			return errParamsMismatch
+		}
+		return nil
+	})
+	if err != nil {
+		logger.Errorw("save tx result err", "err", err.Error())
+		if errors.Is(err, errParamsMismatch) {
+			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmReject, "Invalid parameter"), nil
+		}
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+	}
 	logger.Infof("APPROVE")
 	return &vo.WithdrawalConfirmResponse{
 		RequestId: req.RequestId,
@@ -273,7 +295,6 @@ func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequ
 }
 
 func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequest, db *gorm.DB, logger log.Logger) (*vo.TransactionNotifyResponse, error) {
-	// TODO: handle withdraw notify
 	detail, err := req.RequestDetail.MarshalJSON()
 	if err != nil {
 		return ErrorTransactionNotify(exceptions.SystemError, "system error"), nil
@@ -293,11 +314,11 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 		logger.Errorf("request detail empty")
 		return ErrorTransactionNotify(exceptions.RequestDetailParameter, "request detail check err"), nil
 	}
-	// amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
-	// if err != nil {
-	// 	return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount "), nil
-	// }
-	// var withdraw model.Withdraw
+	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	if err != nil {
+		return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount "), nil
+	}
+	var withdraw model.Withdraw
 	var sinohope model.Sinohope
 	err = db.Transaction(func(tx *gorm.DB) error {
 		err = tx.
@@ -324,26 +345,46 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 			}
 		}
 
-		// err = tx.
-		// 	Where(
-		// 		fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().BtcTxHash),
-		// 		requestDetail.APIRequestID,
-		// 	).
-		// 	First(&withdraw).Error
-		// if err != nil {
-		// 	logger.Errorw("failed find tx from db", "error", err)
-		// 	return err
-		// }
-		// // update check fields
-		// if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
-		// 	return errors.New("from address not match")
-		// }
-		// if !strings.EqualFold(withdraw.BtcTo, requestDetail.To) {
-		// 	return errors.New("to address not match")
-		// }
-		// if withdraw.BtcValue != amount {
-		// 	return errors.New("amount not match")
-		// }
+		err = tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Where(
+				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
+				requestDetail.APIRequestID,
+			).
+			First(&withdraw).Error
+		if err != nil {
+			logger.Errorw("failed find tx from db", "error", err)
+			return err
+		}
+		// update check fields
+		if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
+			return errors.New("from address not match")
+		}
+		if !strings.EqualFold(withdraw.BtcTo, requestDetail.To) {
+			return errors.New("to address not match")
+		}
+		if withdraw.BtcRealValue != amount {
+			return errors.New("amount not match")
+		}
+		// success
+		if requestDetail.State == 10 {
+			updateFields := map[string]interface{}{
+				model.Withdraw{}.Column().Status:    model.BtcTxWithdrawSinohopeSuccess,
+				model.Withdraw{}.Column().BtcTxHash: requestDetail.TxHash,
+			}
+			err = tx.Model(&model.Withdraw{}).Where("id = ?", withdraw.ID).Updates(updateFields).Error
+			if err != nil {
+				return err
+			}
+		} else {
+			updateFields := map[string]interface{}{
+				model.Withdraw{}.Column().Status: model.BtcTxWithdrawFailed,
+			}
+			err = tx.Model(&model.Withdraw{}).Where("id = ?", withdraw.ID).Updates(updateFields).Error
+			if err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	if err != nil {
