@@ -30,8 +30,9 @@ type Withdraw struct {
 	B2TxHash      string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network tx hash"`
 	B2TxIndex     uint   `json:"b2_tx_index" gorm:"type:bigint;comment:b2 tx index"`
 	B2LogIndex    uint   `json:"b2_log_index" gorm:"type:int;comment:b2 log index"`
+	RefundTxHash  string `json:"refund_tx_hash" gorm:"type:varchar(256);default:'';comment:bitcoin refund tx hash"`
 	Status        int    `json:"status" gorm:"type:smallint;default:1"`
-	CheckStatus   int    `json:"check_status" gorm:"type:smallint;default:0"`
+	AuditStatus   int    `json:"audit_status" gorm:"type:smallint;default:0"`
 }
 
 type FeeRates struct {
@@ -53,7 +54,9 @@ type WithdrawColumns struct {
 	B2BlockNumber string
 	B2LogIndex    string
 	Status        string
-	CheckStatus   string
+	RefundTxHash  string
+	AuditStatus   string
+	B2TxFrom      string
 }
 
 func (Withdraw) TableName() string {
@@ -72,6 +75,8 @@ func (Withdraw) Column() WithdrawColumns {
 		B2BlockNumber: "b2_block_number",
 		B2LogIndex:    "b2_log_index",
 		Status:        "status",
-		CheckStatus:   "check_status",
+		AuditStatus:   "audit_status",
+		RefundTxHash:  "refund_tx_hash",
+		B2TxFrom:      "b2_tx_from",
 	}
 }

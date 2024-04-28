@@ -73,7 +73,7 @@ func (bis *BridgeWithdrawService) OnStart() error {
 	for {
 		// confirm tx
 		var withdrawList []model.Withdraw
-		err := bis.db.Model(&model.Withdraw{}).Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawPending).Limit(10).Find(&withdrawList).Error
+		err := bis.db.Model(&model.Withdraw{}).Where(fmt.Sprintf("%s = ? and btc_tx_hash != ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawPending, "").Limit(10).Find(&withdrawList).Error
 		if err != nil {
 			bis.log.Errorw("BridgeWithdrawService get broadcast tx failed", "error", err)
 			time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)

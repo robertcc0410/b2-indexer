@@ -2,6 +2,7 @@ package rollup
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"math/big"
 	"time"
@@ -19,7 +20,6 @@ import (
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -169,10 +169,13 @@ func (bis *IndexerService) OnStart() error {
 }
 
 func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) error {
+	caller := event.TopicToAddress(vlog, 1).Hex()
+	withdrawUUID := hex.EncodeToString(vlog.Data[32*2 : 32*3])
 	amount := DataToBigInt(vlog, 1)
 	destAddrStr := DataToString(vlog, 0)
 	withdrawData := model.Withdraw{
-		UUID:          uuid.NewV4().String(),
+		B2TxFrom:      caller,
+		UUID:          withdrawUUID,
 		BtcFrom:       listenAddress,
 		BtcTo:         destAddrStr,
 		BtcValue:      amount.Int64(),

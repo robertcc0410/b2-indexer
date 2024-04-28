@@ -102,6 +102,20 @@ func (bis *TransferService) OnStart() error {
 					bis.log.Errorw("TransferService Create withdrawSinohope error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
 					return err
 				}
+
+				withdrawAudit := model.WithdrawAudit{
+					B2TxHash:  v.B2TxHash,
+					BtcFrom:   v.BtcFrom,
+					BtcTo:     v.BtcTo,
+					BtcValue:  v.BtcValue,
+					BtcTxHash: res.Transaction.TxHash,
+					// Status: 1,
+					MPCStatus: res.State,
+				}
+				if err := tx.Create(&withdrawAudit).Error; err != nil {
+					bis.log.Errorw("TransferService Create withdrawAudit error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
+					return err
+				}
 				return nil
 			})
 			if err != nil {
