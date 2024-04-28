@@ -11,4 +11,5 @@ const (
 	RequestDetailToMismatch = 2004
 	IPWhiteList             = 2005
 	RequestDetailAmount     = 2006
+	WithdrawConfirmReject   = 2007
 )
