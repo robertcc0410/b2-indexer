@@ -97,6 +97,7 @@ func LoadKeypair(keyStr string) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
 	}
 	return privateKey, &privateKey.PublicKey, nil
 }
+
 func LoadHexKeypair(keyStr string) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
 	pkBytes, err := hex.DecodeString(keyStr)
 	if err != nil {

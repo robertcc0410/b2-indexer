@@ -62,7 +62,6 @@ func newMpcServer(cfg *config.HTTPConfig) *mpcServer {
 		mpcCallbackPrivateKey: private,
 		mpcNodePublicKey:      tssNodePublicKey,
 	}
-
 }
 
 func (s *mpcServer) ErrorMpcCheck(status int64, error string, rsp sinohopeType.MpcCheckResponseData) *vo.MpcCheckResponse {
