@@ -205,7 +205,7 @@ func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequ
 	}
 	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
 	if err != nil {
-		return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount "), nil
+		return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount fail"), nil
 	}
 	var deposit model.Deposit
 	var sinohope model.Sinohope
@@ -316,7 +316,7 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 	}
 	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
 	if err != nil {
-		return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount "), nil
+		return ErrorTransactionNotify(exceptions.RequestDetailAmount, "request detail amount fail"), nil
 	}
 	var withdraw model.Withdraw
 	var sinohope model.Sinohope
@@ -356,6 +356,7 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 			logger.Errorw("failed find tx from db", "error", err)
 			return err
 		}
+		logger.Infow("query withdraw detail", "withdraw", withdraw)
 		// update check fields
 		if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
 			return errors.New("from address not match")

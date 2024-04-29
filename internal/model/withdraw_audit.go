@@ -25,7 +25,7 @@ type WithdrawAudit struct {
 	MPCStatus int    `json:"mpc_status" gorm:"type:smallint;default:1"`
 }
 
-type WithdrawCheckColumns struct {
+type WithdrawAuditColumns struct {
 	B2TxHash  string
 	BtcFrom   string
 	BtcTo     string
@@ -39,8 +39,8 @@ func (WithdrawAudit) TableName() string {
 	return "withdraw_audit"
 }
 
-func (WithdrawAudit) Column() WithdrawCheckColumns {
-	return WithdrawCheckColumns{
+func (WithdrawAudit) Column() WithdrawAuditColumns {
+	return WithdrawAuditColumns{
 		B2TxHash:  "b2_tx_hash",
 		BtcFrom:   "btc_from",
 		BtcTo:     "btc_to",
