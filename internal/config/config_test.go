@@ -286,6 +286,7 @@ func TestTransferConfig(t *testing.T) {
 	os.Unsetenv("TRANSFER_OPERATION_TYPE")
 	os.Unsetenv("TRANSFER_NETWORK_NAME")
 	os.Unsetenv("TRANSFER_ENABLE_ENCRYPT")
+	os.Unsetenv("TRANSFER_FEE")
 
 	config, err := config.LoadTransferConfig("./testdata")
 	require.NoError(t, err)
@@ -299,6 +300,7 @@ func TestTransferConfig(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
+	require.Equal(t, "", config.Fee)
 }
 
 func TestTransferConfigEnv(t *testing.T) {
@@ -310,10 +312,11 @@ func TestTransferConfigEnv(t *testing.T) {
 	os.Setenv("TRANSFER_CHAIN_SYMBOL", "BTC_BTC")
 	os.Setenv("TRANSFER_ASSET_ID", "BTC")
 	os.Setenv("TRANSFER_OPERATION_TYPE", "TRANSFER")
-	os.Setenv("TRANSFER_NETWORK_NAME", "")
+	os.Setenv("TRANSFER_NETWORK_NAME", "testnet")
 	os.Setenv("TRANSFER_ENABLE_ENCRYPT", "false")
+	os.Setenv("TRANSFER_FEE", "0.02")
 
-	config, err := config.LoadTransferConfig("./testdata")
+	config, err := config.LoadTransferConfig("")
 	require.NoError(t, err)
 	require.Equal(t, "https://api.sinohope.com", config.BaseURL)
 	require.Equal(t, "", config.PrivateKey)
@@ -325,6 +328,7 @@ func TestTransferConfigEnv(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
+	require.Equal(t, "0.02", config.Fee)
 }
 
 func TestAuditConfig(t *testing.T) {

@@ -74,7 +74,20 @@ func (bis *TransferService) OnStart() error {
 			if isOK {
 				continue
 			}
-			res, err := bis.Transfer(v.B2TxHash, v.BtcTo, strconv.FormatInt(v.BtcValue, 10))
+			var amount string
+			if bis.cfg.Fee != "" {
+				feeFloat, err := strconv.ParseFloat(bis.cfg.Fee, 64)
+				if err != nil {
+					bis.log.Errorw("TransferService fee ParseFloat error", "error", err, "fee", bis.cfg.Fee)
+					time.Sleep(time.Second)
+					continue
+				}
+				result := float64(v.BtcValue) * feeFloat
+				amount = strconv.FormatFloat(result, 'f', -1, 64)
+			} else {
+				amount = strconv.FormatInt(v.BtcValue, 10)
+			}
+			res, err := bis.Transfer(v.B2TxHash, v.BtcTo, amount)
 			if err != nil {
 				bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
 				time.Sleep(time.Second)
