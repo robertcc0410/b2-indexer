@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/pem"
 	"errors"
 	"fmt"
 
@@ -301,7 +302,53 @@ func generateECDSAPrivateKey() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			pubKeyBlock := &pem.Block{
+				Type:  "PUBLIC KEY",
+				Bytes: pubKeyBytes,
+			}
+			encPubkey := pem.EncodeToMemory(pubKeyBlock)
+
+			privateKeyBlock := &pem.Block{
+				Type:  "EC PRIVATE KEY",
+				Bytes: pkcs8Bytes,
+			}
+			encPrivateKey := pem.EncodeToMemory(privateKeyBlock)
+			cmd.Println("pubKey hex:", hex.EncodeToString(pubKeyBytes))
+			cmd.Print("pubKey:\n", string(encPubkey))
+			cmd.Println("privateKey hex:", hex.EncodeToString(pkcs8Bytes))
+			cmd.Print("privateKey:\n", string(encPrivateKey))
+			return nil
+		},
+	}
+	return cmd
+}
+
+func generateEncECDSAPrivateKey() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gen-enc-ecdsa-key",
+		Short: "generate enc ECDSA PrivateKey",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			if err != nil {
+				return err
+			}
+			pkcs8Bytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+			if err != nil {
+				return err
+			}
+			pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+			if err != nil {
+				return err
+			}
+
+			pubKeyBlock := &pem.Block{
+				Type:  "PUBLIC KEY",
+				Bytes: pubKeyBytes,
+			}
+			pubkey := pem.EncodeToMemory(pubKeyBlock)
 			cmd.Println("pubKey:", hex.EncodeToString(pubKeyBytes))
+			cmd.Println("pubKey:", string(pubkey))
 			cmd.Println("privateKey:", hex.EncodeToString(pkcs8Bytes))
 			return nil
 		},
