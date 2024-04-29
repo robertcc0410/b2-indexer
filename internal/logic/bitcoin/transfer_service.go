@@ -51,7 +51,7 @@ func (bis *TransferService) OnStart() error {
 	for {
 		var withdrawList []model.Withdraw
 		err := bis.db.Model(&model.Withdraw{}).
-			Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).Limit(10).
+			Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).Order(fmt.Sprintf("%s ASC", model.Withdraw{}.Column().B2BlockNumber)).Limit(10).
 			Find(&withdrawList).Error
 		if err != nil {
 			bis.log.Errorw("TransferService get withdraw List failed", "error", err)
