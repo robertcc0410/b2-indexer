@@ -141,7 +141,7 @@ func (bis *IndexerService) OnStart() error {
 					err = handelWithdrawEvent(vlog, bis.db, bis.config.IndexerListenAddress)
 					if err != nil {
 						bis.log.Errorw("IndexerService handelWithdrawEvent err: ", "error", err)
-						break
+						continue
 					}
 				}
 				if eventHash == common.HexToHash(bis.config.Bridge.Deposit) {
@@ -162,7 +162,6 @@ func (bis *IndexerService) OnStart() error {
 			if err := bis.db.Save(&rollupIndex).Error; err != nil {
 				bis.log.Errorw("failed to save b2 index block", "error", err, "currentBlock", i,
 					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
-				break
 			}
 		}
 	}
