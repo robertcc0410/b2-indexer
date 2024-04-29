@@ -33,8 +33,8 @@ type Withdraw struct {
 	B2TxIndex     uint   `json:"b2_tx_index" gorm:"type:bigint;comment:b2 tx index"`
 	B2LogIndex    uint   `json:"b2_log_index" gorm:"type:int;comment:b2 log index"`
 	RefundTxHash  string `json:"refund_tx_hash" gorm:"type:varchar(256);default:'';comment:bitcoin refund tx hash"`
-	Status        string `json:"status" gorm:"type:smallint;default:1"`
-	AuditStatus   string `json:"audit_status" gorm:"type:smallint;default:0"`
+	Status        string `json:"status" gorm:"type:varchar(64);default:1"`
+	AuditStatus   string `json:"audit_status" gorm:"type:varchar(64);default:0"`
 }
 
 type FeeRates struct {
