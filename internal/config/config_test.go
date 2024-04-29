@@ -2,7 +2,6 @@ package config_test
 
 import (
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/b2network/b2-indexer/internal/config"
@@ -39,16 +38,13 @@ func TestBitcoinConfig(t *testing.T) {
 	os.Unsetenv("EPS_AUTHORIZATION")
 	os.Unsetenv("BITCOIN_BRIDGE_DEPOSIT")
 	os.Unsetenv("BITCOIN_BRIDGE_WITHDRAW")
-	os.Unsetenv("BITCOIN_BRIDGE_UNISAT_API_KEY")
-	os.Unsetenv("BITCOIN_BRIDGE_PUBLICKEYS")
-	os.Unsetenv("BITCOIN_BRIDGE_TIME_INTERVAL")
-	os.Unsetenv("BITCOIN_BRIDGE_MULTISIG_NUM")
 	os.Unsetenv("BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER")
 	os.Unsetenv("BITCOIN_BRIDGE_ENABLE_VSM")
 	os.Unsetenv("BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX")
 	os.Unsetenv("BITCOIN_BRIDGE_VSM_IV")
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY")
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG")
+	os.Unsetenv("BITCOIN_BRIDGE_CONFIRM_HEIGHT")
 	config, err := config.LoadBitcoinConfig("./testdata")
 	require.NoError(t, err)
 	require.Equal(t, "signet", config.NetworkName)
@@ -76,16 +72,13 @@ func TestBitcoinConfig(t *testing.T) {
 	require.Equal(t, "", config.Eps.Authorization)
 	require.Equal(t, "", config.Bridge.Deposit)
 	require.Equal(t, "", config.Bridge.Withdraw)
-	require.Equal(t, "", config.Bridge.UnisatAPIKey)
-	require.Equal(t, int64(0), config.Bridge.TimeInterval)
-	require.Equal(t, []string{""}, config.Bridge.PublicKeys)
-	require.Equal(t, 0, config.Bridge.MultisigNum)
 	require.Equal(t, false, config.Bridge.EnableRollupListener)
 	require.Equal(t, false, config.Bridge.EnableVSM)
 	require.Equal(t, uint(10), config.Bridge.VSMInternalKeyIndex)
 	require.Equal(t, "abc", config.Bridge.VSMIv)
 	require.Equal(t, "aaa", config.Bridge.LocalDecryptKey)
 	require.Equal(t, "aes", config.Bridge.LocalDecryptAlg)
+	require.Equal(t, 6, config.Bridge.ConfirmHeight)
 }
 
 func TestBitcoinConfigEnv(t *testing.T) {
@@ -118,16 +111,13 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	os.Setenv("EPS_AUTHORIZATION", "")
 	os.Setenv("BITCOIN_BRIDGE_DEPOSIT", "")
 	os.Setenv("BITCOIN_BRIDGE_WITHDRAW", "")
-	os.Setenv("BITCOIN_BRIDGE_UNISAT_API_KEY", "")
-	os.Setenv("BITCOIN_BRIDGE_TIME_INTERVAL", strconv.FormatInt(0, 10))
-	os.Setenv("BITCOIN_BRIDGE_PUBLICKEYS", "")
-	os.Setenv("BITCOIN_BRIDGE_MULTISIG_NUM", strconv.FormatInt(0, 10))
 	os.Setenv("BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER", "false")
 	os.Setenv("BITCOIN_BRIDGE_ENABLE_VSM", "true")
 	os.Setenv("BITCOIN_BRIDGE_VSM_INTERNAL_KEY_INDEX", "11")
 	os.Setenv("BITCOIN_BRIDGE_VSM_IV", "1111abc")
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY", "abcd")
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG", "rsa")
+	os.Setenv("BITCOIN_BRIDGE_CONFIRM_HEIGHT", "6")
 
 	config, err := config.LoadBitcoinConfig("./")
 	require.NoError(t, err)
@@ -156,16 +146,13 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	require.Equal(t, "", config.Eps.Authorization)
 	require.Equal(t, "", config.Bridge.Deposit)
 	require.Equal(t, "", config.Bridge.Withdraw)
-	require.Equal(t, "", config.Bridge.UnisatAPIKey)
-	require.Equal(t, int64(0), config.Bridge.TimeInterval)
-	require.Equal(t, []string(nil), config.Bridge.PublicKeys)
-	require.Equal(t, 0, config.Bridge.MultisigNum)
 	require.Equal(t, false, config.Bridge.EnableRollupListener)
 	require.Equal(t, true, config.Bridge.EnableVSM)
 	require.Equal(t, uint(11), config.Bridge.VSMInternalKeyIndex)
 	require.Equal(t, "1111abc", config.Bridge.VSMIv)
 	require.Equal(t, "abcd", config.Bridge.LocalDecryptKey)
 	require.Equal(t, "rsa", config.Bridge.LocalDecryptAlg)
+	require.Equal(t, 6, config.Bridge.ConfirmHeight)
 }
 
 func TestChainParams(t *testing.T) {
@@ -287,6 +274,7 @@ func TestTransferConfig(t *testing.T) {
 	os.Unsetenv("TRANSFER_NETWORK_NAME")
 	os.Unsetenv("TRANSFER_ENABLE_ENCRYPT")
 	os.Unsetenv("TRANSFER_FEE")
+	os.Unsetenv("TRANSFER_TIME_INTERVAL")
 
 	config, err := config.LoadTransferConfig("./testdata")
 	require.NoError(t, err)
@@ -300,7 +288,8 @@ func TestTransferConfig(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
-	require.Equal(t, "", config.Fee)
+	require.Equal(t, "0.02", config.Fee)
+	require.Equal(t, 60, config.TimeInterval)
 }
 
 func TestTransferConfigEnv(t *testing.T) {
@@ -315,6 +304,7 @@ func TestTransferConfigEnv(t *testing.T) {
 	os.Setenv("TRANSFER_NETWORK_NAME", "testnet")
 	os.Setenv("TRANSFER_ENABLE_ENCRYPT", "false")
 	os.Setenv("TRANSFER_FEE", "0.02")
+	os.Setenv("TRANSFER_TIME_INTERVAL", "60")
 
 	config, err := config.LoadTransferConfig("")
 	require.NoError(t, err)
@@ -329,6 +319,7 @@ func TestTransferConfigEnv(t *testing.T) {
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
 	require.Equal(t, "0.02", config.Fee)
+	require.Equal(t, 60, config.TimeInterval)
 }
 
 func TestAuditConfig(t *testing.T) {

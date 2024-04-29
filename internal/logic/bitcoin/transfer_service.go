@@ -63,7 +63,11 @@ func (bis *TransferService) OnStart() error {
 			continue
 		}
 		for _, v := range withdrawList {
-			isOK, err := bis.QueryTransactionsByRequestIDs(v.B2TxHash)
+			requestID := v.B2TxHash
+			if has0xPrefix(requestID) {
+				requestID = requestID[2:]
+			}
+			isOK, err := bis.QueryTransactionsByRequestIDs(requestID)
 			if err != nil {
 				if err.Error() != "error response, code: 2004 msg: 交易记录不存在" {
 					bis.log.Errorw("TransferService QueryTransactionsByRequestIDs error", "error", err, "B2TxHash", v.B2TxHash)
@@ -87,7 +91,7 @@ func (bis *TransferService) OnStart() error {
 			} else {
 				amount = strconv.FormatInt(v.BtcValue, 10)
 			}
-			res, err := bis.Transfer(v.B2TxHash, v.BtcTo, amount)
+			res, err := bis.Transfer(requestID, v.BtcTo, amount)
 			if err != nil {
 				bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
 				time.Sleep(time.Second)
@@ -96,8 +100,9 @@ func (bis *TransferService) OnStart() error {
 
 			err = bis.db.Transaction(func(tx *gorm.DB) error {
 				updateFields := map[string]interface{}{
-					model.Withdraw{}.Column().Status:    model.BtcTxWithdrawPending,
-					model.Withdraw{}.Column().BtcTxHash: res.Transaction.TxHash,
+					model.Withdraw{}.Column().BtcRealValue: amount,
+					model.Withdraw{}.Column().Status:       model.BtcTxWithdrawPending,
+					model.Withdraw{}.Column().BtcTxHash:    res.Transaction.TxHash,
 				}
 				err = tx.Model(&model.Withdraw{}).Where("id = ?", v.ID).Updates(updateFields).Error
 				if err != nil {
@@ -135,6 +140,7 @@ func (bis *TransferService) OnStart() error {
 				bis.log.Errorw("TransferService OnStart error", "error", err)
 				time.Sleep(time.Second)
 			}
+			time.Sleep(time.Second * time.Duration(bis.cfg.TimeInterval))
 		}
 	}
 }

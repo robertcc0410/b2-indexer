@@ -99,14 +99,6 @@ type BridgeConfig struct {
 	Deposit string `mapstructure:"deposit" env:"BITCOIN_BRIDGE_DEPOSIT"`
 	// Withdraw defines the withdraw event hash
 	Withdraw string `mapstructure:"withdraw" env:"BITCOIN_BRIDGE_WITHDRAW"`
-	// UnisatApiKey defines unisat api_key
-	UnisatAPIKey string `mapstructure:"unisat-api-key" env:"BITCOIN_BRIDGE_UNISAT_API_KEY"`
-	// PublicKeys defines signer publickey
-	PublicKeys []string `mapstructure:"publickeys" env:"BITCOIN_BRIDGE_PUBLICKEYS"`
-	// TimeInterval defines withdraw time interval
-	TimeInterval int64 `mapstructure:"time-interval" env:"BITCOIN_BRIDGE_TIME_INTERVAL"`
-	// MultisigNum defines withdraw multisig number
-	MultisigNum int `mapstructure:"multisig-num" env:"BITCOIN_BRIDGE_MULTISIG_NUM"`
 	// EnableRollupListener defines rollup index server
 	EnableRollupListener bool `mapstructure:"enable-rollup-listener" env:"BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER"`
 	// EnableVSM defines whether to enable the vsm encryption/decryption
@@ -119,6 +111,8 @@ type BridgeConfig struct {
 	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY"`
 	// LocalAesAlg defines the bridge server local dec alg, rsa aes
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG"`
+	// ConfirmHeight defines the btc tx confirm block height
+	ConfirmHeight int `mapstructure:"confirm-height" env:"BITCOIN_BRIDGE_CONFIRM_HEIGHT" envDefault:"6"`
 }
 
 // TODO: @robertcc0410 env prefix, mapstructure and env,  env prefix in the rule must be the same
@@ -180,6 +174,8 @@ type TransferConfig struct {
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_LOCAL_DECRYPT_ALG"`
 	// Fee defines the withdraw fee
 	Fee string `mapstructure:"fee" env:"TRANSFER_FEE"`
+	// TimeInterval defines withdraw time interval
+	TimeInterval int `mapstructure:"time-interval" env:"TRANSFER_TIME_INTERVAL" envDefault:"60"`
 }
 
 const (
