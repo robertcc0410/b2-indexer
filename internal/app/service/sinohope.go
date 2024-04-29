@@ -136,36 +136,36 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 		logger.Errorf("request detail empty")
 		return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err"), nil
 	}
-	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
-	if err != nil {
-		return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
-	}
-	var withdraw model.Withdraw
+	// amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	// if err != nil {
+	// 	return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
+	// }
+	// var withdraw model.Withdraw
 	err = db.Transaction(func(tx *gorm.DB) error {
-		err = tx.
-			Set("gorm:query_option", "FOR UPDATE").
-			Where(
-				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
-				requestDetail.APIRequestID,
-			).
-			First(&withdraw).Error
-		if err != nil {
-			logger.Errorw("failed find tx from db", "error", err)
-			return err
-		}
-		// update check fields
-		if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
-			logger.Errorf("from address not match")
-			return errParamsMismatch
-		}
-		if !strings.EqualFold(withdraw.BtcTo, requestDetail.To) {
-			logger.Errorf("to address not match")
-			return errParamsMismatch
-		}
-		if withdraw.BtcRealValue != amount {
-			logger.Errorf("amount not match")
-			return errParamsMismatch
-		}
+		// err = tx.
+		// 	Set("gorm:query_option", "FOR UPDATE").
+		// 	Where(
+		// 		fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
+		// 		requestDetail.APIRequestID,
+		// 	).
+		// 	First(&withdraw).Error
+		// if err != nil {
+		// 	logger.Errorw("failed find tx from db", "error", err)
+		// 	return err
+		// }
+		// // update check fields
+		// if !strings.EqualFold(withdraw.BtcFrom, requestDetail.From) {
+		// 	logger.Errorf("from address not match")
+		// 	return errParamsMismatch
+		// }
+		// if !strings.EqualFold(withdraw.BtcTo, requestDetail.To) {
+		// 	logger.Errorf("to address not match")
+		// 	return errParamsMismatch
+		// }
+		// if withdraw.BtcRealValue != amount {
+		// 	logger.Errorf("amount not match")
+		// 	return errParamsMismatch
+		// }
 		return nil
 	})
 	if err != nil {

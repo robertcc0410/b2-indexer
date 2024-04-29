@@ -107,6 +107,7 @@ func Sinohope() *cobra.Command {
 		createWallet(),
 		genAddress(),
 		generateECDSAPrivateKey(),
+		generateEncECDSAPrivateKey(),
 	)
 	cmd.PersistentFlags().String(FlagBaseURL, "https://api.sinohope.com", "sinohope base url")
 	cmd.PersistentFlags().String(FlagPrivateKey, "", "fakePrivateKey")
@@ -327,7 +328,7 @@ func generateECDSAPrivateKey() *cobra.Command {
 func generateEncECDSAPrivateKey() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gen-enc-ecdsa-key",
-		Short: "generate enc ECDSA PrivateKey",
+		Short: "generate enc ECDSA PrivateKey,  example: gen-enc-ecdsa-key --vsmInternalKeyIndex 3",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 			if err != nil {
@@ -347,12 +348,46 @@ func generateEncECDSAPrivateKey() *cobra.Command {
 				Bytes: pubKeyBytes,
 			}
 			pubkey := pem.EncodeToMemory(pubKeyBlock)
-			cmd.Println("pubKey:", hex.EncodeToString(pubKeyBytes))
-			cmd.Println("pubKey:", string(pubkey))
-			cmd.Println("privateKey:", hex.EncodeToString(pkcs8Bytes))
+
+			ivKey := make([]byte, 16)
+			_, err = rand.Read(ivKey)
+			if err != nil {
+				return err
+			}
+
+			aesKey, err := crypto.GenAesKey()
+			if err != nil {
+				return err
+			}
+
+			// local enc
+			localEncData, err := crypto.AesEncrypt([]byte(hex.EncodeToString(pkcs8Bytes)), aesKey)
+			if err != nil {
+				return err
+			}
+			internalKeyIndex, err := cmd.Flags().GetUint(FlagVSMInternalKeyIndex)
+			if err != nil {
+				return err
+			}
+			// vsm enc
+			vsmEecData, _, err := vsm.TassSymmKeyOperation(
+				vsm.TaEnc,
+				vsm.AlgAes256,
+				[]byte(hex.EncodeToString(localEncData)),
+				[]byte(hex.EncodeToString(ivKey)),
+				internalKeyIndex)
+			if err != nil {
+				return err
+			}
+			cmd.Printf("pubKey hex:\n%s\n\n", hex.EncodeToString(pubKeyBytes))
+			cmd.Printf("pubKey:\n%s\n", string(pubkey))
+			cmd.Printf("aes key:\n%s\n\n", hex.EncodeToString(aesKey))
+			cmd.Printf("iv:\n%s\n\n", hex.EncodeToString(ivKey))
+			cmd.Printf("vsm enc data:\n%s\n\n", hex.EncodeToString(vsmEecData))
 			return nil
 		},
 	}
+	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
 	return cmd
 }
 
