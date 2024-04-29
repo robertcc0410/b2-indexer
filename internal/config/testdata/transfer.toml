@@ -8,3 +8,5 @@ chain-symbol = "BTC"
 operation-type = "TRANSFER"
 network-name = "testnet"
 enable-encrypt = false
+fee = "0.02"
+time-interval = 60

@@ -96,7 +96,8 @@ func (bis *BridgeWithdrawService) OnStart() error {
 				time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 				continue
 			}
-			if txRawResult.Confirmations >= 6 {
+			if txRawResult.Confirmations >= uint64(bis.config.Bridge.ConfirmHeight) {
+				bis.log.Infow("BridgeWithdrawService Update WithdrawTx status success", "b2TxHash", v.B2TxHash)
 				err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawSuccess).Error
 				if err != nil {
 					bis.log.Errorw("BridgeWithdrawService Update WithdrawTx status err", "error", err, "b2TxHash", v.B2TxHash)
