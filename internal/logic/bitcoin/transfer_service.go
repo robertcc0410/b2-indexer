@@ -74,9 +74,7 @@ func (bis *TransferService) HandleTransfer() {
 		case <-ticker.C:
 			var withdrawList []model.Withdraw
 			err := bis.db.Model(&model.Withdraw{}).
-				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status),
-					model.BtcTxWithdrawSubmit).
-				Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
+				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).Order("id ASC").
 				Limit(10).
 				Find(&withdrawList).Error
 			if err != nil {
