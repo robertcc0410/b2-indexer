@@ -89,9 +89,6 @@ func (bis *TransferService) HandleTransfer() {
 			}
 			for _, v := range withdrawList {
 				requestID := v.B2TxHash
-				if has0xPrefix(requestID) {
-					requestID = requestID[2:]
-				}
 				isOK, err := bis.QueryTransactionsByRequestIDs(requestID)
 				if err != nil {
 					if err.Error() != "error response, code: 2004 msg: 交易记录不存在" {
