@@ -88,42 +88,49 @@ func (bis *BridgeWithdrawService) HandleWithdraw() {
 			return
 		}
 	}
+	ticker := time.NewTicker(time.Duration(WithdrawHandleTime) * time.Second)
 	for {
-		// confirm tx
-		var withdrawList []model.Withdraw
-		err := bis.db.Model(&model.Withdraw{}).Where(fmt.Sprintf("%s = ? and btc_tx_hash != ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSinohopeSuccess, "").Limit(10).Find(&withdrawList).Error
-		if err != nil {
-			bis.log.Errorw("BridgeWithdrawService get broadcast tx failed", "error", err)
-			time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
-			continue
-		}
-		if len(withdrawList) == 0 {
-			time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
-			continue
-		}
-		for _, v := range withdrawList {
-			txHash, err := chainhash.NewHashFromStr(v.BtcTxHash)
+		select {
+		case <-bis.stopChan:
+			bis.log.Warnf("withdraw confirm stopping...")
+			return
+		case <-ticker.C:
+			// confirm tx
+			var withdrawList []model.Withdraw
+			err := bis.db.Model(&model.Withdraw{}).Where(fmt.Sprintf("%s = ? and btc_tx_hash != ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSinohopeSuccess, "").Limit(10).Find(&withdrawList).Error
 			if err != nil {
-				bis.log.Errorw("BridgeWithdrawService NewHashFromStr err", "error", err, "BtcTxHash", v.BtcTxHash)
+				bis.log.Errorw("BridgeWithdrawService get broadcast tx failed", "error", err)
 				time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 				continue
 			}
-			txRawResult, err := bis.btcCli.GetRawTransactionVerbose(txHash)
-			if err != nil {
-				bis.log.Errorw("BridgeWithdrawService GetRawTransactionVerbose err", "error", err, "BtcTxHash", v.BtcTxHash)
+			if len(withdrawList) == 0 {
 				time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 				continue
 			}
-			if txRawResult.Confirmations >= uint64(bis.config.Bridge.ConfirmHeight) {
-				bis.log.Infow("BridgeWithdrawService Update WithdrawTx status success", "b2TxHash", v.B2TxHash)
-				err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawSuccess).Error
+			for _, v := range withdrawList {
+				txHash, err := chainhash.NewHashFromStr(v.BtcTxHash)
 				if err != nil {
-					bis.log.Errorw("BridgeWithdrawService Update WithdrawTx status err", "error", err, "b2TxHash", v.B2TxHash)
+					bis.log.Errorw("BridgeWithdrawService NewHashFromStr err", "error", err, "BtcTxHash", v.BtcTxHash)
 					time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
 					continue
 				}
+				txRawResult, err := bis.btcCli.GetRawTransactionVerbose(txHash)
+				if err != nil {
+					bis.log.Errorw("BridgeWithdrawService GetRawTransactionVerbose err", "error", err, "BtcTxHash", v.BtcTxHash)
+					time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
+					continue
+				}
+				if txRawResult.Confirmations >= uint64(bis.config.Bridge.ConfirmHeight) {
+					bis.log.Infow("BridgeWithdrawService Update WithdrawTx status success", "b2TxHash", v.B2TxHash)
+					err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawSuccess).Error
+					if err != nil {
+						bis.log.Errorw("BridgeWithdrawService Update WithdrawTx status err", "error", err, "b2TxHash", v.B2TxHash)
+						time.Sleep(time.Duration(WithdrawHandleTime) * time.Second)
+						continue
+					}
+				}
+				time.Sleep(time.Duration(WithdrawTXConfirmTime) * time.Second)
 			}
-			time.Sleep(time.Duration(WithdrawTXConfirmTime) * time.Second)
 		}
 	}
 }
