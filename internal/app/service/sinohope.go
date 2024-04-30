@@ -156,10 +156,10 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 			).
 			First(&withdraw).Error
 		if err != nil {
+			logger.Errorw("failed find tx from db", "error", err)
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errRecordNotFound
 			}
-			logger.Errorw("failed find tx from db", "error", err)
 			return err
 		}
 		// update check fields
