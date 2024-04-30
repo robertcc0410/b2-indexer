@@ -38,7 +38,7 @@ func ErrorTransactionNotify(code int64, message string) *vo.TransactionNotifyRes
 	}
 }
 
-func ErrorWithdrawalConfirm(code int64, message string, requestId string) *vo.WithdrawalConfirmResponse {
+func ErrorWithdrawalConfirm(code int64, message string, requestID string) *vo.WithdrawalConfirmResponse {
 	action := ""
 	if code == exceptions.WithdrawConfirmReject {
 		action = sinohopeType.WithdrawalActionReject
@@ -50,7 +50,7 @@ func ErrorWithdrawalConfirm(code int64, message string, requestId string) *vo.Wi
 		Code:      code,
 		Message:   message,
 		Action:    action,
-		RequestId: requestId,
+		RequestId: requestID,
 	}
 }
 
