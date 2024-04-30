@@ -97,3 +97,19 @@ func LoadKeypair(keyStr string) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
 	}
 	return privateKey, &privateKey.PublicKey, nil
 }
+
+func LoadHexKeypair(keyStr string) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
+	pkBytes, err := hex.DecodeString(keyStr)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey, err := x509.ParsePKCS8PrivateKey(pkBytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	ecdsaPrivateKey, ok := privateKey.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("convert PKCS8 to ecdsa private key failed")
+	}
+	return ecdsaPrivateKey, &ecdsaPrivateKey.PublicKey, nil
+}

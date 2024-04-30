@@ -12,4 +12,5 @@ const (
 	IPWhiteList             = 2005
 	RequestDetailAmount     = 2006
 	WithdrawConfirmReject   = 2007
+	WithdrawMpcReject       = 2008
 )
