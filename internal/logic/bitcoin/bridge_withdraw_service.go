@@ -25,12 +25,13 @@ const (
 type BridgeWithdrawService struct {
 	service.BaseService
 
-	btcCli  *rpcclient.Client
-	ethCli  *ethclient.Client
-	config  *config.BitcoinConfig
-	db      *gorm.DB
-	auditDB *gorm.DB
-	log     log.Logger
+	btcCli   *rpcclient.Client
+	ethCli   *ethclient.Client
+	config   *config.BitcoinConfig
+	db       *gorm.DB
+	auditDB  *gorm.DB
+	log      log.Logger
+	stopChan chan struct{}
 }
 
 // NewBridgeWithdrawService returns a new service instance.
@@ -49,25 +50,37 @@ func NewBridgeWithdrawService(
 
 // OnStart implements service.Service
 func (bis *BridgeWithdrawService) OnStart() error {
+	go bis.HandleWithdraw()
+	bis.stopChan = make(chan struct{})
+	select {}
+}
+
+func (bis *BridgeWithdrawService) OnStop() {
+	bis.log.Warnf("bridge transfer service stoping...")
+	close(bis.stopChan)
+}
+
+// OnStart implements service.Service
+func (bis *BridgeWithdrawService) HandleWithdraw() {
 	if !bis.db.Migrator().HasTable(&model.Withdraw{}) {
 		err := bis.db.AutoMigrate(&model.Withdraw{})
 		if err != nil {
 			bis.log.Errorw("BridgeWithdrawService create withdraw table", "error", err.Error())
-			return err
+			return
 		}
 	}
 	if !bis.db.Migrator().HasTable(&model.WithdrawSinohope{}) {
 		err := bis.db.AutoMigrate(&model.WithdrawSinohope{})
 		if err != nil {
 			bis.log.Errorw("BridgeWithdrawService create withdraw_sinohope table", "error", err.Error())
-			return err
+			return
 		}
 	}
 	if !bis.auditDB.Migrator().HasTable(&model.WithdrawAudit{}) {
 		err := bis.auditDB.AutoMigrate(&model.WithdrawAudit{})
 		if err != nil {
 			bis.log.Errorw("BridgeWithdrawService create withdraw_audit table", "error", err.Error())
-			return err
+			return
 		}
 	}
 	for {

@@ -31,6 +31,7 @@ type TransferService struct {
 	db          *gorm.DB
 	log         log.Logger
 	sinohopeAPI features.TransactionAPI
+	stopChan    chan struct{}
 }
 
 // NewTransferService returns a new service instance.
@@ -48,6 +49,17 @@ func NewTransferService(
 
 // OnStart implements service.Service
 func (bis *TransferService) OnStart() error {
+	go bis.HandleTransfer()
+	bis.stopChan = make(chan struct{})
+	select {}
+}
+
+func (bis *TransferService) OnStop() {
+	bis.log.Warnf("bridge transfer service stoping...")
+	close(bis.stopChan)
+}
+
+func (bis *TransferService) HandleTransfer() {
 	for {
 		var withdrawList []model.Withdraw
 		err := bis.db.Model(&model.Withdraw{}).
@@ -109,7 +121,6 @@ func (bis *TransferService) OnStart() error {
 					bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
 					return err
 				}
-
 				withdrawSinohope := model.WithdrawSinohope{
 					B2TxHash:  v.B2TxHash,
 					SinoID:    res.SinoId,
