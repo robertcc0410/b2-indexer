@@ -51,6 +51,7 @@ func NewTransferService(
 
 // OnStart implements service.Service
 func (bis *TransferService) OnStart() error {
+	bis.wg.Add(1)
 	go bis.HandleTransfer()
 	bis.stopChan = make(chan struct{})
 	select {}
@@ -59,9 +60,11 @@ func (bis *TransferService) OnStart() error {
 func (bis *TransferService) OnStop() {
 	bis.log.Warnf("bridge transfer service stoping...")
 	close(bis.stopChan)
+	bis.wg.Wait()
 }
 
 func (bis *TransferService) HandleTransfer() {
+	defer bis.wg.Done()
 	ticker := time.NewTicker(time.Duration(bis.cfg.TimeInterval))
 	for {
 		select {
@@ -71,7 +74,9 @@ func (bis *TransferService) HandleTransfer() {
 		case <-ticker.C:
 			var withdrawList []model.Withdraw
 			err := bis.db.Model(&model.Withdraw{}).
-				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).Limit(10).
+				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).
+				Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
+				Limit(10).
 				Find(&withdrawList).Error
 			if err != nil {
 				bis.log.Errorw("TransferService get withdraw List failed", "error", err)
