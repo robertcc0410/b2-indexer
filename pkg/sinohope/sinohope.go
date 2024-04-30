@@ -8,12 +8,12 @@ import (
 	"github.com/b2network/b2-indexer/pkg/vsm"
 )
 
-func DecodeKey(key string, internalKeyIndex uint, localKey string, vsmIv string) (string, error) {
-	localKeyByte, err := hex.DecodeString(localKey)
+func DecryptKey(ciphertext string, localDecryptKey string, vsmIv string, internalKeyIndex uint) (string, error) {
+	localKeyByte, err := hex.DecodeString(localDecryptKey)
 	if err != nil {
 		return "", err
 	}
-	tassInputData, err := hex.DecodeString(key)
+	tassInputData, err := hex.DecodeString(ciphertext)
 	if err != nil {
 		return "", err
 	}
@@ -21,7 +21,7 @@ func DecodeKey(key string, internalKeyIndex uint, localKey string, vsmIv string)
 	if err != nil {
 		return "", err
 	}
-	key = string(bytes.TrimRight(decKey, "\x00"))
+	key := string(bytes.TrimRight(decKey, "\x00"))
 	decodeLocalData, err := hex.DecodeString(key)
 	if err != nil {
 		return "", err

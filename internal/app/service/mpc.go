@@ -40,7 +40,7 @@ func newMpcServer(cfg *config.HTTPConfig) *mpcServer {
 	}
 
 	if cfg.Mpc.EnableVSM {
-		callbackKeyHex, err := sinohope.DecodeKey(cfg.Mpc.CallbackPrivateKey, cfg.Mpc.VSMInternalKeyIndex, cfg.Mpc.LocalDecryptKey, cfg.Mpc.VSMIv)
+		callbackKeyHex, err := sinohope.DecryptKey(cfg.Mpc.CallbackPrivateKey, cfg.Mpc.LocalDecryptKey, cfg.Mpc.VSMIv, cfg.Mpc.VSMInternalKeyIndex)
 		if err != nil {
 			panic(fmt.Sprintf("decode private key failed, %v", err))
 		}
