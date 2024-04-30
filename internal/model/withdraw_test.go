@@ -2,10 +2,11 @@ package model_test
 
 import (
 	"fmt"
-	"github.com/b2network/b2-indexer/internal/model"
-	"github.com/b2network/b2-indexer/pkg/utils"
 	"reflect"
 	"testing"
+
+	"github.com/b2network/b2-indexer/internal/model"
+	"github.com/b2network/b2-indexer/pkg/utils"
 )
 
 func TestValidateWithdrawColumn(t *testing.T) {

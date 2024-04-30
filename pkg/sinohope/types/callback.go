@@ -81,17 +81,18 @@ type MpcCheckRequestDetail struct {
 	SignType string          `json:"sign_type,omitempty" form:"sign_type"`
 	TxInfo   json.RawMessage `json:"tx_info,omitempty" form:"tx_info"`
 
-	PublicKey   string `json:"public_key,omitempty"`
-	Path        string `json:"path,omitempty"`
-	Message     string `json:"message,omitempty"`
-	Coin        string `json:"coin,omitempty"`
-	FromAddress string `json:"from_address,omitempty"`
-	ToAddress   string `json:"to_address,omitempty"`
-	Amount      string `json:"amount,omitempty"`
-	Fee         string `json:"fee,omitempty"`
-	GasPrice    string `json:"gas_price,omitempty"`
-	GasLimit    string `json:"gas_limit,omitempty"`
-	Signature   string `json:"signature,omitempty"`
+	PublicKey    string `json:"public_key,omitempty"`
+	Path         string `json:"path,omitempty"`
+	Message      string `json:"message,omitempty"`
+	Coin         string `json:"coin,omitempty"`
+	FromAddress  string `json:"from_address,omitempty"`
+	ToAddress    string `json:"to_address,omitempty"`
+	Amount       string `json:"amount,omitempty"`
+	Fee          string `json:"fee,omitempty"`
+	GasPrice     string `json:"gas_price,omitempty"`
+	GasLimit     string `json:"gas_limit,omitempty"`
+	Signature    string `json:"signature,omitempty"`
+	APIRequestID string `json:"apiRequestId"`
 }
 
 type MpcCheckExtraInfo struct {
