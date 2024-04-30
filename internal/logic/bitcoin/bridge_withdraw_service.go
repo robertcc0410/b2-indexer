@@ -2,6 +2,7 @@ package bitcoin
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/b2network/b2-indexer/internal/config"
@@ -31,6 +32,7 @@ type BridgeWithdrawService struct {
 	db       *gorm.DB
 	auditDB  *gorm.DB
 	log      log.Logger
+	wg       sync.WaitGroup
 	stopChan chan struct{}
 }
 
@@ -50,6 +52,7 @@ func NewBridgeWithdrawService(
 
 // OnStart implements service.Service
 func (bis *BridgeWithdrawService) OnStart() error {
+	bis.wg.Add(1)
 	go bis.HandleWithdraw()
 	bis.stopChan = make(chan struct{})
 	select {}
@@ -58,10 +61,12 @@ func (bis *BridgeWithdrawService) OnStart() error {
 func (bis *BridgeWithdrawService) OnStop() {
 	bis.log.Warnf("bridge transfer service stoping...")
 	close(bis.stopChan)
+	bis.wg.Wait()
 }
 
 // OnStart implements service.Service
 func (bis *BridgeWithdrawService) HandleWithdraw() {
+	defer bis.wg.Done()
 	if !bis.db.Migrator().HasTable(&model.Withdraw{}) {
 		err := bis.db.AutoMigrate(&model.Withdraw{})
 		if err != nil {

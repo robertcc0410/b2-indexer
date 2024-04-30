@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -31,6 +32,7 @@ type TransferService struct {
 	db          *gorm.DB
 	log         log.Logger
 	sinohopeAPI features.TransactionAPI
+	wg          sync.WaitGroup
 	stopChan    chan struct{}
 }
 
@@ -49,6 +51,7 @@ func NewTransferService(
 
 // OnStart implements service.Service
 func (bis *TransferService) OnStart() error {
+	bis.wg.Add(1)
 	go bis.HandleTransfer()
 	bis.stopChan = make(chan struct{})
 	select {}
@@ -57,9 +60,11 @@ func (bis *TransferService) OnStart() error {
 func (bis *TransferService) OnStop() {
 	bis.log.Warnf("bridge transfer service stoping...")
 	close(bis.stopChan)
+	bis.wg.Wait()
 }
 
 func (bis *TransferService) HandleTransfer() {
+	defer bis.wg.Done()
 	for {
 		var withdrawList []model.Withdraw
 		err := bis.db.Model(&model.Withdraw{}).
