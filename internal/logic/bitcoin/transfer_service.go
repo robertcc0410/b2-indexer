@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -31,6 +32,8 @@ type TransferService struct {
 	db          *gorm.DB
 	log         log.Logger
 	sinohopeAPI features.TransactionAPI
+	wg          sync.WaitGroup
+	stopChan    chan struct{}
 }
 
 // NewTransferService returns a new service instance.
@@ -48,99 +51,121 @@ func NewTransferService(
 
 // OnStart implements service.Service
 func (bis *TransferService) OnStart() error {
+	bis.wg.Add(1)
+	go bis.HandleTransfer()
+	bis.stopChan = make(chan struct{})
+	select {}
+}
+
+func (bis *TransferService) OnStop() {
+	bis.log.Warnf("bridge transfer service stoping...")
+	close(bis.stopChan)
+	bis.wg.Wait()
+}
+
+func (bis *TransferService) HandleTransfer() {
+	defer bis.wg.Done()
+	ticker := time.NewTicker(time.Duration(bis.cfg.TimeInterval))
 	for {
-		var withdrawList []model.Withdraw
-		err := bis.db.Model(&model.Withdraw{}).
-			Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).Limit(10).
-			Find(&withdrawList).Error
-		if err != nil {
-			bis.log.Errorw("TransferService get withdraw List failed", "error", err)
-			time.Sleep(time.Second)
-			continue
-		}
-		if len(withdrawList) == 0 {
-			time.Sleep(time.Second)
-			continue
-		}
-		for _, v := range withdrawList {
-			requestID := v.B2TxHash
-			if has0xPrefix(requestID) {
-				requestID = requestID[2:]
-			}
-			isOK, err := bis.QueryTransactionsByRequestIDs(requestID)
+		select {
+		case <-bis.stopChan:
+			bis.log.Warnf("transfer stopping...")
+			return
+		case <-ticker.C:
+			var withdrawList []model.Withdraw
+			err := bis.db.Model(&model.Withdraw{}).
+				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).
+				Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
+				Limit(10).
+				Find(&withdrawList).Error
 			if err != nil {
-				if err.Error() != "error response, code: 2004 msg: 交易记录不存在" {
-					bis.log.Errorw("TransferService QueryTransactionsByRequestIDs error", "error", err, "B2TxHash", v.B2TxHash)
-					time.Sleep(time.Second)
-					continue
-				}
-			}
-			if isOK {
-				continue
-			}
-			var amount string
-			if bis.cfg.Fee != "" {
-				feeFloat, err := strconv.ParseFloat(bis.cfg.Fee, 64)
-				if err != nil {
-					bis.log.Errorw("TransferService fee ParseFloat error", "error", err, "fee", bis.cfg.Fee)
-					time.Sleep(time.Second)
-					continue
-				}
-				result := float64(v.BtcValue) * feeFloat
-				amount = strconv.FormatFloat(result, 'f', -1, 64)
-			} else {
-				amount = strconv.FormatInt(v.BtcValue, 10)
-			}
-			res, err := bis.Transfer(requestID, v.BtcTo, amount)
-			if err != nil {
-				bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
+				bis.log.Errorw("TransferService get withdraw List failed", "error", err)
 				time.Sleep(time.Second)
 				continue
 			}
-
-			err = bis.db.Transaction(func(tx *gorm.DB) error {
-				updateFields := map[string]interface{}{
-					model.Withdraw{}.Column().BtcRealValue: amount,
-					model.Withdraw{}.Column().Status:       model.BtcTxWithdrawPending,
-					model.Withdraw{}.Column().BtcTxHash:    res.Transaction.TxHash,
-				}
-				err = tx.Model(&model.Withdraw{}).Where("id = ?", v.ID).Updates(updateFields).Error
-				if err != nil {
-					bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
-					return err
-				}
-
-				withdrawSinohope := model.WithdrawSinohope{
-					B2TxHash:  v.B2TxHash,
-					SinoID:    res.SinoId,
-					RequestID: res.RequestId,
-					State:     res.State,
-				}
-				if err := tx.Create(&withdrawSinohope).Error; err != nil {
-					bis.log.Errorw("TransferService Create withdrawSinohope error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
-					return err
-				}
-
-				withdrawAudit := model.WithdrawAudit{
-					B2TxHash:  v.B2TxHash,
-					BtcFrom:   v.BtcFrom,
-					BtcTo:     v.BtcTo,
-					BtcValue:  v.BtcValue,
-					BtcTxHash: res.Transaction.TxHash,
-					// Status: 1,
-					MPCStatus: res.State,
-				}
-				if err := tx.Create(&withdrawAudit).Error; err != nil {
-					bis.log.Errorw("TransferService Create withdrawAudit error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
-					return err
-				}
-				return nil
-			})
-			if err != nil {
-				bis.log.Errorw("TransferService OnStart error", "error", err)
+			if len(withdrawList) == 0 {
 				time.Sleep(time.Second)
+				continue
 			}
-			time.Sleep(time.Second * time.Duration(bis.cfg.TimeInterval))
+			for _, v := range withdrawList {
+				requestID := v.B2TxHash
+				if has0xPrefix(requestID) {
+					requestID = requestID[2:]
+				}
+				isOK, err := bis.QueryTransactionsByRequestIDs(requestID)
+				if err != nil {
+					if err.Error() != "error response, code: 2004 msg: 交易记录不存在" {
+						bis.log.Errorw("TransferService QueryTransactionsByRequestIDs error", "error", err, "B2TxHash", v.B2TxHash)
+						time.Sleep(time.Second)
+						continue
+					}
+				}
+				if isOK {
+					continue
+				}
+				var amount string
+				if bis.cfg.Fee != "" {
+					feeFloat, err := strconv.ParseFloat(bis.cfg.Fee, 64)
+					if err != nil {
+						bis.log.Errorw("TransferService fee ParseFloat error", "error", err, "fee", bis.cfg.Fee)
+						time.Sleep(time.Second)
+						continue
+					}
+					result := float64(v.BtcValue) * feeFloat
+					amount = strconv.FormatFloat(result, 'f', -1, 64)
+				} else {
+					amount = strconv.FormatInt(v.BtcValue, 10)
+				}
+				res, err := bis.Transfer(requestID, v.BtcTo, amount)
+				if err != nil {
+					bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
+					time.Sleep(time.Second)
+					continue
+				}
+
+				err = bis.db.Transaction(func(tx *gorm.DB) error {
+					updateFields := map[string]interface{}{
+						model.Withdraw{}.Column().BtcRealValue: amount,
+						model.Withdraw{}.Column().Status:       model.BtcTxWithdrawPending,
+						model.Withdraw{}.Column().BtcTxHash:    res.Transaction.TxHash,
+					}
+					err = tx.Model(&model.Withdraw{}).Where("id = ?", v.ID).Updates(updateFields).Error
+					if err != nil {
+						bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
+						return err
+					}
+					withdrawSinohope := model.WithdrawSinohope{
+						B2TxHash:  v.B2TxHash,
+						SinoID:    res.SinoId,
+						RequestID: res.RequestId,
+						State:     res.State,
+					}
+					if err := tx.Create(&withdrawSinohope).Error; err != nil {
+						bis.log.Errorw("TransferService Create withdrawSinohope error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
+						return err
+					}
+
+					withdrawAudit := model.WithdrawAudit{
+						B2TxHash:  v.B2TxHash,
+						BtcFrom:   v.BtcFrom,
+						BtcTo:     v.BtcTo,
+						BtcValue:  v.BtcValue,
+						BtcTxHash: res.Transaction.TxHash,
+						// Status: 1,
+						MPCStatus: res.State,
+					}
+					if err := tx.Create(&withdrawAudit).Error; err != nil {
+						bis.log.Errorw("TransferService Create withdrawAudit error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
+						return err
+					}
+					return nil
+				})
+				if err != nil {
+					bis.log.Errorw("TransferService OnStart error", "error", err)
+					time.Sleep(time.Second)
+				}
+				time.Sleep(time.Second * time.Duration(bis.cfg.TimeInterval))
+			}
 		}
 	}
 }

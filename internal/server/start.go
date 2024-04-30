@@ -233,10 +233,14 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 			return err
 		}
 		withdrawService := bitcoin.NewBridgeWithdrawService(btclient, ethlient, bitcoinCfg, db, auditDB, bridgeLogger)
-
+		defer func() {
+			if err = withdrawService.Stop(); err != nil {
+				logger.Errorf("stop withdrawService err:%v", err.Error())
+			}
+		}()
 		epsErrCh := make(chan error)
 		go func() {
-			if err := withdrawService.OnStart(); err != nil {
+			if err := withdrawService.Start(); err != nil {
 				epsErrCh <- err
 			}
 		}()

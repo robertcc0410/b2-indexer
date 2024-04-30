@@ -67,10 +67,14 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 		return err
 	}
 	transferService := bitcoin.NewTransferService(transferCfg, db, bridgeLogger, sinohopeAPI)
-
+	defer func() {
+		if err = transferService.Stop(); err != nil {
+			logger.Errorf("stop transferService err:%v", err.Error())
+		}
+	}()
 	transferErrCh := make(chan error)
 	go func() {
-		if err := transferService.OnStart(); err != nil {
+		if err := transferService.Start(); err != nil {
 			transferErrCh <- err
 		}
 	}()
