@@ -18,7 +18,10 @@ import (
 	"gorm.io/gorm"
 )
 
-var errParamsMismatch = errors.New("req params mismatch")
+var (
+	errParamsMismatch = errors.New("req params mismatch")
+	errRecordNotFound = errors.New("record not found")
+)
 
 type sinohopeServer struct {
 	pb.UnimplementedSinohopeServiceServer
@@ -38,6 +41,9 @@ func ErrorTransactionNotify(code int64, message string) *vo.TransactionNotifyRes
 func ErrorWithdrawalConfirm(code int64, message string) *vo.WithdrawalConfirmResponse {
 	action := ""
 	if code == exceptions.WithdrawConfirmReject {
+		action = sinohopeType.WithdrawalActionReject
+	}
+	if code == exceptions.WithdrawConfirmRecordNotFound {
 		action = sinohopeType.WithdrawalActionReject
 	}
 	return &vo.WithdrawalConfirmResponse{
@@ -150,6 +156,9 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 			).
 			First(&withdraw).Error
 		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errRecordNotFound
+			}
 			logger.Errorw("failed find tx from db", "error", err)
 			return err
 		}
@@ -172,6 +181,9 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 		logger.Errorw("save tx result err", "err", err.Error())
 		if errors.Is(err, errParamsMismatch) {
 			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmReject, "Invalid parameter"), nil
+		}
+		if errors.Is(err, errRecordNotFound) {
+			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmRecordNotFound, "record not found"), nil
 		}
 		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
 	}
