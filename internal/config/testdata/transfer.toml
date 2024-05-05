@@ -12,5 +12,4 @@ vsm-internal-key-index = 10
 vsm-iv = "abc"
 local-decrypt-key = "aaa"
 local-decrypt-alg = "aes"
-fee = "0.02"
 time-interval = 60

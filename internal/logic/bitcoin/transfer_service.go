@@ -75,7 +75,7 @@ func (bis *TransferService) HandleTransfer() {
 			var withdrawList []model.Withdraw
 			err := bis.db.Model(&model.Withdraw{}).
 				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).
-				Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
+				Where("created_at >= ?", time.Now().Add(time.Second*time.Duration(bis.cfg.TimeInterval))).Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
 				Limit(10).
 				Find(&withdrawList).Error
 			if err != nil {
@@ -100,19 +100,7 @@ func (bis *TransferService) HandleTransfer() {
 				if isOK {
 					continue
 				}
-				var amount string
-				if bis.cfg.Fee != "" {
-					feeFloat, err := strconv.ParseFloat(bis.cfg.Fee, 64)
-					if err != nil {
-						bis.log.Errorw("TransferService fee ParseFloat error", "error", err, "fee", bis.cfg.Fee)
-						time.Sleep(time.Second)
-						continue
-					}
-					result := float64(v.BtcValue) * feeFloat
-					amount = strconv.FormatFloat(result, 'f', -1, 64)
-				} else {
-					amount = strconv.FormatInt(v.BtcValue, 10)
-				}
+				amount := strconv.FormatInt(v.BtcValue, 10)
 				res, err := bis.Transfer(requestID, v.BtcTo, amount)
 				if err != nil {
 					bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
@@ -161,7 +149,6 @@ func (bis *TransferService) HandleTransfer() {
 					bis.log.Errorw("TransferService OnStart error", "error", err)
 					time.Sleep(time.Second)
 				}
-				time.Sleep(time.Second * time.Duration(bis.cfg.TimeInterval))
 			}
 		}
 	}
@@ -180,11 +167,6 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 		bis.log.Errorw("TransferService Transfer Fee failed", "error", err)
 		return nil, err
 	}
-	feeRates, err := bis.GetFeeRate()
-	if err != nil {
-		bis.log.Errorw("TransferService Transfer GetFeeRate failed", "error", err)
-		return nil, err
-	}
 	res, err := bis.sinohopeAPI.CreateTransfer(&common.WalletTransactionSendWAASParam{
 		RequestId:   requestID,
 		VaultId:     bis.cfg.VaultID,
@@ -194,8 +176,7 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 		ChainSymbol: bis.cfg.ChainSymbol,
 		AssetId:     bis.cfg.AssetID,
 		Amount:      amount,
-		Fee:         fee.TransactionFee.AverageFee,
-		FeeRate:     strconv.Itoa(feeRates.FastestFee),
+		FeeRate:     fee.TransactionFee.AverageFee,
 	})
 	if err != nil {
 		bis.log.Errorw("TransferService Transfer CreateTransfer failed", "error", err)
