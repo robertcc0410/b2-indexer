@@ -155,23 +155,25 @@ func (bis *TransferService) HandleTransfer() {
 }
 
 func (bis *TransferService) Transfer(requestID string, to string, amount string) (*common.CreateSettlementTxResData, error) {
-	// fee, err := bis.sinohopeAPI.Fee(&common.WalletTransactionFeeWAASParam{
-	//	OperationType: bis.cfg.OperationType,
-	//	From:          bis.cfg.From,
-	//	To:            to,
-	//	AssetId:       bis.cfg.AssetID,
-	//	ChainSymbol:   bis.cfg.ChainSymbol,
-	//	Amount:        amount,
-	// })
-	// if err != nil {
-	//	bis.log.Errorw("TransferService Transfer Fee failed", "error", err)
-	//	return nil, err
-	// }
+	fee, err := bis.sinohopeAPI.Fee(&common.WalletTransactionFeeWAASParam{
+		OperationType: bis.cfg.OperationType,
+		From:          bis.cfg.From,
+		To:            to,
+		AssetId:       bis.cfg.AssetID,
+		ChainSymbol:   bis.cfg.ChainSymbol,
+		Amount:        amount,
+	})
+	if err != nil {
+		bis.log.Errorw("TransferService Transfer Fee failed", "error", err)
+		return nil, err
+	}
+	bis.log.Infow("TransferService Transfer Fee", "fee", fee)
 	feeRates, err := bis.GetFeeRate()
 	if err != nil {
 		bis.log.Errorw("TransferService Transfer GetFeeRate failed", "error", err)
 		return nil, err
 	}
+	bis.log.Infow("TransferService Transfer feeRates", "feeRates", feeRates)
 	res, err := bis.sinohopeAPI.CreateTransfer(&common.WalletTransactionSendWAASParam{
 		RequestId:   requestID,
 		VaultId:     bis.cfg.VaultID,
