@@ -185,13 +185,13 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 	}
 	// decode tx info
 	var requestDetailTxInfo sinohopeType.MpcCheckTxInfo
-	txInfoJson, err := requestDetail.TxInfo.MarshalJSON()
+	txInfoJSON, err := requestDetail.TxInfo.MarshalJSON()
 	if err != nil {
 		logger.Errorf("request detail tx info marshal err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.SystemError, "request detail tx info marshal failed", responseData), nil
 	}
 
-	err = json.Unmarshal(txInfoJson, &requestDetailTxInfo)
+	err = json.Unmarshal(txInfoJSON, &requestDetailTxInfo)
 	if err != nil {
 		logger.Errorf("request detail tx info unmarshal err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.SystemError, "request detail tx info marshal failed", responseData), nil
