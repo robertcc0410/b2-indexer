@@ -235,6 +235,7 @@ func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequ
 					RequestID:     req.RequestId,
 					RequestType:   int(req.RequestType),
 					RequestDetail: string(detail),
+					ExtraInfo:     string("{}"),
 				}
 				err = tx.Save(&sinohope).Error
 				if err != nil {
@@ -342,10 +343,12 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 			First(&sinohope).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
+				logger.Infof("insert detai: %s", string(detail))
 				sinohope = model.Sinohope{
 					RequestID:     apiRequestID,
 					RequestType:   int(req.RequestType),
 					RequestDetail: string(detail),
+					ExtraInfo:     string("{}"),
 				}
 				err = tx.Save(&sinohope).Error
 				if err != nil {
