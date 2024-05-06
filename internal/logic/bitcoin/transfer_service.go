@@ -100,7 +100,7 @@ func (bis *TransferService) HandleTransfer() {
 				if isOK {
 					continue
 				}
-				amount := strconv.FormatInt(v.BtcValue, 10)
+				amount := strconv.FormatInt(v.BtcRealValue, 10)
 				res, err := bis.Transfer(requestID, v.BtcTo, amount)
 				if err != nil {
 					bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
@@ -110,10 +110,9 @@ func (bis *TransferService) HandleTransfer() {
 
 				err = bis.db.Transaction(func(tx *gorm.DB) error {
 					updateFields := map[string]interface{}{
-						model.Withdraw{}.Column().RequestID:    requestID,
-						model.Withdraw{}.Column().BtcRealValue: amount,
-						model.Withdraw{}.Column().Status:       model.BtcTxWithdrawPending,
-						model.Withdraw{}.Column().BtcTxHash:    res.Transaction.TxHash,
+						model.Withdraw{}.Column().RequestID: requestID,
+						model.Withdraw{}.Column().Status:    model.BtcTxWithdrawPending,
+						model.Withdraw{}.Column().BtcTxHash: res.Transaction.TxHash,
 					}
 					err = tx.Model(&model.Withdraw{}).Where("id = ?", v.ID).Updates(updateFields).Error
 					if err != nil {
