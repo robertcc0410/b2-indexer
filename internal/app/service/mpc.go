@@ -183,7 +183,21 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 		logger.Errorf("verify signature failed")
 		return s.ErrorMpcCheck(exceptions.SystemError, "verify signature failed", responseData), nil
 	}
-	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	// decode tx info
+	var requestDetailTxInfo sinohopeType.MpcCheckTxInfo
+	txInfoJson, err := requestDetail.TxInfo.MarshalJSON()
+	if err != nil {
+		logger.Errorf("request detail tx info marshal err:%v", err.Error())
+		return s.ErrorMpcCheck(exceptions.SystemError, "request detail tx info marshal failed", responseData), nil
+	}
+
+	err = json.Unmarshal(txInfoJson, &requestDetailTxInfo)
+	if err != nil {
+		logger.Errorf("request detail tx info unmarshal err:%v", err.Error())
+		return s.ErrorMpcCheck(exceptions.SystemError, "request detail tx info marshal failed", responseData), nil
+	}
+
+	amount, err := strconv.ParseInt(requestDetailTxInfo.Amount, 10, 64)
 	if err != nil {
 		logger.Errorf("amount parse err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.RequestDetailAmount, "request detail amount fail", responseData), nil
@@ -208,11 +222,11 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 		}
 		logger.Infow("query withdraw detail", "withdraw", withdraw)
 		// update check fields
-		if !strings.EqualFold(withdraw.BtcFrom, requestDetail.FromAddress) {
+		if !strings.EqualFold(withdraw.BtcFrom, requestDetailTxInfo.From) {
 			logger.Errorw("from address not match")
 			return errParamsMismatch
 		}
-		if !strings.EqualFold(withdraw.BtcTo, requestDetail.ToAddress) {
+		if !strings.EqualFold(withdraw.BtcTo, requestDetailTxInfo.To) {
 			logger.Errorw("to address not match")
 			return errParamsMismatch
 		}
