@@ -75,7 +75,7 @@ func (bis *TransferService) HandleTransfer() {
 			var withdrawList []model.Withdraw
 			err := bis.db.Model(&model.Withdraw{}).
 				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).
-				Where("created_at >= ?", time.Now().Add(time.Second*time.Duration(bis.cfg.TimeInterval))).Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
+				Where("created_at <= ?", time.Now().Add(-time.Second*time.Duration(bis.cfg.TimeInterval))).Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
 				Limit(10).
 				Find(&withdrawList).Error
 			if err != nil {
