@@ -233,10 +233,12 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 	// mpc callback sign
 	message, err := json.Marshal(responseData)
 	if err != nil {
+		logger.Errorf("marshal response err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.SystemError, "system error", responseData), nil
 	}
 	sig, err := mpc.Sign(s.mpcCallbackPrivateKey, hex.EncodeToString(message))
 	if err != nil {
+		logger.Errorf("sign err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.SystemError, "system error", responseData), nil
 	}
 	rspData, err := structpb.NewStruct(map[string]interface{}{
