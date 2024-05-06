@@ -110,6 +110,7 @@ func (bis *TransferService) HandleTransfer() {
 
 				err = bis.db.Transaction(func(tx *gorm.DB) error {
 					updateFields := map[string]interface{}{
+						model.Withdraw{}.Column().RequestID:    requestID,
 						model.Withdraw{}.Column().BtcRealValue: amount,
 						model.Withdraw{}.Column().Status:       model.BtcTxWithdrawPending,
 						model.Withdraw{}.Column().BtcTxHash:    res.Transaction.TxHash,
