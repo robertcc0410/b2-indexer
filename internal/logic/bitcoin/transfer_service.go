@@ -167,6 +167,13 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 		bis.log.Errorw("TransferService Transfer Fee failed", "error", err)
 		return nil, err
 	}
+	bis.log.Infow("TransferService Transfer Fee", "fee", fee)
+	feeRates, err := bis.GetFeeRate()
+	if err != nil {
+		bis.log.Errorw("TransferService Transfer GetFeeRate failed", "error", err)
+		return nil, err
+	}
+	bis.log.Infow("TransferService Transfer feeRates", "feeRates", feeRates)
 	res, err := bis.sinohopeAPI.CreateTransfer(&common.WalletTransactionSendWAASParam{
 		RequestId:   requestID,
 		VaultId:     bis.cfg.VaultID,
@@ -176,7 +183,8 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 		ChainSymbol: bis.cfg.ChainSymbol,
 		AssetId:     bis.cfg.AssetID,
 		Amount:      amount,
-		FeeRate:     fee.TransactionFee.AverageFee,
+		// Fee:         fee.TransactionFee.AverageFee,
+		FeeRate: strconv.Itoa(feeRates.FastestFee),
 	})
 	if err != nil {
 		bis.log.Errorw("TransferService Transfer CreateTransfer failed", "error", err)
