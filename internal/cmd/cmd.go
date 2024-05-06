@@ -45,6 +45,7 @@ func rootCmd() *cobra.Command {
 	rootCmd.AddCommand(gvsmCmd.Gvsm())
 	rootCmd.AddCommand(cryptoCmd.Crypto())
 	rootCmd.AddCommand(transferServer())
+	rootCmd.AddCommand(resetTransferCmd())
 	return rootCmd
 }
 
