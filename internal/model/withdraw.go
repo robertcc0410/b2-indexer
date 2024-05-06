@@ -21,6 +21,8 @@ const (
 type Withdraw struct {
 	Base
 	UUID          string `json:"uuid" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network withdraw_uuid"`
+	RequestID     string `json:"request_id" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network request id"`
+	Fee           int64  `json:"fee" gorm:"type:bigint;comment:fee"`
 	BtcFrom       string `json:"btc_from" gorm:"type:varchar(256);default:'';index"`
 	BtcTo         string `json:"btc_to" gorm:"type:varchar(256);default:'';index"`
 	BtcValue      int64  `json:"btc_value" gorm:"type:bigint;default:0;comment:bitcoin transfer value"`
@@ -61,6 +63,8 @@ type WithdrawColumns struct {
 	UUID          string
 	B2TxIndex     string
 	B2BlockHash   string
+	RequestID     string
+	Fee           string
 }
 
 func (Withdraw) TableName() string {
@@ -84,5 +88,7 @@ func (Withdraw) Column() WithdrawColumns {
 		UUID:          "uuid",
 		B2TxIndex:     "b2_tx_index",
 		B2BlockHash:   "b2_block_hash",
+		RequestID:     "request_id",
+		Fee:           "fee",
 	}
 }
