@@ -100,7 +100,7 @@ func (bis *TransferService) HandleTransfer() {
 				if isOK {
 					continue
 				}
-				amount := strconv.FormatInt(v.BtcValue, 10)
+				amount := strconv.FormatInt(v.BtcRealValue, 10)
 				res, err := bis.Transfer(requestID, v.BtcTo, amount)
 				if err != nil {
 					bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)

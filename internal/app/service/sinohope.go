@@ -152,7 +152,7 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 		err = tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where(
-				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
+				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().RequestID),
 				requestDetail.APIRequestID,
 			).
 			First(&withdraw).Error
@@ -361,7 +361,7 @@ func (s *sinohopeServer) transactionNotifyWithdraw(req *vo.TransactionNotifyRequ
 		err = tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where(
-				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
+				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().RequestID),
 				requestDetail.APIRequestID,
 			).
 			First(&withdraw).Error
