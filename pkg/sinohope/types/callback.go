@@ -99,7 +99,48 @@ type MpcCheckExtraInfo struct {
 	SinoID    string `json:"sino_id,omitempty"`
 	RequestID string `json:"request_id,omitempty"`
 }
+type MpcCheckTxInfo struct {
+	Amount       string    `json:"amount"`
+	APIRequestID string    `json:"apiRequestId"`
+	AssetID      string    `json:"assetId"`
+	ChainSymbol  string    `json:"chainSymbol"`
+	CurInputID   int       `json:"curInputId"`
+	ExtraData    ExtraData `json:"extraData"`
+	Fee          string    `json:"fee"`
+	FeeRate      string    `json:"feeRate"`
+	From         string    `json:"from"`
+	GasLimit     string    `json:"gasLimit"`
+	GasPrice     string    `json:"gasPrice"`
+	Note         string    `json:"note"`
+	RequestID    string    `json:"requestId"`
+	To           string    `json:"to"`
+	ToTag        string    `json:"toTag"`
+	VaultID      string    `json:"vaultId"`
+	WalletID     string    `json:"walletId"`
+}
 
+type VinList struct {
+	Address         string `json:"address"`
+	Amount          int    `json:"amount"`
+	BlockHash       string `json:"blockHash"`
+	BlockHeight     int    `json:"blockHeight"`
+	BlockState      int    `json:"blockState"`
+	BlockTimeStamp  int    `json:"blockTimeStamp"`
+	Currency        string `json:"currency"`
+	ID              int    `json:"id"`
+	State           int    `json:"state"`
+	Tag             string `json:"tag"`
+	TransactionHash string `json:"transactionHash"`
+	VoutIndex       int    `json:"voutIndex"`
+}
+type VoutList struct {
+	Address string `json:"address"`
+	Amount  int    `json:"amount"`
+}
+type ExtraData struct {
+	VinList  []VinList  `json:"vinList"`
+	VoutList []VoutList `json:"voutList"`
+}
 type MpcCheckResponseData struct {
 	CallbackID string `json:"callback_id,omitempty"`
 	SinoID     string `json:"sino_id,omitempty"`
