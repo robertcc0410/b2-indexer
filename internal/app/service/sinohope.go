@@ -38,7 +38,7 @@ func ErrorTransactionNotify(code int64, message string) *vo.TransactionNotifyRes
 	}
 }
 
-func ErrorWithdrawalConfirm(code int64, message string) *vo.WithdrawalConfirmResponse {
+func ErrorWithdrawalConfirm(code int64, message string, requestID string) *vo.WithdrawalConfirmResponse {
 	action := ""
 	if code == exceptions.WithdrawConfirmReject {
 		action = sinohopeType.WithdrawalActionReject
@@ -47,9 +47,10 @@ func ErrorWithdrawalConfirm(code int64, message string) *vo.WithdrawalConfirmRes
 		action = sinohopeType.WithdrawalActionReject
 	}
 	return &vo.WithdrawalConfirmResponse{
-		Code:    code,
-		Message: message,
-		Action:  action,
+		Code:      code,
+		Message:   message,
+		Action:    action,
+		RequestId: requestID,
 	}
 }
 
@@ -103,12 +104,12 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 	db, err := GetDBContext(ctx)
 	if err != nil {
 		logger.Errorf("GetDBContext err:%v", err.Error())
-		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error", req.RequestId), nil
 	}
 	httpCfg, err := GetHTTPConfig(ctx)
 	if err != nil {
 		logger.Errorf("GetHttpConfig err:%v", err.Error())
-		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error", req.RequestId), nil
 	}
 	// check white list
 	isWhiteList := false
@@ -123,28 +124,28 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 	logger.Infof("ip:%v  white list:%v", clientIP, whiteList)
 	if !isWhiteList {
 		logger.Errorf("ip:%v not in white list", clientIP)
-		return ErrorWithdrawalConfirm(exceptions.IPWhiteList, "ip limit"), nil
+		return ErrorWithdrawalConfirm(exceptions.IPWhiteList, "ip limit", req.RequestId), nil
 	}
 	detail, err := req.RequestDetail.MarshalJSON()
 	if err != nil {
-		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error", req.RequestId), nil
 	}
 	logger.Infof("request detail: %s", string(detail))
 	requestDetail := sinohopeType.ConfirmRequestDetail{}
 	err = json.Unmarshal(detail, &requestDetail)
 	if err != nil {
 		logger.Errorf("request detail unmarshal err:%v", err.Error())
-		return ErrorWithdrawalConfirm(exceptions.RequestDetailUnmarshal, "request detail unmarshal err"), nil
+		return ErrorWithdrawalConfirm(exceptions.RequestDetailUnmarshal, "request detail unmarshal err", req.RequestId), nil
 	}
 	rollupTxHash := requestDetail.APIRequestID
 	logger.Infof("rollupTxHash: %v", rollupTxHash)
 	if requestDetail.From == "" || requestDetail.To == "" {
 		logger.Errorf("request detail empty")
-		return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err"), nil
+		return ErrorWithdrawalConfirm(exceptions.RequestDetailParameter, "request detail check err", req.RequestId), nil
 	}
 	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
 	if err != nil {
-		return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount "), nil
+		return ErrorWithdrawalConfirm(exceptions.RequestDetailAmount, "request detail amount parse fail", req.RequestId), nil
 	}
 	var withdraw model.Withdraw
 	err = db.Transaction(func(tx *gorm.DB) error {
@@ -180,12 +181,12 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 	if err != nil {
 		logger.Errorw("save tx result err", "err", err.Error())
 		if errors.Is(err, errParamsMismatch) {
-			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmReject, "Invalid parameter"), nil
+			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmReject, "Invalid parameter", req.RequestId), nil
 		}
 		if errors.Is(err, errRecordNotFound) {
-			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmRecordNotFound, "record not found"), nil
+			return ErrorWithdrawalConfirm(exceptions.WithdrawConfirmRecordNotFound, "record not found", req.RequestId), nil
 		}
-		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error"), nil
+		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error", req.RequestId), nil
 	}
 	logger.Infof("APPROVE")
 	return &vo.WithdrawalConfirmResponse{
