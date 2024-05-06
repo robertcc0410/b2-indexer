@@ -94,10 +94,11 @@ func (s *mpcServer) ErrorMpcCheck(status int64, error string, rsp sinohopeType.M
 			Signature: sig,
 		}
 	default:
+		// TODO: mpc wait unavailable
 		rspData, _ := structpb.NewStruct(map[string]interface{}{
 			"callback_id": rsp.CallbackID,
-			"action":      sinohopeType.MpcCheckActionWait,
-			"wait_time":   "60",
+			// "action":      sinohopeType.MpcCheckActionWait,
+			// "wait_time":   "60",
 		})
 		return &vo.MpcCheckResponse{
 			Status: strconv.Itoa(int(status)),
