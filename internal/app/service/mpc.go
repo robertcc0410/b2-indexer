@@ -185,6 +185,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 	}
 	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
 	if err != nil {
+		logger.Errorf("amount parse err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.RequestDetailAmount, "request detail amount fail", responseData), nil
 	}
 	responseData.RequestID = mpcCheckExtraInfo.RequestID
