@@ -213,7 +213,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where(
 				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().RequestID),
-				requestDetail.APIRequestID,
+				requestDetailTxInfo.APIRequestID,
 			).
 			First(&withdraw).Error
 		if err != nil {
