@@ -122,7 +122,7 @@ func (bis *TransferService) HandleTransfer() {
 						ApiRequestID:      requestID,
 						B2TxHash:          v.B2TxHash,
 						SinohopeID:        res.SinoId,
-						SinohopeRequestID: res.SinoId,
+						SinohopeRequestID: res.RequestId,
 						FeeRate:           feeRate,
 						State:             res.State,
 					}
