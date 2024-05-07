@@ -10,11 +10,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/b2network/b2-indexer/pkg/utils"
+
 	"github.com/btcsuite/btcd/chaincfg"
 
 	"github.com/b2network/b2-indexer/internal/config"
 	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/pkg/log"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/cometbft/cometbft/libs/service"
 	"github.com/sinohope/sinohope-golang-sdk/common"
 	"github.com/sinohope/sinohope-golang-sdk/features"
@@ -91,7 +94,7 @@ func (bis *TransferService) HandleTransfer() {
 				// checkAddress
 				networkName := bis.cfg.NetworkName
 				if networkName == chaincfg.MainNetParams.Name {
-					if !strings.HasPrefix(v.BtcTo, "bc1") && !strings.HasPrefix(v.BtcTo, "1") {
+					if !bis.IsBTCLiveNetAddress(v.BtcTo) {
 						err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawCheckAddressFailed).Error
 						if err != nil {
 							bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
@@ -100,7 +103,7 @@ func (bis *TransferService) HandleTransfer() {
 					}
 				}
 				if networkName == chaincfg.TestNet3Params.Name || networkName == "testnet" {
-					if !strings.HasPrefix(v.BtcTo, "m") && !strings.HasPrefix(v.BtcTo, "n") && !strings.HasPrefix(v.BtcTo, "tb1") {
+					if !bis.IsBTCTestNetAddress(v.BtcTo) {
 						err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawCheckAddressFailed).Error
 						if err != nil {
 							bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
@@ -266,4 +269,22 @@ func (bis *TransferService) GetFeeRate() (*model.FeeRates, error) {
 		return nil, err
 	}
 	return &feeRates, nil
+}
+
+func (bis *TransferService) IsBTCTestNetAddress(address string) bool {
+	_, err := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	if err != nil {
+		return false
+	}
+	_, _, addressType := utils.VerifyAddress(address)
+	return addressType == utils.TestNet
+}
+
+func (bis *TransferService) IsBTCLiveNetAddress(address string) bool {
+	_, err := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	if err != nil {
+		return false
+	}
+	_, _, addressType := utils.VerifyAddress(address)
+	return addressType == utils.LiveNet
 }
