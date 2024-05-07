@@ -5,11 +5,12 @@ package model
 // 1.2 BtcTxWithdrawPending
 // 1.3 BtcTxWithdrawSuccess/BtcTxWithdrawFailed
 const (
-	BtcTxWithdrawSubmit          = "submit"
-	BtcTxWithdrawPending         = "pending"
-	BtcTxWithdrawSinohopeSuccess = "sinohope_success"
-	BtcTxWithdrawSuccess         = "success"
-	BtcTxWithdrawFailed          = "failed"
+	BtcTxWithdrawSubmit             = "submit"
+	BtcTxWithdrawPending            = "pending"
+	BtcTxWithdrawSinohopeSuccess    = "sinohope_success"
+	BtcTxWithdrawSuccess            = "success"
+	BtcTxWithdrawFailed             = "failed"
+	BtcTxWithdrawCheckAddressFailed = "check_address_failed"
 )
 
 // btc tx check status sequence

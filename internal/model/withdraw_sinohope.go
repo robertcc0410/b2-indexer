@@ -2,17 +2,21 @@ package model
 
 type WithdrawSinohope struct {
 	Base
-	B2TxHash  string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';uniqueIndex;comment:b2 network tx hash"`
-	SinoID    string `json:"sinoId" gorm:"type:varchar(256)"`
-	RequestID string `json:"requestId" gorm:"type:varchar(256)"`
-	State     int    `json:"state" gorm:"type:smallint"`
+	APIRequestID      string `json:"api_request_id" gorm:"type:varchar(256);comment:withdraw request id"`
+	B2TxHash          string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';comment:b2 network tx hash"`
+	SinohopeID        string `json:"sinohope_id" gorm:"type:varchar(256)"`
+	SinohopeRequestID string `json:"sinohope_request_id" gorm:"type:varchar(256)"`
+	FeeRate           string `json:"fee_rate" gorm:"type:varchar(256)"`
+	State             int    `json:"state" gorm:"type:smallint"`
 }
 
 type WithdrawSinohopeColumns struct {
-	B2TxHash  string
-	SinoID    string
-	RequestID string
-	State     string
+	APIRequestID      string
+	B2TxHash          string
+	SinohopeID        string
+	SinohopeRequestID string
+	FeeRate           string
+	State             string
 }
 
 func (WithdrawSinohope) TableName() string {
@@ -21,9 +25,11 @@ func (WithdrawSinohope) TableName() string {
 
 func (WithdrawSinohope) Column() WithdrawSinohopeColumns {
 	return WithdrawSinohopeColumns{
-		B2TxHash:  "b2_tx_hash",
-		SinoID:    "sino_id",
-		RequestID: "request_id",
-		State:     "state",
+		APIRequestID:      "api_request_id",
+		B2TxHash:          "b2_tx_hash",
+		SinohopeID:        "sinohope_id",
+		SinohopeRequestID: "sinohope_request_id",
+		FeeRate:           "fee_rate",
+		State:             "state",
 	}
 }
