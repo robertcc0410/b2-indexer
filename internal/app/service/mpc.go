@@ -94,10 +94,11 @@ func (s *mpcServer) ErrorMpcCheck(status int64, error string, rsp sinohopeType.M
 			Signature: sig,
 		}
 	default:
+		// TODO: mpc wait unavailable
 		rspData, _ := structpb.NewStruct(map[string]interface{}{
 			"callback_id": rsp.CallbackID,
-			"action":      sinohopeType.MpcCheckActionWait,
-			"wait_time":   "60",
+			// "action":      sinohopeType.MpcCheckActionWait,
+			// "wait_time":   "60",
 		})
 		return &vo.MpcCheckResponse{
 			Status: strconv.Itoa(int(status)),
@@ -183,8 +184,23 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 		logger.Errorf("verify signature failed")
 		return s.ErrorMpcCheck(exceptions.SystemError, "verify signature failed", responseData), nil
 	}
-	amount, err := strconv.ParseInt(requestDetail.Amount, 10, 64)
+	// decode tx info
+	var requestDetailTxInfo sinohopeType.MpcCheckTxInfo
+	txInfoJSON, err := requestDetail.TxInfo.MarshalJSON()
 	if err != nil {
+		logger.Errorf("request detail tx info marshal err:%v", err.Error())
+		return s.ErrorMpcCheck(exceptions.SystemError, "request detail tx info marshal failed", responseData), nil
+	}
+
+	err = json.Unmarshal(txInfoJSON, &requestDetailTxInfo)
+	if err != nil {
+		logger.Errorf("request detail tx info unmarshal err:%v", err.Error())
+		return s.ErrorMpcCheck(exceptions.SystemError, "request detail tx info marshal failed", responseData), nil
+	}
+
+	amount, err := strconv.ParseInt(requestDetailTxInfo.Amount, 10, 64)
+	if err != nil {
+		logger.Errorf("amount parse err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.RequestDetailAmount, "request detail amount fail", responseData), nil
 	}
 	responseData.RequestID = mpcCheckExtraInfo.RequestID
@@ -198,7 +214,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where(
 				fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().RequestID),
-				requestDetail.APIRequestID,
+				requestDetailTxInfo.APIRequestID,
 			).
 			First(&withdraw).Error
 		if err != nil {
@@ -207,11 +223,11 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 		}
 		logger.Infow("query withdraw detail", "withdraw", withdraw)
 		// update check fields
-		if !strings.EqualFold(withdraw.BtcFrom, requestDetail.FromAddress) {
+		if !strings.EqualFold(withdraw.BtcFrom, requestDetailTxInfo.From) {
 			logger.Errorw("from address not match")
 			return errParamsMismatch
 		}
-		if !strings.EqualFold(withdraw.BtcTo, requestDetail.ToAddress) {
+		if !strings.EqualFold(withdraw.BtcTo, requestDetailTxInfo.To) {
 			logger.Errorw("to address not match")
 			return errParamsMismatch
 		}
@@ -232,10 +248,12 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 	// mpc callback sign
 	message, err := json.Marshal(responseData)
 	if err != nil {
+		logger.Errorf("marshal response err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.SystemError, "system error", responseData), nil
 	}
 	sig, err := mpc.Sign(s.mpcCallbackPrivateKey, hex.EncodeToString(message))
 	if err != nil {
+		logger.Errorf("sign err:%v", err.Error())
 		return s.ErrorMpcCheck(exceptions.SystemError, "system error", responseData), nil
 	}
 	rspData, err := structpb.NewStruct(map[string]interface{}{
