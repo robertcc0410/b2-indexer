@@ -277,10 +277,7 @@ func (bis *TransferService) IsBTCTestNetAddress(address string) bool {
 		return false
 	}
 	_, _, addressType := utils.VerifyAddress(address)
-	if addressType == utils.TestNet {
-		return true
-	}
-	return false
+	return addressType == utils.TestNet
 }
 
 func (bis *TransferService) IsBTCLiveNetAddress(address string) bool {
@@ -289,8 +286,5 @@ func (bis *TransferService) IsBTCLiveNetAddress(address string) bool {
 		return false
 	}
 	_, _, addressType := utils.VerifyAddress(address)
-	if addressType == utils.LiveNet {
-		return true
-	}
-	return false
+	return addressType == utils.LiveNet
 }
