@@ -88,6 +88,26 @@ func (bis *TransferService) HandleTransfer() {
 				continue
 			}
 			for _, v := range withdrawList {
+				// checkAddress
+				networkName := bis.cfg.NetworkName
+				if networkName == chaincfg.MainNetParams.Name {
+					if !strings.HasPrefix(v.BtcTo, "bc1") && !strings.HasPrefix(v.BtcTo, "3") {
+						err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawCheckAddressFailed).Error
+						if err != nil {
+							bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
+							continue
+						}
+					}
+				}
+				if networkName == chaincfg.TestNet3Params.Name || networkName == "testnet" {
+					if !strings.HasPrefix(v.BtcTo, "2") && !strings.HasPrefix(v.BtcTo, "tb1") {
+						err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawCheckAddressFailed).Error
+						if err != nil {
+							bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
+							continue
+						}
+					}
+				}
 				requestID := v.RequestID
 				isOK, err := bis.QueryTransactionsByRequestIDs(requestID)
 				if err != nil {
