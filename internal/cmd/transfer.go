@@ -312,7 +312,7 @@ func queryTransferDetail() *cobra.Command {
 
 // speedupTransfer
 //
-//	Temporarily closed, no test
+//lint:ignore U1000 Ignore unused function temporarily for debugging
 func speedupTransfer() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "speedup-transfer",
