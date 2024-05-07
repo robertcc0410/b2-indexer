@@ -70,7 +70,7 @@ func resetTransferCmd() *cobra.Command {
 
 			sinohopeAPI, err := sdk.NewTransactionAPI(transferCfg.BaseURL, privateKey)
 			if err != nil {
-				cmd.Println("failed to init transaction api: %v", err)
+				cmd.Printf("failed to init transaction api: %v\n", err)
 				return
 			}
 
@@ -135,13 +135,13 @@ func resetTransferCmd() *cobra.Command {
 							logger.Errorw("failed to save tx result", "error", err)
 							return err
 						}
-						newApiRequestID, err := resetRequestID(apiRequestID)
+						newAPIRequestID, err := resetRequestID(apiRequestID)
 						if err != nil {
 							return err
 						}
 						updateFields := map[string]interface{}{
 							model.Withdraw{}.Column().Status:    model.BtcTxWithdrawSubmit,
-							model.Withdraw{}.Column().RequestID: newApiRequestID,
+							model.Withdraw{}.Column().RequestID: newAPIRequestID,
 						}
 						err = tx.Model(&model.Withdraw{}).Where("id = ?", oldWithdraw.ID).Updates(updateFields).Error
 						if err != nil {
@@ -149,10 +149,9 @@ func resetTransferCmd() *cobra.Command {
 						}
 
 						return nil
-					} else {
-						logger.Errorw("failed find tx from db", "error", err)
-						return err
 					}
+					logger.Errorw("failed find tx from db", "error", err)
+					return err
 				}
 				cmd.Println(withdrawReset)
 				return fmt.Errorf("withdraw reset data already exists")
@@ -178,17 +177,17 @@ func createResetTransferTableCmd() *cobra.Command {
 			}
 			return server.TransferConfigsPreRunHandler(cmd, home)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			db, err := server.GetDBContextFromCmd(cmd)
 			if err != nil {
-				cmd.Println("failed to get db context: %v", err)
+				cmd.Printf("failed to get db context: %v\n", err)
 				return
 			}
 
 			if !db.Migrator().HasTable(&model.WithdrawReset{}) {
 				err = db.AutoMigrate(&model.WithdrawReset{})
 				if err != nil {
-					cmd.Println("failed to migrate WithdrawReset table: %v", err)
+					cmd.Printf("failed to migrate WithdrawReset table: %v\n", err)
 					return
 				}
 			}
