@@ -95,8 +95,8 @@ func (bis *TransferService) HandleTransfer() {
 						err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawCheckAddressFailed).Error
 						if err != nil {
 							bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
-							continue
 						}
+						continue
 					}
 				}
 				if networkName == chaincfg.TestNet3Params.Name || networkName == "testnet" {
@@ -104,8 +104,8 @@ func (bis *TransferService) HandleTransfer() {
 						err = bis.db.Model(&model.Withdraw{}).Where("id = ?", v.ID).Update(model.Withdraw{}.Column().Status, model.BtcTxWithdrawCheckAddressFailed).Error
 						if err != nil {
 							bis.log.Errorw("TransferService Update WithdrawTx status error", "error", err, "B2TxHash", v.B2TxHash)
-							continue
 						}
+						continue
 					}
 				}
 				requestID := v.RequestID
