@@ -2,7 +2,7 @@ package model
 
 type WithdrawSinohope struct {
 	Base
-	ApiRequestID      string `json:"api_request_id" gorm:"type:varchar(256);comment:withdraw request id"`
+	APIRequestID      string `json:"api_request_id" gorm:"type:varchar(256);comment:withdraw request id"`
 	B2TxHash          string `json:"b2_tx_hash" gorm:"type:varchar(256);default:'';comment:b2 network tx hash"`
 	SinohopeID        string `json:"sinohope_id" gorm:"type:varchar(256)"`
 	SinohopeRequestID string `json:"sinohope_request_id" gorm:"type:varchar(256)"`
@@ -11,7 +11,7 @@ type WithdrawSinohope struct {
 }
 
 type WithdrawSinohopeColumns struct {
-	ApiRequestID      string
+	APIRequestID      string
 	B2TxHash          string
 	SinohopeID        string
 	SinohopeRequestID string
@@ -25,7 +25,7 @@ func (WithdrawSinohope) TableName() string {
 
 func (WithdrawSinohope) Column() WithdrawSinohopeColumns {
 	return WithdrawSinohopeColumns{
-		ApiRequestID:      "api_request_id",
+		APIRequestID:      "api_request_id",
 		B2TxHash:          "b2_tx_hash",
 		SinohopeID:        "sinohope_id",
 		SinohopeRequestID: "sinohope_request_id",

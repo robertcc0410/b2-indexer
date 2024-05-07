@@ -119,7 +119,7 @@ func (bis *TransferService) HandleTransfer() {
 						return err
 					}
 					withdrawSinohope := model.WithdrawSinohope{
-						ApiRequestID:      requestID,
+						APIRequestID:      requestID,
 						B2TxHash:          v.B2TxHash,
 						SinohopeID:        res.SinoId,
 						SinohopeRequestID: res.RequestId,
