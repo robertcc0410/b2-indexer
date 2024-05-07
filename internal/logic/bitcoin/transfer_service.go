@@ -157,8 +157,8 @@ func (bis *TransferService) HandleTransfer() {
 						BtcTo:     v.BtcTo,
 						BtcValue:  v.BtcValue,
 						BtcTxHash: res.Transaction.TxHash,
-						// Status: 1,
-						MPCStatus: res.State,
+						Status:    model.WithdrawAuditStatusApprove,
+						MPCStatus: model.WithdrawAuditMPCStatusApprove,
 					}
 					if err := tx.Create(&withdrawAudit).Error; err != nil {
 						bis.log.Errorw("TransferService Create withdrawAudit error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)

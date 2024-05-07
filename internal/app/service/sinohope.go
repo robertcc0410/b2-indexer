@@ -88,6 +88,8 @@ func (s *sinohopeServer) TransactionNotify(ctx context.Context, req *vo.Transact
 		logger.Errorf("ip:%v not in white list", clientIP)
 		return ErrorTransactionNotify(exceptions.IPWhiteList, "ip limit"), nil
 	}
+	signature := utils.SinohopeSig(ctx, logger)
+	logger.Infof("sinohope signature:%v", signature)
 	if req.RequestType == sinohopeType.RequestTypeRecharge {
 		logger.Infof("handle recharge request")
 		return s.transactionNotifyRecharge(req, listenAddress, db, logger)
@@ -126,6 +128,8 @@ func (s *sinohopeServer) WithdrawalConfirm(ctx context.Context, req *vo.Withdraw
 		logger.Errorf("ip:%v not in white list", clientIP)
 		return ErrorWithdrawalConfirm(exceptions.IPWhiteList, "ip limit", req.RequestId), nil
 	}
+	signature := utils.SinohopeSig(ctx, logger)
+	logger.Infof("sinohope signature:%v", signature)
 	detail, err := req.RequestDetail.MarshalJSON()
 	if err != nil {
 		return ErrorWithdrawalConfirm(exceptions.SystemError, "system error", req.RequestId), nil
