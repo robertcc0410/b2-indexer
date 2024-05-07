@@ -88,7 +88,7 @@ func (bis *TransferService) HandleTransfer() {
 				continue
 			}
 			for _, v := range withdrawList {
-				requestID := v.B2TxHash
+				requestID := v.RequestID
 				isOK, err := bis.QueryTransactionsByRequestIDs(requestID)
 				if err != nil {
 					if err.Error() != "error response, code: 2004 msg: 交易记录不存在" {
@@ -101,7 +101,7 @@ func (bis *TransferService) HandleTransfer() {
 					continue
 				}
 				amount := strconv.FormatInt(v.BtcRealValue, 10)
-				res, err := bis.Transfer(requestID, v.BtcTo, amount)
+				res, feeRate, err := bis.Transfer(requestID, v.BtcTo, amount)
 				if err != nil {
 					bis.log.Errorw("TransferService Transfer error", "error", err, "B2TxHash", v.B2TxHash)
 					time.Sleep(time.Second)
@@ -110,7 +110,6 @@ func (bis *TransferService) HandleTransfer() {
 
 				err = bis.db.Transaction(func(tx *gorm.DB) error {
 					updateFields := map[string]interface{}{
-						model.Withdraw{}.Column().RequestID: requestID,
 						model.Withdraw{}.Column().Status:    model.BtcTxWithdrawPending,
 						model.Withdraw{}.Column().BtcTxHash: res.Transaction.TxHash,
 					}
@@ -120,10 +119,12 @@ func (bis *TransferService) HandleTransfer() {
 						return err
 					}
 					withdrawSinohope := model.WithdrawSinohope{
-						B2TxHash:  v.B2TxHash,
-						SinoID:    res.SinoId,
-						RequestID: res.RequestId,
-						State:     res.State,
+						ApiRequestID:      requestID,
+						B2TxHash:          v.B2TxHash,
+						SinohopeID:        res.SinoId,
+						SinohopeRequestID: res.SinoId,
+						FeeRate:           feeRate,
+						State:             res.State,
 					}
 					if err := tx.Create(&withdrawSinohope).Error; err != nil {
 						bis.log.Errorw("TransferService Create withdrawSinohope error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
@@ -154,7 +155,7 @@ func (bis *TransferService) HandleTransfer() {
 	}
 }
 
-func (bis *TransferService) Transfer(requestID string, to string, amount string) (*common.CreateSettlementTxResData, error) {
+func (bis *TransferService) Transfer(requestID string, to string, amount string) (*common.CreateSettlementTxResData, string, error) {
 	fee, err := bis.sinohopeAPI.Fee(&common.WalletTransactionFeeWAASParam{
 		OperationType: bis.cfg.OperationType,
 		From:          bis.cfg.From,
@@ -165,15 +166,16 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 	})
 	if err != nil {
 		bis.log.Errorw("TransferService Transfer Fee failed", "error", err)
-		return nil, err
+		return nil, "", err
 	}
 	bis.log.Infow("TransferService Transfer Fee", "fee", fee)
 	feeRates, err := bis.GetFeeRate()
 	if err != nil {
 		bis.log.Errorw("TransferService Transfer GetFeeRate failed", "error", err)
-		return nil, err
+		return nil, "", err
 	}
 	bis.log.Infow("TransferService Transfer feeRates", "feeRates", feeRates)
+	feeRate := strconv.Itoa(feeRates.FastestFee)
 	res, err := bis.sinohopeAPI.CreateTransfer(&common.WalletTransactionSendWAASParam{
 		RequestId:   requestID,
 		VaultId:     bis.cfg.VaultID,
@@ -184,14 +186,14 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 		AssetId:     bis.cfg.AssetID,
 		Amount:      amount,
 		// Fee:         fee.TransactionFee.AverageFee,
-		FeeRate: strconv.Itoa(feeRates.FastestFee),
+		FeeRate: feeRate,
 	})
 	if err != nil {
 		bis.log.Errorw("TransferService Transfer CreateTransfer failed", "error", err)
-		return nil, err
+		return nil, "", err
 	}
 
-	return res, nil
+	return res, feeRate, nil
 }
 
 func (bis *TransferService) QueryTransactionsByRequestIDs(requestID string) (bool, error) {

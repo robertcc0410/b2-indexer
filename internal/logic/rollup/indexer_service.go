@@ -177,6 +177,7 @@ func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) e
 	withdrawData := model.Withdraw{
 		B2TxFrom:      caller,
 		UUID:          withdrawUUID,
+		RequestID:     vlog.TxHash.String(),
 		BtcFrom:       listenAddress,
 		BtcTo:         destAddrStr,
 		BtcValue:      originalAmount.Int64(),
