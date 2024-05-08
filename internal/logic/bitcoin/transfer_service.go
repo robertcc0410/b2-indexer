@@ -156,13 +156,14 @@ func (bis *TransferService) HandleTransfer() {
 					}
 
 					withdrawAudit := model.WithdrawAudit{
-						B2TxHash:  v.B2TxHash,
-						BtcFrom:   v.BtcFrom,
-						BtcTo:     v.BtcTo,
-						BtcValue:  v.BtcValue,
-						BtcTxHash: res.Transaction.TxHash,
-						Status:    model.WithdrawAuditStatusApprove,
-						MPCStatus: model.WithdrawAuditMPCStatusApprove,
+						APIRequestID: requestID,
+						B2TxHash:     v.B2TxHash,
+						BtcFrom:      v.BtcFrom,
+						BtcTo:        v.BtcTo,
+						BtcValue:     v.BtcValue,
+						BtcTxHash:    res.Transaction.TxHash,
+						Status:       model.WithdrawAuditStatusApprove,
+						MPCStatus:    model.WithdrawAuditMPCStatusApprove,
 					}
 					if err := tx.Create(&withdrawAudit).Error; err != nil {
 						bis.log.Errorw("TransferService Create withdrawAudit error", "error", err, "B2TxHash", v.B2TxHash, "SinoId", res.SinoId, "RequestId", res.RequestId)
