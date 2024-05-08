@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	TransferServiceName = "BitcoinBridgeTransferService"
+	TransferServiceName      = "BitcoinBridgeTransferService"
+	BatchTransferWaitTimeout = 60 * time.Second
 )
 
 // TransferService for btc transfer
@@ -68,7 +69,7 @@ func (bis *TransferService) OnStop() {
 
 func (bis *TransferService) HandleTransfer() {
 	defer bis.wg.Done()
-	ticker := time.NewTicker(time.Duration(bis.cfg.TimeInterval))
+	ticker := time.NewTicker(BatchTransferWaitTimeout)
 	for {
 		select {
 		case <-bis.stopChan:
@@ -281,7 +282,7 @@ func (bis *TransferService) IsBTCTestNetAddress(address string) bool {
 }
 
 func (bis *TransferService) IsBTCLiveNetAddress(address string) bool {
-	_, err := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	_, err := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
 	if err != nil {
 		return false
 	}
