@@ -206,7 +206,7 @@ func (s *mpcServer) MpcCheck(ctx context.Context, req *vo.MpcCheckRequest) (*vo.
 	responseData.RequestID = mpcCheckExtraInfo.RequestID
 	responseData.SinoID = mpcCheckExtraInfo.SinoID
 	// TODO: wait audit system
-	responseData.Action = sinohopeType.MpcCheckActionReject
+	responseData.Action = sinohopeType.MpcCheckActionApprove
 	// responseData.WaitTime = "10"
 	var withdraw model.Withdraw
 	err = db.Transaction(func(tx *gorm.DB) error {
