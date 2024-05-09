@@ -44,6 +44,8 @@ func rootCmd() *cobra.Command {
 	rootCmd.AddCommand(sinohopeCmd.Sinohope())
 	rootCmd.AddCommand(gvsmCmd.Gvsm())
 	rootCmd.AddCommand(cryptoCmd.Crypto())
+	rootCmd.AddCommand(transferServer())
+	rootCmd.AddCommand(resetTransferCmd())
 	return rootCmd
 }
 
@@ -61,7 +63,7 @@ func startCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, _ []string) {
 			err := server.Start(GetServerContextFromCmd(cmd), cmd)
 			if err != nil {
-				log.Error("start index tx service failed")
+				log.Errorf("start index tx service failed:%v", err)
 			}
 		},
 	}
@@ -100,6 +102,28 @@ func startHTTPServer() *cobra.Command {
 			err = server.Run(cmd.Context(), GetServerContextFromCmd(cmd), db)
 			if err != nil {
 				log.Error("start http service failed")
+			}
+		},
+	}
+	cmd.Flags().String(FlagHome, "", "The application home directory")
+	return cmd
+}
+
+func transferServer() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "transfer",
+		Short: "start transfer service",
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			home, err := cmd.Flags().GetString(FlagHome)
+			if err != nil {
+				return err
+			}
+			return server.TransferConfigsPreRunHandler(cmd, home)
+		},
+		Run: func(cmd *cobra.Command, _ []string) {
+			err := server.StartTransfer(GetServerContextFromCmd(cmd), cmd)
+			if err != nil {
+				log.Errorw("start transfer service failed", "error", err)
 			}
 		},
 	}

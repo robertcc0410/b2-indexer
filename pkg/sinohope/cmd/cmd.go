@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/pem"
 	"errors"
 	"fmt"
 
@@ -106,6 +107,7 @@ func Sinohope() *cobra.Command {
 		createWallet(),
 		genAddress(),
 		generateECDSAPrivateKey(),
+		generateEncECDSAPrivateKey(),
 	)
 	cmd.PersistentFlags().String(FlagBaseURL, "https://api.sinohope.com", "sinohope base url")
 	cmd.PersistentFlags().String(FlagPrivateKey, "", "fakePrivateKey")
@@ -207,7 +209,7 @@ func createWallet() *cobra.Command {
 
 			cmd.Println("VaultId:", vaultID)
 			cmd.Println("WalletName:", walletName)
-			cmd.Println("RequestId:", requestID)
+			cmd.Println("RequestID:", requestID)
 			cmd.Println()
 
 			var walletInfo []*common.WaaSWalletInfoData
@@ -262,7 +264,7 @@ func genAddress() *cobra.Command {
 
 			cmd.Println("VaultId:", vaultID)
 			cmd.Println("WalletId:", walletID)
-			cmd.Println("RequestId:", requestID)
+			cmd.Println("RequestID:", requestID)
 			cmd.Println()
 
 			var walletInfo []*common.WaaSAddressInfoData
@@ -301,11 +303,91 @@ func generateECDSAPrivateKey() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cmd.Println("pubKey:", hex.EncodeToString(pubKeyBytes))
-			cmd.Println("privateKey:", hex.EncodeToString(pkcs8Bytes))
+
+			pubKeyBlock := &pem.Block{
+				Type:  "PUBLIC KEY",
+				Bytes: pubKeyBytes,
+			}
+			encPubkey := pem.EncodeToMemory(pubKeyBlock)
+
+			privateKeyBlock := &pem.Block{
+				Type:  "EC PRIVATE KEY",
+				Bytes: pkcs8Bytes,
+			}
+			encPrivateKey := pem.EncodeToMemory(privateKeyBlock)
+			cmd.Println("pubKey hex:", hex.EncodeToString(pubKeyBytes))
+			cmd.Print("pubKey:\n", string(encPubkey))
+			cmd.Println("privateKey hex:", hex.EncodeToString(pkcs8Bytes))
+			cmd.Print("privateKey:\n", string(encPrivateKey))
 			return nil
 		},
 	}
+	return cmd
+}
+
+func generateEncECDSAPrivateKey() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gen-enc-ecdsa-key",
+		Short: "generate enc ECDSA PrivateKey,  example: gen-enc-ecdsa-key --vsmInternalKeyIndex 3",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			if err != nil {
+				return err
+			}
+			pkcs8Bytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+			if err != nil {
+				return err
+			}
+			pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+			if err != nil {
+				return err
+			}
+
+			pubKeyBlock := &pem.Block{
+				Type:  "PUBLIC KEY",
+				Bytes: pubKeyBytes,
+			}
+			pubkey := pem.EncodeToMemory(pubKeyBlock)
+
+			ivKey := make([]byte, 16)
+			_, err = rand.Read(ivKey)
+			if err != nil {
+				return err
+			}
+
+			aesKey, err := crypto.GenAesKey()
+			if err != nil {
+				return err
+			}
+
+			// local enc
+			localEncData, err := crypto.AesEncrypt([]byte(hex.EncodeToString(pkcs8Bytes)), aesKey)
+			if err != nil {
+				return err
+			}
+			internalKeyIndex, err := cmd.Flags().GetUint(FlagVSMInternalKeyIndex)
+			if err != nil {
+				return err
+			}
+			// vsm enc
+			vsmEecData, _, err := vsm.TassSymmKeyOperation(
+				vsm.TaEnc,
+				vsm.AlgAes256,
+				[]byte(hex.EncodeToString(localEncData)),
+				[]byte(hex.EncodeToString(ivKey)),
+				internalKeyIndex)
+			if err != nil {
+				return err
+			}
+			cmd.Printf("pubKey hex:\n%s\n\n", hex.EncodeToString(pubKeyBytes))
+			cmd.Printf("pubKey:\n%s\n", string(pubkey))
+			cmd.Printf("aes key:\n%s\n\n", hex.EncodeToString(aesKey))
+			cmd.Printf("iv:\n%s\n\n", hex.EncodeToString(ivKey))
+			cmd.Printf("vsm enc data:\n%s\n\n", hex.EncodeToString(vsmEecData))
+			return nil
+		},
+	}
+	cmd.PersistentFlags().Uint(FlagVSMInternalKeyIndex, 1, "vsm encryption/decryption internal Key Index")
 	return cmd
 }
 

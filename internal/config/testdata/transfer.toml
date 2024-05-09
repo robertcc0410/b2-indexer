@@ -1,0 +1,15 @@
+base-url = "https://api.sinohope.com"
+private-key = ""
+vault-id = ""
+wallet-id = ""
+from = ""
+asset-id = "BTC_BTC"
+chain-symbol = "BTC"
+operation-type = "TRANSFER"
+network-name = "testnet"
+enable-encrypt = false
+vsm-internal-key-index = 10
+vsm-iv = "abc"
+local-decrypt-key = "aaa"
+local-decrypt-alg = "aes"
+time-interval = 60

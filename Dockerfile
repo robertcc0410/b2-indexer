@@ -5,7 +5,7 @@ RUN cd /src && \
 
 # =====
 FROM ubuntu:latest
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates tzdata
 COPY --from=builder /src/pkg/vsm/libgvsm/linux64/libTassSDF4GHVSM.so /usr/lib/libTassSDF4GHVSM.so
 COPY --from=builder /src/pkg/vsm/libgvsm/cfg/tassConfig.ini /usr/etc/tassConfig.ini
 COPY --from=builder /src/build/main /usr/bin/main

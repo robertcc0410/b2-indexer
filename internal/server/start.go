@@ -198,6 +198,12 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 			return err
 		}
 
+		auditDB, err := GetAuditDBContextFromCmd(cmd)
+		if err != nil {
+			logger.Errorw("failed to get audit db context", "error", err.Error())
+			return err
+		}
+
 		btclient, err := rpcclient.New(&rpcclient.ConnConfig{
 			Host:         bitcoinCfg.RPCHost + ":" + bitcoinCfg.RPCPort,
 			User:         bitcoinCfg.RPCUser,
@@ -226,11 +232,15 @@ func Start(ctx *Context, cmd *cobra.Command) (err error) {
 		if err != nil {
 			return err
 		}
-		withdrawService := bitcoin.NewBridgeWithdrawService(btclient, ethlient, bitcoinCfg, db, bridgeLogger)
-
+		withdrawService := bitcoin.NewBridgeWithdrawService(btclient, ethlient, bitcoinCfg, db, auditDB, bridgeLogger)
+		defer func() {
+			if err = withdrawService.Stop(); err != nil {
+				logger.Errorf("stop withdrawService err:%v", err.Error())
+			}
+		}()
 		epsErrCh := make(chan error)
 		go func() {
-			if err := withdrawService.OnStart(); err != nil {
+			if err := withdrawService.Start(); err != nil {
 				epsErrCh <- err
 			}
 		}()
@@ -253,6 +263,14 @@ func GetDBContextFromCmd(cmd *cobra.Command) (*gorm.DB, error) {
 		return db, nil
 	}
 	return nil, fmt.Errorf("db context not set")
+}
+
+func GetAuditDBContextFromCmd(cmd *cobra.Command) (*gorm.DB, error) {
+	if v := cmd.Context().Value(types.AuditDBContextKey); v != nil {
+		db := v.(*gorm.DB)
+		return db, nil
+	}
+	return nil, fmt.Errorf("audit db context not set")
 }
 
 func WaitForQuitSignals() int {

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package api.protobuf;
+option go_package = "github.com/b2network/b2-indexer/api/protobuf/vo";
+
+import "google/protobuf/struct.proto";
+
+message MpcCheckRequest {
+  string callback_id = 1;
+  string request_type = 2;
+  google.protobuf.Struct request_detail = 3;
+  google.protobuf.Struct extra_info = 4;
+}
+
+message MpcCheckResponse  {
+  string status = 1;
+  string error = 2;
+  google.protobuf.Struct data = 3;
+  string signature = 4;
+};

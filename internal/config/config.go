@@ -24,6 +24,23 @@ type Config struct {
 	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"INDEXER_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
 }
 
+// type AuditConfig struct {
+// 	RootDir                 string `mapstructure:"root-dir" env:"AUDIT_ROOT_DIR"`
+// 	DatabaseSource          string `mapstructure:"database-source" env:"AUDIT_DATABASE_SOURCE" envDefault:"postgres://postgres:postgres@127.0.0.1:5432/b2-indexer"`
+// 	DatabaseMaxIdleConns    int    `mapstructure:"database-max-idle-conns"  env:"AUDIT_DATABASE_MAX_IDLE_CONNS" envDefault:"10"`
+// 	DatabaseMaxOpenConns    int    `mapstructure:"database-max-open-conns" env:"AUDIT_DATABASE_MAX_OPEN_CONNS" envDefault:"20"`
+// 	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"AUDIT_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
+// }
+
+// TODO: temp use, debug, use config env, after usef audit prefix
+type AuditConfig struct {
+	RootDir                 string `mapstructure:"root-dir" env:"INDEXER_ROOT_DIR"`
+	DatabaseSource          string `mapstructure:"database-source" env:"INDEXER_DATABASE_SOURCE" envDefault:"postgres://postgres:postgres@127.0.0.1:5432/b2-indexer"`
+	DatabaseMaxIdleConns    int    `mapstructure:"database-max-idle-conns"  env:"INDEXER_DATABASE_MAX_IDLE_CONNS" envDefault:"10"`
+	DatabaseMaxOpenConns    int    `mapstructure:"database-max-open-conns" env:"INDEXER_DATABASE_MAX_OPEN_CONNS" envDefault:"20"`
+	DatabaseConnMaxLifetime int    `mapstructure:"database-conn-max-lifetime" env:"INDEXER_DATABASE_CONN_MAX_LIFETIME" envDefault:"3600"`
+}
+
 // BitcoinConfig defines the bitcoin config
 type BitcoinConfig struct {
 	// NetworkName defines the bitcoin network name
@@ -82,14 +99,6 @@ type BridgeConfig struct {
 	Deposit string `mapstructure:"deposit" env:"BITCOIN_BRIDGE_DEPOSIT"`
 	// Withdraw defines the withdraw event hash
 	Withdraw string `mapstructure:"withdraw" env:"BITCOIN_BRIDGE_WITHDRAW"`
-	// UnisatApiKey defines unisat api_key
-	UnisatAPIKey string `mapstructure:"unisat-api-key" env:"BITCOIN_BRIDGE_UNISAT_API_KEY"`
-	// PublicKeys defines signer publickey
-	PublicKeys []string `mapstructure:"publickeys" env:"BITCOIN_BRIDGE_PUBLICKEYS"`
-	// TimeInterval defines withdraw time interval
-	TimeInterval int64 `mapstructure:"time-interval" env:"BITCOIN_BRIDGE_TIME_INTERVAL"`
-	// MultisigNum defines withdraw multisig number
-	MultisigNum int `mapstructure:"multisig-num" env:"BITCOIN_BRIDGE_MULTISIG_NUM"`
 	// EnableRollupListener defines rollup index server
 	EnableRollupListener bool `mapstructure:"enable-rollup-listener" env:"BITCOIN_BRIDGE_ROLLUP_ENABLE_LISTENER"`
 	// EnableVSM defines whether to enable the vsm encryption/decryption
@@ -102,6 +111,8 @@ type BridgeConfig struct {
 	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY"`
 	// LocalAesAlg defines the bridge server local dec alg, rsa aes
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG"`
+	// ConfirmHeight defines the btc tx confirm block height
+	ConfirmHeight int `mapstructure:"confirm-height" env:"BITCOIN_BRIDGE_CONFIRM_HEIGHT" envDefault:"6"`
 }
 
 // TODO: @robertcc0410 env prefix, mapstructure and env,  env prefix in the rule must be the same
@@ -119,15 +130,63 @@ type HTTPConfig struct {
 	GrpcPort string `mapstructure:"grpc-port" env:"HTTP_GRPC_PORT" envDefault:"9091"`
 	// ipWhiteList defines the ip white list, Only those in the whitelist can be called
 	IPWhiteList string `mapstructure:"ip-white-list" env:"HTTP_IP_WHITE_LIST"`
+	// enableMpcCallback enable mpc callback api
+	EnableMPCCallback bool      `mapstructure:"enable-mpc-callback" env:"ENABLE_MPC_CALLBACK"  envDefault:"false"`
+	Mpc               MpcConfig `mapstructure:"mpc"`
+}
+
+type MpcConfig struct {
+	// CallbackPrivateKey mpc callback private key
+	CallbackPrivateKey string `mapstructure:"callback-private-key" env:"HTTP_MPC_CALLBACK_PRIVATE_KEY"`
+	// MpcNodePublicKey mpc node pub key
+	MpcNodePublicKey string `mapstructure:"mpc-node-public-key" env:"HTTP_MPC_NODE_PUBLIC_KEY"`
+	// EnableVSM defines whether to enable the vsm encryption/decryption
+	EnableVSM bool `mapstructure:"enable-vsm" env:"HTTP_MPC_ENABLE_VSM"`
+	// VSMInternalKeyIndex defines the vsm internal key index
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"HTTP_MPC_VSM_INTERNAL_KEY_INDEX"`
+	// VSMIv defines the vsm iv
+	VSMIv string `mapstructure:"vsm-iv" env:"HTTP_MPC_VSM_IV"`
+	// LocalDecryptKey defines the local enc key
+	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"HTTP_MPC_LOCAL_DECRYPT_KEY"`
+	// LocalAesAlg defines the local dec alg, rsa aes
+	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"HTTP_MPC_LOCAL_DECRYPT_ALG"`
+}
+
+// TransferConfig defines the transfer server config
+type TransferConfig struct {
+	BaseURL       string `mapstructure:"base-url" env:"TRANSFER_BASE_URL"`
+	PrivateKey    string `mapstructure:"private-key" env:"TRANSFER_PRIVATE_KEY"`
+	VaultID       string `mapstructure:"vault-id" env:"TRANSFER_VAULT_ID"`
+	WalletID      string `mapstructure:"wallet-id" env:"TRANSFER_WALLET_ID"`
+	From          string `mapstructure:"from" env:"TRANSFER_FROM"`
+	AssetID       string `mapstructure:"asset-id" env:"TRANSFER_ASSET_ID"`
+	ChainSymbol   string `mapstructure:"chain-symbol" env:"TRANSFER_CHAIN_SYMBOL"`
+	OperationType string `mapstructure:"operation-type" env:"TRANSFER_OPERATION_TYPE"`
+	NetworkName   string `mapstructure:"network-name" env:"TRANSFER_NETWORK_NAME"`
+	EnableEncrypt bool   `mapstructure:"enable-encrypt" env:"TRANSFER_ENABLE_ENCRYPT"`
+	// VSMInternalKeyIndex defines the vsm internal key index
+	VSMInternalKeyIndex uint `mapstructure:"vsm-internal-key-index" env:"TRANSFER_VSM_INTERNAL_KEY_INDEX"`
+	// VSMIv defines the vsm iv
+	VSMIv string `mapstructure:"vsm-iv" env:"TRANSFER_VSM_IV"`
+	// LocalDecryptKey defines the local enc key
+	LocalDecryptKey string `mapstructure:"local-decrypt-key" env:"TRANSFER_LOCAL_DECRYPT_KEY"`
+	// LocalAesAlg defines the local dec alg, rsa aes
+	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_LOCAL_DECRYPT_ALG"`
+	// TimeInterval defines withdraw time interval
+	TimeInterval int `mapstructure:"time-interval" env:"TRANSFER_TIME_INTERVAL" envDefault:"60"`
 }
 
 const (
-	BitcoinConfigFileName  = "bitcoin.toml"
-	AppConfigFileName      = "indexer.toml"
-	HTTPConfigFileName     = "http.toml"
-	BitcoinConfigEnvPrefix = "BITCOIN"
-	AppConfigEnvPrefix     = "APP"
-	HTTPConfigEnvPrefix    = "HTTP"
+	BitcoinConfigFileName   = "bitcoin.toml"
+	AppConfigFileName       = "indexer.toml"
+	HTTPConfigFileName      = "http.toml"
+	TransferConfigFileName  = "transfer.toml"
+	AuditConfigFileName     = "audit.toml"
+	BitcoinConfigEnvPrefix  = "BITCOIN"
+	AppConfigEnvPrefix      = "INDEXER"
+	HTTPConfigEnvPrefix     = "HTTP"
+	TransferConfigEnvPrefix = "TRANSFER"
+	AuditConfigEnvPrefix    = "AUDIT"
 )
 
 func LoadConfig(homePath string) (*Config, error) {
@@ -235,6 +294,68 @@ func LoadHTTPConfig(homePath string) (*HTTPConfig, error) {
 	v.SetConfigFile(configFile)
 
 	v.SetEnvPrefix(HTTPConfigEnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	// try load config from file
+	err := v.ReadInConfig()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		// if err load config from env
+		if err := env.Parse(&config); err != nil {
+			return nil, err
+		}
+		return &config, nil
+	}
+
+	err = v.Unmarshal(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func LoadTransferConfig(homePath string) (*TransferConfig, error) {
+	config := TransferConfig{}
+	configFile := path.Join(homePath, TransferConfigFileName)
+	v := viper.New()
+	v.SetConfigFile(configFile)
+
+	v.SetEnvPrefix(TransferConfigEnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+
+	// try load config from file
+	err := v.ReadInConfig()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+		// if err load config from env
+		if err := env.Parse(&config); err != nil {
+			return nil, err
+		}
+		return &config, nil
+	}
+
+	err = v.Unmarshal(&config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func LoadAuditConfig(homePath string) (*AuditConfig, error) {
+	config := AuditConfig{}
+	configFile := path.Join(homePath, AuditConfigFileName)
+	v := viper.New()
+	v.SetConfigFile(configFile)
+
+	v.SetEnvPrefix(AuditConfigEnvPrefix)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 

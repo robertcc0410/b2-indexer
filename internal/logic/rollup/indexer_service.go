@@ -2,6 +2,7 @@ package rollup
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"math/big"
 	"time"
@@ -128,7 +129,7 @@ func (bis *IndexerService) OnStart() error {
 			logs, err := bis.ethCli.FilterLogs(context.Background(), query)
 			if err != nil {
 				bis.log.Errorw("IndexerService failed to fetch block", "height", i, "error", err)
-				continue
+				break
 			}
 
 			for _, vlog := range logs {
@@ -136,13 +137,13 @@ func (bis *IndexerService) OnStart() error {
 					continue
 				}
 				eventHash := common.BytesToHash(vlog.Topics[0].Bytes())
-				// if eventHash == common.HexToHash(bis.config.Bridge.Withdraw) {
-				// 	err = handelWithdrawEvent(vlog, bis.db, bis.config.IndexerListenAddress)
-				// 	if err != nil {
-				// 		bis.log.Errorw("IndexerService handelWithdrawEvent err: ", "error", err)
-				// 		continue
-				// 	}
-				// }
+				if eventHash == common.HexToHash(bis.config.Bridge.Withdraw) {
+					err = handelWithdrawEvent(vlog, bis.db, bis.config.IndexerListenAddress)
+					if err != nil {
+						bis.log.Errorw("IndexerService handelWithdrawEvent err: ", "error", err)
+						continue
+					}
+				}
 				if eventHash == common.HexToHash(bis.config.Bridge.Deposit) {
 					bis.log.Warnw("vlog", "vlog", vlog)
 					err = handelDepositEvent(vlog, bis.db)
@@ -161,27 +162,35 @@ func (bis *IndexerService) OnStart() error {
 			if err := bis.db.Save(&rollupIndex).Error; err != nil {
 				bis.log.Errorw("failed to save b2 index block", "error", err, "currentBlock", i,
 					"currentTxIndex", currentTxIndex, "latestBlock", latestBlock)
-				continue
 			}
 		}
 	}
 }
 
-// handelWithdrawEvent
-//
-//lint:ignore U1000 Ignore unused function temporarily for debugging
 func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) error {
-	amount := DataToBigInt(vlog, 1)
+	caller := event.TopicToAddress(vlog, 1).Hex()
+	withdrawUUID := hex.EncodeToString(vlog.Data[32*4 : 32*5])
+	originalAmount := DataToBigInt(vlog, 1)
+	withdrawAmount := DataToBigInt(vlog, 2)
+	withdrawFee := DataToBigInt(vlog, 3)
 	destAddrStr := DataToString(vlog, 0)
+	toAddress := event.TopicToAddress(vlog, 0).Hex()
 	withdrawData := model.Withdraw{
+		B2TxFrom:      caller,
+		B2TxTo:        toAddress,
+		UUID:          withdrawUUID,
+		RequestID:     vlog.TxHash.String(),
 		BtcFrom:       listenAddress,
 		BtcTo:         destAddrStr,
-		BtcValue:      amount.Int64(),
+		BtcValue:      originalAmount.Int64(),
+		BtcRealValue:  withdrawAmount.Int64(),
+		Fee:           withdrawFee.Int64(),
 		B2BlockNumber: vlog.BlockNumber,
 		B2BlockHash:   vlog.BlockHash.String(),
 		B2TxHash:      vlog.TxHash.String(),
 		B2TxIndex:     vlog.TxIndex,
 		B2LogIndex:    vlog.Index,
+		Status:        model.BtcTxWithdrawSubmit,
 	}
 	if err := db.Create(&withdrawData).Error; err != nil {
 		return err
@@ -195,8 +204,7 @@ func handelDepositEvent(vlog ethtypes.Log, db *gorm.DB) error {
 	Amount := event.DataToDecimal(vlog, 0, 0)
 	TxHash := event.DataToHash(vlog, 1)
 
-	log.Errorw("deposit event ", "Caller", Caller, "ToAddress", ToAddress, "Amount", Amount.String(), "TxHash", TxHash.String())
-
+	log.Debugw("deposit event ", "Caller", Caller, "ToAddress", ToAddress, "Amount", Amount.String(), "TxHash", TxHash.String())
 	depositData := model.RollupDeposit{
 		BtcTxHash:        remove0xPrefix(TxHash.String()),
 		BtcFromAAAddress: ToAddress,

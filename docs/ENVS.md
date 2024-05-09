@@ -53,6 +53,21 @@
 | HTTP_GRPC_PORT     | `string` | grpc port     | -              | 8081          | -             |
 | HTTP_IP_WHITE_LIST | `string` | ip white list | Required       |               | -             |
 
+## transfer configuration
+
+| Variable                  | Type     | Description      | Compulsoriness | Default value | Example value            |
+|---------------------------|----------|------------------|----------------|---------------|--------------------------|
+| TRANSFER_BASE_URL         | `string` | base-url         | -              |               | https://api.sinohope.com |
+| TRANSFER_FAKE_PRIVATE_KEY | `string` | fake-private-key | -              | 8081          | -                        |
+| TRANSFER_VAULT_ID         | `string` | vault-id         | -              |               | -                        |
+| TRANSFER_WALLET_ID        | `string` | wallet-id        | -              |               | -                        |
+| TRANSFER_FROM             | `string` | from             | -              |               | -                        |
+| TRANSFER_CHAIN_SYMBOL     | `string` | chain-symbol     | -              |               | BTC_BTC                  |
+| TRANSFER_ASSET_ID         | `string` | asset-id         | -              |               | BTC                      |
+| TRANSFER_OPERATION_TYPE   | `string` | operation-type   | -              |               | TRANSFER                 |
+| TRANSFER_NETWORK_NAME     | `string` | network-name     | -              |               | -                        |
+| TRANSFER_ENABLE_ENCRYPT   | `bool`   | enable-encrypt   | -              |               | -                        |
+
 # Service requirement environment variable
 
 ## b2-indexer
@@ -119,4 +134,45 @@ INDEXER_DATABASE_MAX_IDLE_CONNS
 INDEXER_DATABASE_MAX_OPEN_CONNS
 INDEXER_DATABASE_CONN_MAX_LIFETIME
 HTTP_PORT
+```
+
+## transfer-server
+
+```
+TRANSFER_BASE_URL
+TRANSFER_PRIVATE_KEY
+TRANSFER_VAULT_ID
+TRANSFER_WALLET_ID
+TRANSFER_FROM
+TRANSFER_CHAIN_SYMBOL
+TRANSFER_ASSET_ID
+TRANSFER_OPERATION_TYPE
+TRANSFER_NETWORK_NAME
+TRANSFER_ENABLE_ENCRYPT
+TRANSFER_TIME_INTERVAL
+
+AUDIT_DATABASE_SOURCE
+AUDIT_DATABASE_MAX_IDLE_CONNS
+AUDIT_DATABASE_MAX_OPEN_CONNS
+AUDIT_DATABASE_CONN_MAX_LIFETIME
+```
+
+## b2-indexer-mpc
+
+```
+INDEXER_LOG_LEVEL
+INDEXER_LOG_FORMAT
+INDEXER_DATABASE_SOURCE
+INDEXER_DATABASE_MAX_IDLE_CONNS
+INDEXER_DATABASE_MAX_OPEN_CONNS
+INDEXER_DATABASE_CONN_MAX_LIFETIME
+HTTP_PORT
+ENABLE_MPC_CALLBACK=true
+HTTP_MPC_CALLBACK_PRIVATE_KEY
+HTTP_MPC_NODE_PUBLIC_KEY
+HTTP_MPC_ENABLE_VSM
+HTTP_MPC_VSM_INTERNAL_KEY_INDEX
+HTTP_MPC_VSM_IV
+HTTP_MPC_LOCAL_DECRYPT_KEY
+HTTP_MPC_LOCAL_DECRYPT_ALG
 ```

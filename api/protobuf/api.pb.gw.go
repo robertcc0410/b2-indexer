@@ -50,7 +50,7 @@ func local_request_HelloService_GetHello_0(ctx context.Context, marshaler runtim
 
 }
 
-func request_NotifyService_TransactionNotify_0(ctx context.Context, marshaler runtime.Marshaler, client NotifyServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_SinohopeService_TransactionNotify_0(ctx context.Context, marshaler runtime.Marshaler, client SinohopeServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq vo.TransactionNotifyRequest
 	var metadata runtime.ServerMetadata
 
@@ -63,7 +63,7 @@ func request_NotifyService_TransactionNotify_0(ctx context.Context, marshaler ru
 
 }
 
-func local_request_NotifyService_TransactionNotify_0(ctx context.Context, marshaler runtime.Marshaler, server NotifyServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_SinohopeService_TransactionNotify_0(ctx context.Context, marshaler runtime.Marshaler, server SinohopeServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq vo.TransactionNotifyRequest
 	var metadata runtime.ServerMetadata
 
@@ -72,6 +72,58 @@ func local_request_NotifyService_TransactionNotify_0(ctx context.Context, marsha
 	}
 
 	msg, err := server.TransactionNotify(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_SinohopeService_WithdrawalConfirm_0(ctx context.Context, marshaler runtime.Marshaler, client SinohopeServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq vo.WithdrawalConfirmRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.WithdrawalConfirm(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_SinohopeService_WithdrawalConfirm_0(ctx context.Context, marshaler runtime.Marshaler, server SinohopeServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq vo.WithdrawalConfirmRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.WithdrawalConfirm(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_MpcService_MpcCheck_0(ctx context.Context, marshaler runtime.Marshaler, client MpcServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq vo.MpcCheckRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.MpcCheck(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_MpcService_MpcCheck_0(ctx context.Context, marshaler runtime.Marshaler, server MpcServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq vo.MpcCheckRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.MpcCheck(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -110,13 +162,13 @@ func RegisterHelloServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 	return nil
 }
 
-// RegisterNotifyServiceHandlerServer registers the http handlers for service NotifyService to "mux".
-// UnaryRPC     :call NotifyServiceServer directly.
+// RegisterSinohopeServiceHandlerServer registers the http handlers for service SinohopeService to "mux".
+// UnaryRPC     :call SinohopeServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterNotifyServiceHandlerFromEndpoint instead.
-func RegisterNotifyServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server NotifyServiceServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSinohopeServiceHandlerFromEndpoint instead.
+func RegisterSinohopeServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SinohopeServiceServer) error {
 
-	mux.Handle("POST", pattern_NotifyService_TransactionNotify_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SinohopeService_TransactionNotify_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -124,12 +176,12 @@ func RegisterNotifyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.protobuf.NotifyService/TransactionNotify", runtime.WithHTTPPathPattern("/v1/call_back/transaction/notify"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.protobuf.SinohopeService/TransactionNotify", runtime.WithHTTPPathPattern("/v1/call_back/transaction/notify"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_NotifyService_TransactionNotify_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SinohopeService_TransactionNotify_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -137,7 +189,66 @@ func RegisterNotifyServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 			return
 		}
 
-		forward_NotifyService_TransactionNotify_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SinohopeService_TransactionNotify_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_SinohopeService_WithdrawalConfirm_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.protobuf.SinohopeService/WithdrawalConfirm", runtime.WithHTTPPathPattern("/v1/call_back/withdrawal/confirm"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_SinohopeService_WithdrawalConfirm_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_SinohopeService_WithdrawalConfirm_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+// RegisterMpcServiceHandlerServer registers the http handlers for service MpcService to "mux".
+// UnaryRPC     :call MpcServiceServer directly.
+// StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterMpcServiceHandlerFromEndpoint instead.
+func RegisterMpcServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server MpcServiceServer) error {
+
+	mux.Handle("POST", pattern_MpcService_MpcCheck_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/api.protobuf.MpcService/MpcCheck", runtime.WithHTTPPathPattern("/v1/check"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_MpcService_MpcCheck_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_MpcService_MpcCheck_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -215,9 +326,9 @@ var (
 	forward_HelloService_GetHello_0 = runtime.ForwardResponseMessage
 )
 
-// RegisterNotifyServiceHandlerFromEndpoint is same as RegisterNotifyServiceHandler but
+// RegisterSinohopeServiceHandlerFromEndpoint is same as RegisterSinohopeServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterNotifyServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterSinohopeServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
@@ -237,41 +348,63 @@ func RegisterNotifyServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.
 		}()
 	}()
 
-	return RegisterNotifyServiceHandler(ctx, mux, conn)
+	return RegisterSinohopeServiceHandler(ctx, mux, conn)
 }
 
-// RegisterNotifyServiceHandler registers the http handlers for service NotifyService to "mux".
+// RegisterSinohopeServiceHandler registers the http handlers for service SinohopeService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterNotifyServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterNotifyServiceHandlerClient(ctx, mux, NewNotifyServiceClient(conn))
+func RegisterSinohopeServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterSinohopeServiceHandlerClient(ctx, mux, NewSinohopeServiceClient(conn))
 }
 
-// RegisterNotifyServiceHandlerClient registers the http handlers for service NotifyService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "NotifyServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "NotifyServiceClient"
+// RegisterSinohopeServiceHandlerClient registers the http handlers for service SinohopeService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "SinohopeServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "SinohopeServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "NotifyServiceClient" to call the correct interceptors.
-func RegisterNotifyServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client NotifyServiceClient) error {
+// "SinohopeServiceClient" to call the correct interceptors.
+func RegisterSinohopeServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SinohopeServiceClient) error {
 
-	mux.Handle("POST", pattern_NotifyService_TransactionNotify_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SinohopeService_TransactionNotify_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.protobuf.NotifyService/TransactionNotify", runtime.WithHTTPPathPattern("/v1/call_back/transaction/notify"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.protobuf.SinohopeService/TransactionNotify", runtime.WithHTTPPathPattern("/v1/call_back/transaction/notify"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_NotifyService_TransactionNotify_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SinohopeService_TransactionNotify_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_NotifyService_TransactionNotify_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SinohopeService_TransactionNotify_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_SinohopeService_WithdrawalConfirm_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.protobuf.SinohopeService/WithdrawalConfirm", runtime.WithHTTPPathPattern("/v1/call_back/withdrawal/confirm"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_SinohopeService_WithdrawalConfirm_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_SinohopeService_WithdrawalConfirm_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -279,9 +412,84 @@ func RegisterNotifyServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 }
 
 var (
-	pattern_NotifyService_TransactionNotify_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "call_back", "transaction", "notify"}, ""))
+	pattern_SinohopeService_TransactionNotify_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "call_back", "transaction", "notify"}, ""))
+
+	pattern_SinohopeService_WithdrawalConfirm_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "call_back", "withdrawal", "confirm"}, ""))
 )
 
 var (
-	forward_NotifyService_TransactionNotify_0 = runtime.ForwardResponseMessage
+	forward_SinohopeService_TransactionNotify_0 = runtime.ForwardResponseMessage
+
+	forward_SinohopeService_WithdrawalConfirm_0 = runtime.ForwardResponseMessage
+)
+
+// RegisterMpcServiceHandlerFromEndpoint is same as RegisterMpcServiceHandler but
+// automatically dials to "endpoint" and closes the connection when "ctx" gets done.
+func RegisterMpcServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+			return
+		}
+		go func() {
+			<-ctx.Done()
+			if cerr := conn.Close(); cerr != nil {
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+			}
+		}()
+	}()
+
+	return RegisterMpcServiceHandler(ctx, mux, conn)
+}
+
+// RegisterMpcServiceHandler registers the http handlers for service MpcService to "mux".
+// The handlers forward requests to the grpc endpoint over "conn".
+func RegisterMpcServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterMpcServiceHandlerClient(ctx, mux, NewMpcServiceClient(conn))
+}
+
+// RegisterMpcServiceHandlerClient registers the http handlers for service MpcService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "MpcServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "MpcServiceClient"
+// doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
+// "MpcServiceClient" to call the correct interceptors.
+func RegisterMpcServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client MpcServiceClient) error {
+
+	mux.Handle("POST", pattern_MpcService_MpcCheck_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/api.protobuf.MpcService/MpcCheck", runtime.WithHTTPPathPattern("/v1/check"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_MpcService_MpcCheck_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_MpcService_MpcCheck_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	return nil
+}
+
+var (
+	pattern_MpcService_MpcCheck_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "check"}, ""))
+)
+
+var (
+	forward_MpcService_MpcCheck_0 = runtime.ForwardResponseMessage
 )
