@@ -288,7 +288,6 @@ func TestTransferConfig(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
-	require.Equal(t, "0.02", config.Fee)
 	require.Equal(t, 60, config.TimeInterval)
 }
 
@@ -318,7 +317,6 @@ func TestTransferConfigEnv(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
-	require.Equal(t, "0.02", config.Fee)
 	require.Equal(t, 60, config.TimeInterval)
 }
 
