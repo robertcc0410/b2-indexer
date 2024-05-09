@@ -42,20 +42,24 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 		if transferCfg.LocalDecryptAlg == b2crypto.AlgAes {
 			decEthPrivKey, err := hex.DecodeString(privateKey)
 			if err != nil {
+				logger.Errorw("transfer service privKey hex.DecodeString", "error", err)
 				return err
 			}
 			localKey, err := hex.DecodeString(transferCfg.LocalDecryptKey)
 			if err != nil {
+				logger.Errorw("transfer service localKey hex.DecodeString", "error", err)
 				return err
 			}
 			localDecEthPrivKey, err := b2crypto.AesDecrypt(decEthPrivKey, localKey)
 			if err != nil {
+				logger.Errorw("transfer service localKey AesDecrypt", "error", err)
 				return err
 			}
 			privateKey = string(localDecEthPrivKey)
 		} else if transferCfg.LocalDecryptAlg == b2crypto.AlgRsa {
 			localDecEthPrivKey, err := b2crypto.RsaDecryptHex(privateKey, transferCfg.LocalDecryptKey)
 			if err != nil {
+				logger.Errorw("transfer service privateKey RsaDecryptHex", "error", err)
 				return err
 			}
 			privateKey = localDecEthPrivKey
@@ -63,7 +67,9 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 	}
 
 	sinohopeAPI, err := sdk.NewTransactionAPI(transferCfg.BaseURL, privateKey)
+	logger.Infow("transfer service NewTransactionAPI", "privateKey", privateKey)
 	if err != nil {
+		logger.Errorw("transfer service NewTransactionAPI", "error", err)
 		return err
 	}
 	transferService := bitcoin.NewTransferService(transferCfg, db, bridgeLogger, sinohopeAPI)
