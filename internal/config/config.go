@@ -176,6 +176,10 @@ type TransferConfig struct {
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"TRANSFER_LOCAL_DECRYPT_ALG"`
 	// TimeInterval defines withdraw time interval
 	TimeInterval int `mapstructure:"time-interval" env:"TRANSFER_TIME_INTERVAL" envDefault:"60"`
+	// BatchWaitTime defines withdraw wait time
+	BatchWaitTime int `mapstructure:"batch-wait-time" env:"TRANSFER_BATCH_WAIT_TIME" envDefault:"60"`
+	// BatchCount defines withdraw deal with count
+	BatchCount int `mapstructure:"batch-count" env:"TRANSFER_BATCH_COUNT" envDefault:"1"`
 }
 
 const (
