@@ -67,6 +67,7 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 	}
 
 	sinohopeAPI, err := sdk.NewTransactionAPI(transferCfg.BaseURL, privateKey)
+	logger.Infow("transfer service NewTransactionAPI", "privateKey", privateKey)
 	if err != nil {
 		logger.Errorw("transfer service NewTransactionAPI", "error", err)
 		return err
