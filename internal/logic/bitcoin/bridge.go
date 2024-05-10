@@ -22,6 +22,7 @@ import (
 	b2crypto "github.com/b2network/b2-indexer/pkg/crypto"
 	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/b2network/b2-indexer/pkg/particle"
+	"github.com/b2network/b2-indexer/pkg/utils"
 	"github.com/b2network/b2-indexer/pkg/vsm"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum"
@@ -42,6 +43,7 @@ var (
 	ErrBridgeFromGasInsufficient                = errors.New("gas required exceeds allowanc")
 	ErrAAAddressNotFound                        = errors.New("address not found")
 	ErrOldNonceToHeight                         = errors.New("old nonce params to height")
+	ErrBridgeBtcAddressWhiteList                = errors.New("whitelist btc address")
 )
 
 // Bridge bridge
@@ -61,6 +63,8 @@ type Bridge struct {
 	enableEoaTransfer bool
 	// aa server
 	AAPubKeyAPI string
+	// whitelist not bridge
+	BtcAddressWhiteList []string
 }
 type B2ExplorerStatus struct {
 	GasPrices struct {
@@ -138,6 +142,18 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 		return nil, err
 	}
 	log.Infof("load eth address: %s", crypto.PubkeyToAddress(privateKey.PublicKey))
+
+	// whitelist btc address
+
+	depositWhitelistBtcAddress := strings.TrimSpace(bridgeCfg.DepositWhitelistBtcAddress)
+	whitelistAddress := make([]string, 0)
+	if depositWhitelistBtcAddress != "" {
+		whitelistAddressArr := strings.Split(depositWhitelistBtcAddress, ",")
+		for _, v := range whitelistAddressArr {
+			whitelistAddress = append(whitelistAddress, strings.TrimSpace(v))
+		}
+	}
+
 	return &Bridge{
 		EthRPCURL:            rpcURL.String(),
 		ContractAddress:      common.HexToAddress(bridgeCfg.ContractAddress),
@@ -150,6 +166,7 @@ func NewBridge(bridgeCfg config.BridgeConfig, abiFileDir string, log log.Logger,
 		AAPubKeyAPI:          bridgeCfg.AAB2PI,
 		BaseGasPriceMultiple: bridgeCfg.GasPriceMultiple,
 		B2ExplorerURL:        bridgeCfg.B2ExplorerURL,
+		BtcAddressWhiteList:  whitelistAddress,
 	}, nil
 }
 
@@ -168,6 +185,12 @@ func (b *Bridge) Deposit(
 
 	if hash == "" {
 		return nil, nil, "", "", fmt.Errorf("tx id is empty")
+	}
+
+	// check bitcoin address whitelist
+	if len(b.BtcAddressWhiteList) > 0 && utils.StrInArray(b.BtcAddressWhiteList, bitcoinAddress.Address) {
+		b.logger.Errorf("whitelist btc address:%v, to address: %s", b.BtcAddressWhiteList, bitcoinAddress.Address)
+		return nil, nil, "", "", ErrBridgeBtcAddressWhiteList
 	}
 
 	ctx := context.Background()
@@ -209,7 +232,11 @@ func (b *Bridge) Transfer(bitcoinAddress b2types.BitcoinFrom,
 	if bitcoinAddress.Address == "" {
 		return nil, "", fmt.Errorf("bitcoin address is empty")
 	}
-
+	// check bitcoin address whitelist
+	if len(b.BtcAddressWhiteList) > 0 && utils.StrInArray(b.BtcAddressWhiteList, bitcoinAddress.Address) {
+		b.logger.Errorf("whitelist btc address:%v, to address: %s", b.BtcAddressWhiteList, bitcoinAddress.Address)
+		return nil, "", ErrBridgeBtcAddressWhiteList
+	}
 	ctx := context.Background()
 
 	toAddress, err := b.BitcoinAddressToEthAddress(bitcoinAddress)
