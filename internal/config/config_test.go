@@ -45,6 +45,7 @@ func TestBitcoinConfig(t *testing.T) {
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY")
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG")
 	os.Unsetenv("BITCOIN_BRIDGE_CONFIRM_HEIGHT")
+	os.Unsetenv("BITCOIN_BRIDGE_DEPOSIT_WHITELIST_BTC_ADDRESS")
 	config, err := config.LoadBitcoinConfig("./testdata")
 	require.NoError(t, err)
 	require.Equal(t, "signet", config.NetworkName)
@@ -79,6 +80,7 @@ func TestBitcoinConfig(t *testing.T) {
 	require.Equal(t, "aaa", config.Bridge.LocalDecryptKey)
 	require.Equal(t, "aes", config.Bridge.LocalDecryptAlg)
 	require.Equal(t, 6, config.Bridge.ConfirmHeight)
+	require.Equal(t, "b1cc", config.Bridge.DepositWhitelistBtcAddress)
 }
 
 func TestBitcoinConfigEnv(t *testing.T) {
@@ -118,6 +120,7 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY", "abcd")
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG", "rsa")
 	os.Setenv("BITCOIN_BRIDGE_CONFIRM_HEIGHT", "6")
+	os.Setenv("BITCOIN_BRIDGE_DEPOSIT_WHITELIST_BTC_ADDRESS", "1,2,3")
 
 	config, err := config.LoadBitcoinConfig("./")
 	require.NoError(t, err)
@@ -153,6 +156,7 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	require.Equal(t, "abcd", config.Bridge.LocalDecryptKey)
 	require.Equal(t, "rsa", config.Bridge.LocalDecryptAlg)
 	require.Equal(t, 6, config.Bridge.ConfirmHeight)
+	require.Equal(t, "1,2,3", config.Bridge.DepositWhitelistBtcAddress)
 }
 
 func TestChainParams(t *testing.T) {

@@ -113,6 +113,8 @@ type BridgeConfig struct {
 	LocalDecryptAlg string `mapstructure:"local-decrypt-alg" env:"BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG"`
 	// ConfirmHeight defines the btc tx confirm block height
 	ConfirmHeight int `mapstructure:"confirm-height" env:"BITCOIN_BRIDGE_CONFIRM_HEIGHT" envDefault:"6"`
+	// DepositBtcWhitelistAddress deposit whitelist btc address, not deposit
+	DepositWhitelistBtcAddress string `mapstructure:"deposit-whitelist-btc-address" env:"BITCOIN_BRIDGE_DEPOSIT_WHITELIST_BTC_ADDRESS"`
 }
 
 // TODO: @robertcc0410 env prefix, mapstructure and env,  env prefix in the rule must be the same
