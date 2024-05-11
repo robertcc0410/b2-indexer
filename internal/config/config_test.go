@@ -45,6 +45,7 @@ func TestBitcoinConfig(t *testing.T) {
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY")
 	os.Unsetenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG")
 	os.Unsetenv("BITCOIN_BRIDGE_CONFIRM_HEIGHT")
+	os.Unsetenv("BITCOIN_BRIDGE_DEPOSIT_WHITELIST_BTC_ADDRESS")
 	config, err := config.LoadBitcoinConfig("./testdata")
 	require.NoError(t, err)
 	require.Equal(t, "signet", config.NetworkName)
@@ -79,6 +80,7 @@ func TestBitcoinConfig(t *testing.T) {
 	require.Equal(t, "aaa", config.Bridge.LocalDecryptKey)
 	require.Equal(t, "aes", config.Bridge.LocalDecryptAlg)
 	require.Equal(t, 6, config.Bridge.ConfirmHeight)
+	require.Equal(t, "b1cc", config.Bridge.DepositWhitelistBtcAddress)
 }
 
 func TestBitcoinConfigEnv(t *testing.T) {
@@ -118,6 +120,7 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_KEY", "abcd")
 	os.Setenv("BITCOIN_BRIDGE_LOCAL_DECRYPT_ALG", "rsa")
 	os.Setenv("BITCOIN_BRIDGE_CONFIRM_HEIGHT", "6")
+	os.Setenv("BITCOIN_BRIDGE_DEPOSIT_WHITELIST_BTC_ADDRESS", "1,2,3")
 
 	config, err := config.LoadBitcoinConfig("./")
 	require.NoError(t, err)
@@ -153,6 +156,7 @@ func TestBitcoinConfigEnv(t *testing.T) {
 	require.Equal(t, "abcd", config.Bridge.LocalDecryptKey)
 	require.Equal(t, "rsa", config.Bridge.LocalDecryptAlg)
 	require.Equal(t, 6, config.Bridge.ConfirmHeight)
+	require.Equal(t, "1,2,3", config.Bridge.DepositWhitelistBtcAddress)
 }
 
 func TestChainParams(t *testing.T) {
@@ -275,6 +279,8 @@ func TestTransferConfig(t *testing.T) {
 	os.Unsetenv("TRANSFER_ENABLE_ENCRYPT")
 	os.Unsetenv("TRANSFER_FEE")
 	os.Unsetenv("TRANSFER_TIME_INTERVAL")
+	os.Unsetenv("TRANSFER_BATCH_WAIT_TIME")
+	os.Unsetenv("TRANSFER_BATCH_COUNT")
 
 	config, err := config.LoadTransferConfig("./testdata")
 	require.NoError(t, err)
@@ -288,8 +294,9 @@ func TestTransferConfig(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
-	require.Equal(t, "0.02", config.Fee)
 	require.Equal(t, 60, config.TimeInterval)
+	require.Equal(t, 60, config.BatchWaitTime)
+	require.Equal(t, 1, config.BatchCount)
 }
 
 func TestTransferConfigEnv(t *testing.T) {
@@ -305,6 +312,8 @@ func TestTransferConfigEnv(t *testing.T) {
 	os.Setenv("TRANSFER_ENABLE_ENCRYPT", "false")
 	os.Setenv("TRANSFER_FEE", "0.02")
 	os.Setenv("TRANSFER_TIME_INTERVAL", "60")
+	os.Setenv("TRANSFER_BATCH_WAIT_TIME", "60")
+	os.Setenv("TRANSFER_BATCH_COUNT", "1")
 
 	config, err := config.LoadTransferConfig("")
 	require.NoError(t, err)
@@ -318,8 +327,9 @@ func TestTransferConfigEnv(t *testing.T) {
 	require.Equal(t, "TRANSFER", config.OperationType)
 	require.Equal(t, "testnet", config.NetworkName)
 	require.Equal(t, false, config.EnableEncrypt)
-	require.Equal(t, "0.02", config.Fee)
 	require.Equal(t, 60, config.TimeInterval)
+	require.Equal(t, 60, config.BatchWaitTime)
+	require.Equal(t, 1, config.BatchCount)
 }
 
 func TestAuditConfig(t *testing.T) {

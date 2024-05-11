@@ -13,3 +13,5 @@ vsm-iv = "abc"
 local-decrypt-key = "aaa"
 local-decrypt-alg = "aes"
 time-interval = 60
+batch-wait-time = 60
+batch-count = 1

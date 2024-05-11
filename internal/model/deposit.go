@@ -23,6 +23,7 @@ const (
 	DepositB2TxStatusAAAddressNotFound                 // aa address not found,  Start process processing separately
 	DepositB2TxStatusIsPending
 	DepositB2TxStatusNonceToLow
+	DepositB2TxStatusWhitelistBtcAddress
 )
 
 const (
@@ -36,6 +37,10 @@ const (
 	DepositB2EoaTxStatusContextDeadlineExceeded // eoa transfer client context deadline exceeded
 	DepositB2EoaTxStatusUnknown
 	DepositB2EoaTxStatusNonceToLow
+	_
+	_
+	_
+	DepositB2EoaStatusWhitelistBtcAddress
 )
 
 const (

@@ -69,7 +69,7 @@ func (bis *TransferService) OnStop() {
 
 func (bis *TransferService) HandleTransfer() {
 	defer bis.wg.Done()
-	ticker := time.NewTicker(BatchTransferWaitTimeout)
+	ticker := time.NewTicker(time.Duration(bis.cfg.BatchWaitTime) * time.Second)
 	for {
 		select {
 		case <-bis.stopChan:
@@ -80,7 +80,7 @@ func (bis *TransferService) HandleTransfer() {
 			err := bis.db.Model(&model.Withdraw{}).
 				Where(fmt.Sprintf("%s = ?", model.Withdraw{}.Column().Status), model.BtcTxWithdrawSubmit).
 				Where("created_at <= ?", time.Now().Add(-time.Second*time.Duration(bis.cfg.TimeInterval))).Order(fmt.Sprintf("%s ASC, id ASC", model.Withdraw{}.Column().B2BlockNumber)).
-				Limit(10).
+				Limit(bis.cfg.BatchCount).
 				Find(&withdrawList).Error
 			if err != nil {
 				bis.log.Errorw("TransferService get withdraw List failed", "error", err)

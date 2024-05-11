@@ -323,6 +323,12 @@ func (bis *BridgeDepositService) HandleDeposit(deposit model.Deposit, oldTx *eth
 				"error", err.Error(),
 				"btcTxHash", deposit.BtcTxHash,
 				"data", deposit)
+		case errors.Is(err, ErrBridgeBtcAddressWhiteList):
+			deposit.B2TxStatus = model.DepositB2TxStatusWhitelistBtcAddress
+			bis.log.Warnw("invoke deposit whitelist btc address",
+				"error", err.Error(),
+				"btcTxHash", deposit.BtcTxHash,
+				"data", deposit)
 		default:
 			deposit.B2TxRetry++
 			deposit.B2TxStatus = model.DepositB2TxStatusPending
@@ -509,6 +515,8 @@ func (bis *BridgeDepositService) EoaTransfer(deposit model.Deposit, oldTx *ethTy
 		switch {
 		case strings.Contains(err.Error(), "nonce too low"):
 			deposit.B2EoaTxStatus = model.DepositB2EoaTxStatusNonceToLow
+		case errors.Is(err, ErrBridgeBtcAddressWhiteList):
+			deposit.B2EoaTxStatus = model.DepositB2EoaStatusWhitelistBtcAddress
 		default:
 			deposit.B2EoaTxStatus = model.DepositB2EoaTxStatusFailed
 		}

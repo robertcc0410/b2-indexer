@@ -32,6 +32,7 @@ vsm-internal-key-index = 10
 vsm-iv = "abc"
 local-decrypt-key = "aaa"
 local-decrypt-alg = "aes"
+deposit-whitelist-btc-address = "b1cc"
 
 [eps]
 enable-eps = true
