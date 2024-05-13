@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/b2network/b2-indexer/pkg/vsm"
@@ -39,7 +40,9 @@ func StartTransfer(ctx *Context, cmd *cobra.Command) (err error) {
 			return err
 		}
 		privateKey = string(bytes.TrimRight(decKey, "\x00"))
+		fmt.Println(privateKey)
 		if transferCfg.LocalDecryptAlg == b2crypto.AlgAes {
+			fmt.Println(privateKey)
 			decEthPrivKey, err := hex.DecodeString(privateKey)
 			if err != nil {
 				logger.Errorw("transfer service privKey hex.DecodeString", "error", err)

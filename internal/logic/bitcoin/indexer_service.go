@@ -36,7 +36,7 @@ type IndexerService struct {
 // NewIndexerService returns a new service instance.
 func NewIndexerService(
 	txIdxr types.BITCOINTxIndexer,
-	// bridge types.BITCOINBridge,
+// bridge types.BITCOINBridge,
 	db *gorm.DB,
 	logger log.Logger,
 ) *IndexerService {
@@ -226,6 +226,16 @@ func (bis *IndexerService) SaveParsedResult(
 			return err
 		}
 
+		existsNullData := false
+		parsedNullData := "" // evm address
+		for _, v := range parseResult.Tos {
+			if v.Type == types.BitcoinToTypeNullData {
+				existsNullData = true
+				bis.log.Errorw("debugnulldata:", "nulldata", v.NullData)
+				parsedNullData = v.NullData
+			}
+		}
+
 		// if existed, update deposit record
 		var deposit model.Deposit
 		err = tx.First(&deposit,
@@ -250,6 +260,9 @@ func (bis *IndexerService) SaveParsedResult(
 				ListenerStatus: model.ListenerStatusSuccess,
 				CallbackStatus: model.CallbackStatusPending,
 			}
+			if existsNullData {
+				deposit.BtcFromEvmAddress = parsedNullData
+			}
 			err = tx.Create(&deposit).Error
 			if err != nil {
 				bis.log.Errorw("failed to save tx parsed result", "error", err)
@@ -265,6 +278,9 @@ func (bis *IndexerService) SaveParsedResult(
 				model.Deposit{}.Column().BtcTos:         string(tos),
 				model.Deposit{}.Column().BtcBlockTime:   btcBlockTime,
 				model.Deposit{}.Column().ListenerStatus: model.ListenerStatusSuccess,
+			}
+			if existsNullData {
+				updateFields[model.Deposit{}.Column().BtcFromEvmAddress] = parsedNullData
 			}
 			err = tx.Model(&model.Deposit{}).Where("id = ?", deposit.ID).Updates(updateFields).Error
 			if err != nil {

@@ -35,7 +35,14 @@ type BitcoinFrom struct {
 	Address string
 }
 
+const (
+	BitcoinToTypeNormal   = 0
+	BitcoinToTypeNullData = 1
+)
+
 type BitcoinTo struct {
-	Address string
-	Value   int64
+	Address  string
+	Value    int64
+	Type     int
+	NullData string
 }
