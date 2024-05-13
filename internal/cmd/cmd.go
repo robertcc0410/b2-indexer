@@ -46,6 +46,7 @@ func rootCmd() *cobra.Command {
 	rootCmd.AddCommand(cryptoCmd.Crypto())
 	rootCmd.AddCommand(transferServer())
 	rootCmd.AddCommand(resetTransferCmd())
+	rootCmd.AddCommand(resetDepositIndexerCmd())
 	return rootCmd
 }
 
