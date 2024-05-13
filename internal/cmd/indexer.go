@@ -37,7 +37,7 @@ func resetDepositIndexerCmd() *cobra.Command {
 				cmd.Println("invalid parameter")
 				return
 			}
-			txId := args[1]
+			txID := args[1]
 			ctx := GetServerContextFromCmd(cmd)
 			bitcoinCfg := ctx.BitcoinConfig
 			db, err := server.GetDBContextFromCmd(cmd)
@@ -71,7 +71,7 @@ func resetDepositIndexerCmd() *cobra.Command {
 			err = db.
 				Where(
 					fmt.Sprintf("%s.%s = ?", model.Deposit{}.TableName(), model.Deposit{}.Column().BtcTxHash),
-					txId,
+					txID,
 				).
 				First(&deposit).Error
 			if err != nil {
@@ -104,10 +104,10 @@ func resetDepositIndexerCmd() *cobra.Command {
 			btcBlockTime := blockHeader.Timestamp
 			var btcTxIndex int64
 			parseResult := types.BitcoinTxParseResult{}
-			existTxId := false
+			existTxID := false
 			for _, v := range txParseResult {
-				if v.TxID == txId {
-					existTxId = true
+				if v.TxID == txID {
+					existTxID = true
 					btcTxIndex = v.Index
 					if len(v.From) == 0 {
 						logger.Errorw("parse result from empty")
@@ -123,7 +123,6 @@ func resetDepositIndexerCmd() *cobra.Command {
 						logger.Errorw("amount mismatch")
 						return
 					}
-
 					parseResult.To = v.To
 					parseResult.From = v.From
 					parseResult.Tos = v.Tos
@@ -131,11 +130,9 @@ func resetDepositIndexerCmd() *cobra.Command {
 					parseResult.TxID = v.TxID
 					parseResult.Value = v.Value
 					parseResult.TxType = v.TxType
-
 				}
 			}
-
-			if !existTxId {
+			if !existTxID {
 				cmd.Println("not found tx")
 				return
 			}
@@ -173,7 +170,7 @@ func resetDepositIndexerCmd() *cobra.Command {
 						Set("gorm:query_option", "FOR UPDATE").
 						Where(
 							fmt.Sprintf("%s.%s = ?", model.Deposit{}.TableName(), model.Deposit{}.Column().BtcTxHash),
-							txId,
+							txID,
 						).
 						First(&oldDeposit).Error
 					if err != nil {
@@ -200,12 +197,11 @@ func resetDepositIndexerCmd() *cobra.Command {
 					}
 					err = tx.Model(&model.Deposit{}).Where(
 						fmt.Sprintf("%s.%s = ?", model.Deposit{}.TableName(), model.Deposit{}.Column().BtcTxHash),
-						txId,
+						txID,
 					).Updates(updateFields).Error
 					if err != nil {
 						return err
 					}
-
 					return nil
 				})
 				if err != nil {
@@ -214,7 +210,6 @@ func resetDepositIndexerCmd() *cobra.Command {
 			}
 		},
 	}
-	// cmd.AddCommand(speedupTransfer())
 	cmd.Flags().String(FlagHome, "", "The application home directory")
 	return cmd
 }
