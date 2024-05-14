@@ -238,9 +238,11 @@ func (bis *IndexerService) SaveParsedResult(
 
 		// if existed, update deposit record
 		var deposit model.Deposit
-		err = tx.First(&deposit,
-			fmt.Sprintf("%s = ?", model.Deposit{}.Column().BtcTxHash),
-			parseResult.TxID).Error
+		err = tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			First(&deposit,
+				fmt.Sprintf("%s = ?", model.Deposit{}.Column().BtcTxHash),
+				parseResult.TxID).Error
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
@@ -270,6 +272,9 @@ func (bis *IndexerService) SaveParsedResult(
 			}
 		} else if deposit.CallbackStatus == model.CallbackStatusSuccess &&
 			deposit.ListenerStatus == model.ListenerStatusPending {
+			if deposit.BtcValue != parseResult.Value || deposit.BtcFrom != parseResult.From[0].Address {
+				return fmt.Errorf("invalid parameter")
+			}
 			// if existed, update deposit record
 			updateFields := map[string]interface{}{
 				model.Deposit{}.Column().BtcBlockNumber: btcBlockNumber,

@@ -253,6 +253,7 @@ func (s *sinohopeServer) transactionNotifyRecharge(req *vo.TransactionNotifyRequ
 		}
 
 		err = tx.
+			Set("gorm:query_option", "FOR UPDATE").
 			Where(
 				fmt.Sprintf("%s.%s = ?", model.Deposit{}.TableName(), model.Deposit{}.Column().BtcTxHash),
 				requestDetail.TxHash,
