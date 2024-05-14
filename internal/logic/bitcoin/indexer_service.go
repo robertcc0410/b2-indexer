@@ -39,7 +39,6 @@ type IndexerService struct {
 // NewIndexerService returns a new service instance.
 func NewIndexerService(
 	txIdxr types.BITCOINTxIndexer,
-	// bridge types.BITCOINBridge,
 	db *gorm.DB,
 	logger log.Logger,
 ) *IndexerService {
@@ -243,8 +242,8 @@ func (bis *IndexerService) SaveParsedResult(
 					existsEvmAddressData = true
 					parsedEvmAddress = string(evmAddress)
 					for k := range parseResult.From {
-						(*parseResult).From[k].Type = types.BitcoinFromTypeEvm
-						(*parseResult).From[k].EvmAddress = parsedEvmAddress
+						parseResult.From[k].Type = types.BitcoinFromTypeEvm
+						parseResult.From[k].EvmAddress = parsedEvmAddress
 					}
 				}
 			}
