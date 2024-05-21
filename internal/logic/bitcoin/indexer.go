@@ -1,6 +1,7 @@
 package bitcoin
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -16,11 +17,12 @@ import (
 )
 
 var (
-	ErrParsePkScript         = errors.New("parse pkscript err")
-	ErrDecodeListenAddress   = errors.New("decode listen address err")
-	ErrTargetConfirmations   = errors.New("target confirmation number was not reached")
-	ErrParsePubKey           = errors.New("parse pubkey failed, not found pubkey or nonsupport ")
-	ErrParsePkScriptNullData = errors.New("parse pkscript null data err")
+	ErrParsePkScript            = errors.New("parse pkscript err")
+	ErrDecodeListenAddress      = errors.New("decode listen address err")
+	ErrTargetConfirmations      = errors.New("target confirmation number was not reached")
+	ErrParsePubKey              = errors.New("parse pubkey failed, not found pubkey or nonsupport ")
+	ErrParsePkScriptNullData    = errors.New("parse pkscript null data err")
+	ErrParsePkScriptNotNullData = errors.New("parse pkscript not null data err")
 )
 
 const (
@@ -129,17 +131,27 @@ func (b *Indexer) parseTx(txResult *wire.MsgTx, index int) (*types.BitcoinTxPars
 			if errors.Is(err, ErrParsePkScript) {
 				continue
 			}
-			// null data
+			// parse null data
 			if errors.Is(err, ErrParsePkScriptNullData) {
-				continue
+				nullData, err := b.parseNullData(v.PkScript)
+				if err != nil {
+					continue
+				}
+				tos = append(tos, types.BitcoinTo{
+					Type:     types.BitcoinToTypeNullData,
+					NullData: nullData,
+				})
+			} else {
+				return nil, err
 			}
-			return nil, err
+		} else {
+			parseTo := types.BitcoinTo{
+				Address: pkAddress,
+				Value:   v.Value,
+				Type:    types.BitcoinToTypeNormal,
+			}
+			tos = append(tos, parseTo)
 		}
-		parseTo := types.BitcoinTo{
-			Address: pkAddress,
-			Value:   v.Value,
-		}
-		tos = append(tos, parseTo)
 		// if pk address eq dest listened address, after parse from address by vin prev tx
 		if pkAddress == b.listenAddress.EncodeAddress() {
 			listenAddress = true
@@ -200,6 +212,7 @@ func (b *Indexer) parseFromAddress(txResult *wire.MsgTx) (fromAddress []types.Bi
 
 		fromAddress = append(fromAddress, types.BitcoinFrom{
 			Address: vinPkAddress,
+			Type:    types.BitcoinFromTypeBtc,
 		})
 	}
 	return fromAddress, nil
@@ -211,23 +224,21 @@ func (b *Indexer) ParseAddress(pkScript []byte) (string, error) {
 }
 
 // parseNullData from pkscript parse null data
-//
-//lint:ignore U1000 Ignore unused function temporarily for debugging
 func (b *Indexer) parseNullData(pkScript []byte) (string, error) {
-	pk, err := txscript.ParsePkScript(pkScript)
-	if err != nil {
-		return "", fmt.Errorf("%w:%s", ErrParsePkScript, err.Error())
+	if !txscript.IsNullData(pkScript) {
+		return "", ErrParsePkScriptNotNullData
 	}
-	if pk.Class() != txscript.NullDataTy {
-		return "", fmt.Errorf("not null data type")
-	}
-	return pk.String(), nil
+	return hex.EncodeToString(pkScript[1:]), nil
 }
 
 // parseAddress from pkscript parse address
 func (b *Indexer) parseAddress(pkScript []byte) (string, error) {
 	pk, err := txscript.ParsePkScript(pkScript)
 	if err != nil {
+		scriptClass := txscript.GetScriptClass(pkScript)
+		if scriptClass == txscript.NullDataTy {
+			return "", ErrParsePkScriptNullData
+		}
 		return "", fmt.Errorf("%w:%s", ErrParsePkScript, err.Error())
 	}
 

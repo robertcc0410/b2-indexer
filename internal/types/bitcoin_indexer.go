@@ -31,11 +31,25 @@ type BitcoinTxParseResult struct {
 	Tos []BitcoinTo
 }
 
+const (
+	BitcoinFromTypeBtc = 0
+	BitcoinFromTypeEvm = 1
+)
+
 type BitcoinFrom struct {
-	Address string
+	Address    string
+	Type       int
+	EvmAddress string
 }
 
+const (
+	BitcoinToTypeNormal   = 0
+	BitcoinToTypeNullData = 1
+)
+
 type BitcoinTo struct {
-	Address string
-	Value   int64
+	Address  string
+	Value    int64
+	Type     int
+	NullData string
 }
