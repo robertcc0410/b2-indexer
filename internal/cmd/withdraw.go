@@ -131,47 +131,7 @@ func scanWithdrawTxByHash() *cobra.Command {
 			if y == "Y" || y == "y" {
 				err = db.Transaction(func(tx *gorm.DB) error {
 					for _, v := range withdrawList {
-						var withdraw model.Withdraw
-						err = tx.
-							Where(
-								fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
-								v.B2TxHash,
-							).
-							Where(
-								fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxIndex),
-								v.B2TxIndex,
-							).
-							Where(
-								fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2LogIndex),
-								v.B2LogIndex,
-							).
-							First(&withdraw).Error
-						if err != nil {
-							if !errors.Is(err, gorm.ErrRecordNotFound) {
-								cmd.Printf("failed create withdraw: %v", err)
-								return err
-							}
-						}
-						if withdraw.ID != 0 {
-							cmd.Println("continue id:", withdraw.ID)
-							continue
-						}
-						err := tx.Create(&v).Error
-						if err != nil {
-							cmd.Printf("failed create withdraw: %v", err)
-							return err
-						}
-						withdrawRecord := model.WithdrawRecord{
-							WithdrawID: v.ID,
-							RequestID:  v.RequestID,
-							B2TxHash:   v.B2TxHash,
-							BtcFrom:    v.BtcFrom,
-							BtcTo:      v.BtcTo,
-							BtcValue:   v.BtcValue,
-						}
-						err = tx.Create(&withdrawRecord).Error
-						if err != nil {
-							cmd.Printf("failed create withdraw record: %v", err)
+						if err := processWithdraw(cmd, tx, v); err != nil {
 							return err
 						}
 					}
@@ -185,4 +145,52 @@ func scanWithdrawTxByHash() *cobra.Command {
 	}
 	cmd.Flags().String(FlagHome, "", "The application home directory")
 	return cmd
+}
+
+func processWithdraw(cmd *cobra.Command, tx *gorm.DB, v model.Withdraw) error {
+	var withdraw model.Withdraw
+	err := tx.
+		Where(
+			fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxHash),
+			v.B2TxHash,
+		).
+		Where(
+			fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2TxIndex),
+			v.B2TxIndex,
+		).
+		Where(
+			fmt.Sprintf("%s.%s = ?", model.Withdraw{}.TableName(), model.Withdraw{}.Column().B2LogIndex),
+			v.B2LogIndex,
+		).
+		First(&withdraw).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			cmd.Printf("failed create withdraw: %v", err)
+			return err
+		}
+	}
+	if withdraw.ID != 0 {
+		cmd.Println("continue id:", withdraw.ID)
+		return nil
+	}
+
+	if err := tx.Create(&v).Error; err != nil {
+		cmd.Printf("failed create withdraw: %v", err)
+		return err
+	}
+
+	withdrawRecord := model.WithdrawRecord{
+		WithdrawID: v.ID,
+		RequestID:  v.RequestID,
+		B2TxHash:   v.B2TxHash,
+		BtcFrom:    v.BtcFrom,
+		BtcTo:      v.BtcTo,
+		BtcValue:   v.BtcValue,
+	}
+	if err := tx.Create(&withdrawRecord).Error; err != nil {
+		cmd.Printf("failed create withdraw record: %v", err)
+		return err
+	}
+
+	return nil
 }
