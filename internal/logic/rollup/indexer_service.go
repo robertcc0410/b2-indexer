@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -179,7 +180,7 @@ func handelWithdrawEvent(vlog ethtypes.Log, db *gorm.DB, listenAddress string) e
 		B2TxFrom:      caller,
 		B2TxTo:        toAddress,
 		UUID:          withdrawUUID,
-		RequestID:     vlog.TxHash.String(),
+		RequestID:     fmt.Sprintf("%s-%d-%d", vlog.TxHash.String(), vlog.TxIndex, vlog.Index),
 		BtcFrom:       listenAddress,
 		BtcTo:         destAddrStr,
 		BtcValue:      originalAmount.Int64(),

@@ -88,6 +88,13 @@ func (bis *BridgeWithdrawService) HandleWithdraw() {
 			return
 		}
 	}
+	if !bis.db.Migrator().HasTable(&model.WithdrawRecord{}) {
+		err := bis.auditDB.AutoMigrate(&model.WithdrawRecord{})
+		if err != nil {
+			bis.log.Errorw("BridgeWithdrawService create withdraw_record table", "error", err.Error())
+			return
+		}
+	}
 	ticker := time.NewTicker(time.Duration(WithdrawHandleTime) * time.Second)
 	for {
 		select {

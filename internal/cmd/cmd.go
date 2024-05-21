@@ -47,6 +47,7 @@ func rootCmd() *cobra.Command {
 	rootCmd.AddCommand(transferServer())
 	rootCmd.AddCommand(resetTransferCmd())
 	rootCmd.AddCommand(resetDepositIndexerCmd())
+	rootCmd.AddCommand(scanWithdrawTxByHash())
 	return rootCmd
 }
 
