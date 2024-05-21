@@ -51,6 +51,7 @@ func scanWithdrawTxByHash() *cobra.Command {
 			if err != nil {
 				if err != gorm.ErrRecordNotFound {
 					cmd.Printf("failed find tx from db: %v", err)
+					return
 				}
 			}
 			for k, v := range withdrawArry {
@@ -69,6 +70,7 @@ func scanWithdrawTxByHash() *cobra.Command {
 			ethlient, err := ethclient.Dial(bitcoinCfg.Bridge.EthRPCURL)
 			if err != nil {
 				cmd.Printf("failed dial b2 client: %v", err)
+				return
 			}
 			defer func() {
 				ethlient.Close()
@@ -77,6 +79,7 @@ func scanWithdrawTxByHash() *cobra.Command {
 			receipt, err := ethlient.TransactionReceipt(context.Background(), common.HexToHash(txHash))
 			if err != nil {
 				cmd.Printf("failed transactionReceipt by txHash: %v", err)
+				return
 			}
 			var withdrawList []model.Withdraw
 			for _, vlog := range receipt.Logs {
