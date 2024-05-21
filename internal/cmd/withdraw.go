@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"github.com/b2network/b2-indexer/internal/logic/rollup"
 	"github.com/b2network/b2-indexer/internal/model"
 	"github.com/b2network/b2-indexer/internal/server"
