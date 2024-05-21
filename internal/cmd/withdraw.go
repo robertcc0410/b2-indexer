@@ -156,7 +156,8 @@ func scanWithdrawTxByHash() *cobra.Command {
 							cmd.Println("continue id:", withdraw.ID)
 							continue
 						}
-						if err := tx.Create(&v).Error; err != nil {
+						err := tx.Create(&v).Error
+						if err != nil {
 							cmd.Printf("failed create withdraw: %v", err)
 							return err
 						}
@@ -168,7 +169,7 @@ func scanWithdrawTxByHash() *cobra.Command {
 							BtcTo:      v.BtcTo,
 							BtcValue:   v.BtcValue,
 						}
-						err := tx.Create(&withdrawRecord).Error
+						err = tx.Create(&withdrawRecord).Error
 						if err != nil {
 							cmd.Printf("failed create withdraw record: %v", err)
 							return err
