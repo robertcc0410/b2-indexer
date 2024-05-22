@@ -686,7 +686,7 @@ func (bis *BridgeDepositService) CheckDeposit() {
 					continue
 				}
 				if deposit.B2TxStatus == model.DepositB2TxStatusSuccess {
-					if strings.EqualFold(deposit.BtcFromAAAddress, rollupDeposit.BtcFromAAAddress) &&
+					if (strings.EqualFold(deposit.BtcFromAAAddress, rollupDeposit.BtcFromAAAddress) || strings.EqualFold(deposit.BtcFromEvmAddress, rollupDeposit.BtcFromAAAddress)) &&
 						deposit.BtcValue == rollupDeposit.BtcValue {
 						deposit.B2TxCheck = model.B2CheckStatusSuccess
 					} else {
