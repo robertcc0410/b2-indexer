@@ -224,8 +224,8 @@ func (bis *IndexerService) SaveParsedResult(
 		}
 
 		bis.log.Errorw("parseResult:", "result", parseResult)
-		existsEvmAddressData := false
-		parsedEvmAddress := "" // evm address
+		existsEvmAddressData := false // The evm address is processed only if it exists. Otherwise, aa is used
+		parsedEvmAddress := ""        // evm address
 		for _, v := range parseResult.Tos {
 			// only handle first null data
 			if existsEvmAddressData {
