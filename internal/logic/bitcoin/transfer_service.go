@@ -200,7 +200,7 @@ func (bis *TransferService) Transfer(requestID string, to string, amount string)
 		return nil, "", err
 	}
 	bis.log.Infow("TransferService Transfer feeRates", "feeRates", feeRates)
-	feeRate := strconv.Itoa(feeRates.FastestFee)
+	feeRate := fee.TransactionFee.FeePerByte
 	res, err := bis.sinohopeAPI.CreateTransfer(&common.WalletTransactionSendWAASParam{
 		RequestId:   requestID,
 		VaultId:     bis.cfg.VaultID,
