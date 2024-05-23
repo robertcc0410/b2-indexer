@@ -13,6 +13,7 @@ import (
 	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/cometbft/cometbft/libs/service"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"gorm.io/gorm"
 )
@@ -262,14 +263,27 @@ func (bis *BridgeDepositService) HandleDeposit(deposit model.Deposit, oldTx *eth
 	// check Confirmations
 	err := bis.btcIndexer.CheckConfirmations(deposit.BtcTxHash)
 	if err != nil {
-		bis.log.Errorw("check btc tx confirmations err", "tx hash:", deposit.B2TxHash, "err:", err)
+		if errors.Is(err, ErrTargetConfirmations) {
+			bis.log.Infow("check btc tx confirmations err", "tx hash:", deposit.B2TxHash, "err:", err)
+		} else {
+			bis.log.Errorw("check btc tx confirmations err", "tx hash:", deposit.B2TxHash, "err:", err)
+		}
 		return err
 	}
 
-	// send deposit tx
-	b2Tx, _, aaAddress, fromAddress, err := bis.bridge.Deposit(deposit.BtcTxHash, types.BitcoinFrom{
+	bitcoinFrom := types.BitcoinFrom{
 		Address: deposit.BtcFrom,
-	}, deposit.BtcValue, oldTx, nonce, resetNonce)
+	}
+
+	useEvmAddress := false
+	if deposit.BtcFromEvmAddress != "" && common.IsHexAddress(deposit.BtcFromEvmAddress) {
+		useEvmAddress = true
+		bitcoinFrom.EvmAddress = deposit.BtcFromEvmAddress
+		bitcoinFrom.Type = types.BitcoinFromTypeEvm
+	}
+
+	// send deposit tx
+	b2Tx, _, aaAddress, fromAddress, err := bis.bridge.Deposit(deposit.BtcTxHash, bitcoinFrom, deposit.BtcValue, oldTx, nonce, resetNonce)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrBridgeDepositTxHashExist):
@@ -362,7 +376,9 @@ func (bis *BridgeDepositService) HandleDeposit(deposit model.Deposit, oldTx *eth
 	}
 	deposit.B2TxStatus = model.DepositB2TxStatusWaitMined
 	deposit.B2TxHash = b2Tx.Hash().String()
-	deposit.BtcFromAAAddress = aaAddress
+	if !useEvmAddress {
+		deposit.BtcFromAAAddress = aaAddress
+	}
 	deposit.B2TxNonce = b2Tx.Nonce()
 	updateFields := map[string]interface{}{
 		model.Deposit{}.Column().B2TxHash:         deposit.B2TxHash,
@@ -504,9 +520,16 @@ func (bis *BridgeDepositService) HandleEoaTransfer() error {
 }
 
 func (bis *BridgeDepositService) EoaTransfer(deposit model.Deposit, oldTx *ethTypes.Transaction, nonce uint64, resetNonce bool) error {
-	b2EoaTx, fromAddress, err := bis.bridge.Transfer(types.BitcoinFrom{
+	bitcoinFrom := types.BitcoinFrom{
 		Address: deposit.BtcFrom,
-	}, deposit.BtcValue, oldTx, nonce, resetNonce)
+	}
+
+	if deposit.BtcFromEvmAddress != "" && common.IsHexAddress(deposit.BtcFromEvmAddress) {
+		bitcoinFrom.EvmAddress = deposit.BtcFromEvmAddress
+		bitcoinFrom.Type = types.BitcoinFromTypeEvm
+	}
+
+	b2EoaTx, fromAddress, err := bis.bridge.Transfer(bitcoinFrom, deposit.BtcValue, oldTx, nonce, resetNonce)
 	if err != nil {
 		bis.log.Errorw("invoke eoa transfer tx err",
 			"error", err.Error(),
@@ -663,7 +686,7 @@ func (bis *BridgeDepositService) CheckDeposit() {
 					continue
 				}
 				if deposit.B2TxStatus == model.DepositB2TxStatusSuccess {
-					if strings.EqualFold(deposit.BtcFromAAAddress, rollupDeposit.BtcFromAAAddress) &&
+					if (strings.EqualFold(deposit.BtcFromAAAddress, rollupDeposit.BtcFromAAAddress) || strings.EqualFold(deposit.BtcFromEvmAddress, rollupDeposit.BtcFromAAAddress)) &&
 						deposit.BtcValue == rollupDeposit.BtcValue {
 						deposit.B2TxCheck = model.B2CheckStatusSuccess
 					} else {

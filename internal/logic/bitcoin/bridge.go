@@ -505,7 +505,11 @@ func (b *Bridge) ABIPack(abiData string, method string, args ...interface{}) ([]
 }
 
 // BitcoinAddressToEthAddress bitcoin address to eth address
+// if OP_RETURN existed, use OP_RETURN EVM address
 func (b *Bridge) BitcoinAddressToEthAddress(bitcoinAddress b2types.BitcoinFrom) (string, error) {
+	if bitcoinAddress.Type == b2types.BitcoinFromTypeEvm && common.IsHexAddress(bitcoinAddress.EvmAddress) {
+		return bitcoinAddress.EvmAddress, nil
+	}
 	pubkeyResp, err := aa.GetPubKey(b.AAPubKeyAPI, bitcoinAddress.Address)
 	if err != nil {
 		b.logger.Errorw("get pub key:", "pubkey", pubkeyResp, "address", bitcoinAddress.Address)

@@ -1,6 +1,8 @@
 package bitcoin
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +12,7 @@ import (
 	"github.com/b2network/b2-indexer/internal/types"
 	"github.com/b2network/b2-indexer/pkg/log"
 	"github.com/cometbft/cometbft/libs/service"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 )
@@ -36,7 +39,6 @@ type IndexerService struct {
 // NewIndexerService returns a new service instance.
 func NewIndexerService(
 	txIdxr types.BITCOINTxIndexer,
-	// bridge types.BITCOINBridge,
 	db *gorm.DB,
 	logger log.Logger,
 ) *IndexerService {
@@ -217,6 +219,35 @@ func (bis *IndexerService) SaveParsedResult(
 			return fmt.Errorf("parse result to empty")
 		}
 
+		if len(parseResult.Tos) == 0 {
+			return fmt.Errorf("parse result to empty")
+		}
+
+		bis.log.Errorw("parseResult:", "result", parseResult)
+		existsEvmAddressData := false // The evm address is processed only if it exists. Otherwise, aa is used
+		parsedEvmAddress := ""        // evm address
+		for _, v := range parseResult.Tos {
+			// only handle first null data
+			if existsEvmAddressData {
+				continue
+			}
+			if v.Type == types.BitcoinToTypeNullData {
+				decodeNullData, err := hex.DecodeString(v.NullData)
+				if err != nil {
+					bis.log.Errorw("decode null data err", "error", err, "nullData", v.NullData)
+					continue
+				}
+				evmAddress := bytes.TrimSpace(decodeNullData[1:])
+				if common.IsHexAddress(string(evmAddress)) {
+					existsEvmAddressData = true
+					parsedEvmAddress = string(evmAddress)
+					for k := range parseResult.From {
+						parseResult.From[k].Type = types.BitcoinFromTypeEvm
+						parseResult.From[k].EvmAddress = parsedEvmAddress
+					}
+				}
+			}
+		}
 		froms, err := json.Marshal(parseResult.From)
 		if err != nil {
 			return err
@@ -225,7 +256,6 @@ func (bis *IndexerService) SaveParsedResult(
 		if err != nil {
 			return err
 		}
-
 		// if existed, update deposit record
 		var deposit model.Deposit
 		err = tx.
@@ -252,6 +282,9 @@ func (bis *IndexerService) SaveParsedResult(
 				ListenerStatus: model.ListenerStatusSuccess,
 				CallbackStatus: model.CallbackStatusPending,
 			}
+			if existsEvmAddressData {
+				deposit.BtcFromEvmAddress = parsedEvmAddress
+			}
 			err = tx.Create(&deposit).Error
 			if err != nil {
 				bis.log.Errorw("failed to save tx parsed result", "error", err)
@@ -270,6 +303,9 @@ func (bis *IndexerService) SaveParsedResult(
 				model.Deposit{}.Column().BtcTos:         string(tos),
 				model.Deposit{}.Column().BtcBlockTime:   btcBlockTime,
 				model.Deposit{}.Column().ListenerStatus: model.ListenerStatusSuccess,
+			}
+			if existsEvmAddressData {
+				updateFields[model.Deposit{}.Column().BtcFromEvmAddress] = parsedEvmAddress
 			}
 			err = tx.Model(&model.Deposit{}).Where("id = ?", deposit.ID).Updates(updateFields).Error
 			if err != nil {
